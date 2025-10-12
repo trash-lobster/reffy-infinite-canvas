@@ -1,23 +1,32 @@
-import { Canvas } from "../src";
+import { Canvas, Circle } from "../src";
 
 async function main() {
     const el = document.getElementById('canvas') as HTMLCanvasElement;
     
     const canvas = await new Canvas({
-        element: el,
-        width: window.innerWidth,
-        height: window.innerHeight,
+        canvas: el,
         devicePixelRatio: window.devicePixelRatio,
     }).initialized;
+
+    const circle = new Circle(
+        {
+            cx: 100,
+            cy: 100,
+            r: 100,
+            fill: 'red'
+        }
+    );
+    canvas.appendChild(circle);
+
     
     function animate() {
-        requestAnimationFrame(animate);
         canvas.render();
+        requestAnimationFrame(animate);
     }
     
     animate();
     
-    canvas.resize(500, 500);
+    canvas.resize(window.innerWidth, window.innerHeight);
     canvas.destroy();
 }
 

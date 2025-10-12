@@ -1,66 +1,54 @@
-import * as d3 from 'd3-color';
-import { Shape } from './Shape';
 import {
-  type Device,
-  type RenderPass,
-  Bindings,
-  Buffer,
-  BufferFrequencyHint,
-  BufferUsage,
-  BlendMode,
-  BlendFactor,
-  ChannelWriteMask,
-  Format,
-  InputLayout,
-  Program,
-  RenderPipeline,
-  VertexStepMode,
-} from '@antv/g-device-api';
-import { vert, frag } from '../shaders/sdf';
+  Shape,
+  ShapeAttributes,
+  isFillOrStrokeAffected,
+  strokeOffset,
+} from './Shape';
+import { distanceBetweenPoints } from '../utils';
+import { AABB } from './AABB';
 
-export enum AntiAliasingType {
-  NONE,
-  SMOOTHSTEP,
-  DIVIDE,
-  FWIDTH,
+export interface CircleAttributes extends ShapeAttributes {
+  /**
+   * The cx attribute define the x-axis coordinate of a center point.
+   * @see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/cx
+   */
+  cx: number;
+
+  /**
+   * The cy attribute define the y-axis coordinate of a center point.
+   * @see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/cy
+   */
+  cy: number;
+
+  /**
+   * The r attribute defines the radius of a circle.
+   * @see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/r
+   *
+   */
+  r: number;
 }
 
-export class Circle extends Shape {
-  #program: Program;
-  #fragUnitBuffer: Buffer;
-  #instancedBuffer: Buffer;
-  #indexBuffer: Buffer;
-  #pipeline: RenderPipeline;
-  #inputLayout: InputLayout;
-  #bindings: Bindings;
+export class Circle extends Shape implements CircleAttributes {
+  #cx: number;
+  #cy: number;
+  #r: number;
 
-  constructor(
-    config: Partial<{
-      cx: number;
-      cy: number;
-      r: number;
-      fill: string;
-      antiAliasingType: AntiAliasingType;
-    }> = {},
+  static getGeometryBounds(
+    attributes: Partial<Pick<CircleAttributes, 'cx' | 'cy' | 'r'>>,
   ) {
-    super();
+    const { cx, cy, r } = attributes;
+    return new AABB(cx - r, cy - r, cx + r, cy + r);
+  }
 
-    const { cx, cy, r, fill, antiAliasingType } = config;
+  constructor(attributes: Partial<CircleAttributes> = {}) {
+    super(attributes);
+
+    const { cx, cy, r } = attributes;
 
     this.cx = cx ?? 0;
     this.cy = cy ?? 0;
     this.r = r ?? 0;
-    this.fill = fill ?? 'black';
-    this.#antiAliasingType = antiAliasingType;
   }
-
-  #cx: number;
-  #cy: number;
-  #r: number;
-  #fill: string;
-  #fillRGB: d3.RGBColor;
-  #antiAliasingType = AntiAliasingType.NONE;
-  #uniformBuffer: Buffer;
 
   get cx() {
     return this.#cx;
@@ -70,6 +58,8 @@ export class Circle extends Shape {
     if (this.#cx !== cx) {
       this.#cx = cx;
       this.renderDirtyFlag = true;
+      this.geometryBoundsDirtyFlag = true;
+      this.renderBoundsDirtyFlag = true;
     }
   }
 
@@ -81,6 +71,8 @@ export class Circle extends Shape {
     if (this.#cy !== cy) {
       this.#cy = cy;
       this.renderDirtyFlag = true;
+      this.geometryBoundsDirtyFlag = true;
+      this.renderBoundsDirtyFlag = true;
     }
   }
 
@@ -92,175 +84,62 @@ export class Circle extends Shape {
     if (this.#r !== r) {
       this.#r = r;
       this.renderDirtyFlag = true;
+      this.geometryBoundsDirtyFlag = true;
+      this.renderBoundsDirtyFlag = true;
     }
   }
 
-  get fill() {
-    return this.#fill;
-  }
+  containsPoint(x: number, y: number) {
+    const {
+      strokeWidth,
+      strokeAlignment,
+      cx,
+      cy,
+      r,
+      pointerEvents,
+      fill,
+      stroke,
+    } = this;
 
-  set fill(fill: string) {
-    if (this.#fill !== fill) {
-      this.#fill = fill;
-      this.#fillRGB = d3.rgb(fill);
-      this.renderDirtyFlag = true;
+    const absDistance = distanceBetweenPoints(cx, cy, x, y);
+
+    const [hasFill, hasStroke] = isFillOrStrokeAffected(
+      pointerEvents,
+      fill,
+      stroke,
+    );
+    if (hasFill) {
+      return absDistance <= r;
     }
-  }
-
-  render(device: Device, renderPass: RenderPass, uniformBuffer: Buffer) {
-    if (!this.#program) {
-      this.#uniformBuffer = device.createBuffer({
-        viewOrSize: new Float32Array([this.#antiAliasingType]),
-        usage: BufferUsage.UNIFORM,
-        hint: BufferFrequencyHint.DYNAMIC,
-      });
-      this.#program = device.createProgram({
-        vertex: {
-          glsl: vert,
-        },
-        fragment: {
-          glsl: frag,
-        },
-      });
-
-      this.#instancedBuffer = device.createBuffer({
-        viewOrSize: Float32Array.BYTES_PER_ELEMENT * 8,
-        usage: BufferUsage.VERTEX,
-        hint: BufferFrequencyHint.DYNAMIC,
-      });
-      this.#fragUnitBuffer = device.createBuffer({
-        viewOrSize: new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]),
-        usage: BufferUsage.VERTEX,
-        hint: BufferFrequencyHint.STATIC,
-      });
-      this.#indexBuffer = device.createBuffer({
-        viewOrSize: new Uint32Array([0, 1, 2, 0, 2, 3]),
-        usage: BufferUsage.INDEX,
-        hint: BufferFrequencyHint.STATIC,
-      });
-
-      this.#inputLayout = device.createInputLayout({
-        vertexBufferDescriptors: [
-          {
-            arrayStride: 4 * 2,
-            stepMode: VertexStepMode.VERTEX,
-            attributes: [
-              {
-                shaderLocation: 0,
-                offset: 0,
-                format: Format.F32_RG,
-              },
-            ],
-          },
-          {
-            arrayStride: 4 * 8,
-            stepMode: VertexStepMode.INSTANCE,
-            attributes: [
-              {
-                shaderLocation: 1,
-                offset: 0,
-                format: Format.F32_RG,
-              },
-              {
-                shaderLocation: 2,
-                offset: 4 * 2,
-                format: Format.F32_RG,
-              },
-              {
-                shaderLocation: 3,
-                offset: 4 * 4,
-                format: Format.F32_RGBA,
-              },
-            ],
-          },
-        ],
-        indexBufferFormat: Format.U32_R,
-        program: this.#program,
-      });
-
-      this.#pipeline = device.createRenderPipeline({
-        inputLayout: this.#inputLayout,
-        program: this.#program,
-        colorAttachmentFormats: [Format.U8_RGBA_RT],
-        megaStateDescriptor: {
-          attachmentsState: [
-            {
-              channelWriteMask: ChannelWriteMask.ALL,
-              rgbBlendState: {
-                blendMode: BlendMode.ADD,
-                blendSrcFactor: BlendFactor.SRC_ALPHA,
-                blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
-              },
-              alphaBlendState: {
-                blendMode: BlendMode.ADD,
-                blendSrcFactor: BlendFactor.ONE,
-                blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
-              },
-            },
-          ],
-        },
-      });
-
-      this.#bindings = device.createBindings({
-        pipeline: this.#pipeline,
-        uniformBufferBindings: [
-          {
-            buffer: uniformBuffer,
-          },
-          {
-            buffer: this.#uniformBuffer,
-          },
-        ],
-      });
-    }
-
-    if (this.renderDirtyFlag) {
-      this.#instancedBuffer.setSubData(
-        0,
-        new Uint8Array(
-          new Float32Array([
-            this.#cx,
-            this.#cy,
-            this.#r,
-            this.#r,
-            this.#fillRGB.r / 255,
-            this.#fillRGB.g / 255,
-            this.#fillRGB.b / 255,
-            this.#fillRGB.opacity,
-          ]).buffer,
-        ),
+    if (hasStroke) {
+      const offset = strokeOffset(strokeAlignment, strokeWidth);
+      return (
+        absDistance >= r + offset - strokeWidth && absDistance <= r + offset
       );
     }
-
-    renderPass.setPipeline(this.#pipeline);
-    renderPass.setVertexInput(
-      this.#inputLayout,
-      [
-        {
-          buffer: this.#fragUnitBuffer,
-        },
-        {
-          buffer: this.#instancedBuffer,
-        },
-      ],
-      {
-        buffer: this.#indexBuffer,
-      },
-    );
-    renderPass.setBindings(this.#bindings);
-    renderPass.drawIndexed(6, 1);
-
-    this.renderDirtyFlag = false;
+    return false;
   }
 
-  destroy(): void {
-    this.#program.destroy();
-    this.#instancedBuffer.destroy();
-    this.#fragUnitBuffer.destroy();
-    this.#indexBuffer.destroy();
-    this.#uniformBuffer.destroy();
-    this.#pipeline.destroy();
-    this.#inputLayout.destroy();
-    this.#bindings.destroy();
+  getGeometryBounds() {
+    if (this.geometryBoundsDirtyFlag) {
+      this.geometryBoundsDirtyFlag = false;
+      this.geometryBounds = Circle.getGeometryBounds(this);
+    }
+    return this.geometryBounds;
+  }
+
+  getRenderBounds() {
+    if (this.renderBoundsDirtyFlag) {
+      const { strokeWidth, strokeAlignment, cx, cy, r } = this;
+      const offset = strokeOffset(strokeAlignment, strokeWidth);
+      this.renderBoundsDirtyFlag = false;
+      this.renderBounds = new AABB(
+        cx - r - offset,
+        cy - r - offset,
+        cx + r + offset,
+        cy + r + offset,
+      );
+    }
+    return this.renderBounds;
   }
 }

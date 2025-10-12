@@ -1,12 +1,12 @@
 import type { AsArray } from './interfaces';
-export class SyncWaterfallHook<T> {
-  #callbacks: ((...args: AsArray<T>) => T)[] = [];
+export class SyncWaterfallHook<T, R> {
+  #callbacks: ((...args: AsArray<T>) => R)[] = [];
 
-  tap(fn: (...args: AsArray<T>) => T) {
+  tap(fn: (...args: AsArray<T>) => R) {
     this.#callbacks.push(fn);
   }
 
-  call(...argsArr: AsArray<T>): AsArray<T> | null {
+  call(...argsArr: AsArray<T>): R {
     if (this.#callbacks.length) {
       /* eslint-disable-next-line prefer-spread */
       let result = this.#callbacks[0].apply(void 0, argsArr);

@@ -1,6 +1,5 @@
-import { load } from "@loaders.gl/core";
-import { ImageLoader } from "@loaders.gl/images";
-import { Canvas, Circle } from "../src";
+import { Canvas } from "../src";
+import { Rect, Triangle } from "../src/shapes";
 
 async function main() {
     const $canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -17,43 +16,75 @@ async function main() {
     resize(window.innerWidth, window.innerHeight);
 
     
-    const canvas = await new Canvas({
-        canvas: $canvas,
-        devicePixelRatio: window.devicePixelRatio,
-    }).initialized;
-    
-    const image = (await load(
-        'https://infinitecanvas.cc/canvas.png',
-        // 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAADElEQVQImWNgoBMAAABpAAFEI8ARAAAAAElFTkSuQmCC',
-        ImageLoader,
-    )) as ImageBitmap;
+    const canvas = new Canvas(
+        $canvas
+    );
 
-    const circle = new Circle({
-        cx: 100,
-        cy: 100,
-        r: 50,
-        fill: image,
-        stroke: 'black',
-        strokeWidth: 5,
-        strokeOpacity: 0.5,
-    });
-    canvas.appendChild(circle);
-    
-    circle.addEventListener('pointerenter', () => {
-        circle.fill = 'green';
-    });
-    
-    function animate() {
+    const positions = [
+        0, 0,
+        0, 0.5,
+        0.7, 0,
+    ];
+    const triangle = new Triangle(positions);
+    const rectangle = new Rect({
+        x: 0,
+        y: 0,
+        width: 0.3,
+        height: 0.5,
+    })
+    canvas.appendChild(rectangle);
+
+    const render = () => {
         canvas.render();
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
     }
+
+    render();
+
+    // const image = (await load(
+    //     'https://i.redd.it/gewlibsk5muf1.jpeg',
+    //     // 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAADElEQVQImWNgoBMAAABpAAFEI8ARAAAAAElFTkSuQmCC',
+    //     ImageLoader,
+    // )) as ImageBitmap;
+
+    let imageCount = 1;
+    // function addImage() {
+
+    //     // rect.addEventListener('pointerdown', () => {
+    //     //     rect.draggable = true;
+    //     // })
+
+    //     rect.addEventListener('dragstart', (event) => {
+    //         console.log('Drag started');
+    //         // rect.draggable = true;
+    //     });
+
+    //     rect.addEventListener('drag', (event) => {
+    //         // // Update position based on movement delta
+    //         rect.x += (event as FederatedPointerEvent).dx;
+    //         rect.y += (event as FederatedPointerEvent).dy;
+    //     });
+
+    //     rect.addEventListener('dragend', (event) => {
+    //         console.log('Drag ended');
+    //         // Clean up, snap to grid, etc.
+    //         // rect.draggable = false;
+    //     });
+
+    //     imageCount++;
+    // }
     
-    animate();
+    // function animate() {
+    //     canvas.render();
+    //     requestAnimationFrame(animate);
+    // }
     
-    window.addEventListener('resize', () => {
-        resize(window.innerWidth, window.innerHeight);
-        canvas.resize(window.innerWidth, window.innerHeight);
-    });
+    // animate();
+    
+    // window.addEventListener('resize', () => {
+    //     resize(window.innerWidth, window.innerHeight);
+    //     canvas.resize(window.innerWidth, window.innerHeight);
+    // });
 }
 
 main();

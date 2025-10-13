@@ -1,18 +1,23 @@
 import { Shape } from "shapes";
+import { arraysEqual } from "../util/checks";
 
-export class Rect implements Shape {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    renderDirtyFlag: boolean;
+export class Triangle implements Shape {
+    $positions: number[];
+    renderDirtyFlag: boolean = true;
 
-    constructor(config: Partial<Rect>) {
-        this.x = config.x;
-        this.y = config.y;
-        this.width = config.width;
-        this.height = config.height;
-        this.renderDirtyFlag = true;
+    constructor(positions: number[]) {
+        this.$positions = positions;
+    }
+
+    get positions() {
+        return this.$positions;
+    }
+
+    set positions(newPos: number[]) {
+        if (!arraysEqual(this.$positions, newPos)) {
+            this.$positions = newPos;
+            this.renderDirtyFlag = true;
+        }
     }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) {
@@ -20,7 +25,7 @@ export class Rect implements Shape {
             const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
             const positionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.getPositions()), gl.STATIC_DRAW)
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positions), gl.STATIC_DRAW)
             gl.useProgram(program);
             // turn on the attribute
             gl.enableVertexAttribArray(positionAttributeLocation);
@@ -40,27 +45,7 @@ export class Rect implements Shape {
         // draw
         var primitiveType = gl.TRIANGLES;
         var offset = 0;
-        var count = 6;
+        var count = 3;
         gl.drawArrays(primitiveType, offset, count);
-    }
-
-    private getPositions(): number[] {
-        // Calculate the four corners of the rectangle
-        const left = this.x;
-        const right = this.x + this.width;
-        const top = this.y;
-        const bottom = this.y + this.height;
-        
-        // Return 6 vertices (2 triangles) to form a rectangle
-        // Triangle 1: top-left, bottom-left, top-right
-        // Triangle 2: top-right, bottom-left, bottom-right
-        return [
-            left, top,      // top-left
-            left, bottom,   // bottom-left  
-            right, top,     // top-right
-            right, top,     // top-right
-            left, bottom,   // bottom-left
-            right, bottom   // bottom-right
-        ];
     }
 }

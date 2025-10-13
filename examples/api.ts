@@ -27,10 +27,10 @@ async function main() {
     ];
     const triangle = new Triangle(positions);
     const rectangle = new Rect({
-        x: 0,
-        y: 0,
-        width: 0.3,
-        height: 0.5,
+        x: 200,
+        y: 200,
+        width: 300,
+        height: 500,
     })
     canvas.appendChild(rectangle);
 
@@ -48,43 +48,6 @@ async function main() {
     // )) as ImageBitmap;
 
     let imageCount = 1;
-    // function addImage() {
-
-    //     // rect.addEventListener('pointerdown', () => {
-    //     //     rect.draggable = true;
-    //     // })
-
-    //     rect.addEventListener('dragstart', (event) => {
-    //         console.log('Drag started');
-    //         // rect.draggable = true;
-    //     });
-
-    //     rect.addEventListener('drag', (event) => {
-    //         // // Update position based on movement delta
-    //         rect.x += (event as FederatedPointerEvent).dx;
-    //         rect.y += (event as FederatedPointerEvent).dy;
-    //     });
-
-    //     rect.addEventListener('dragend', (event) => {
-    //         console.log('Drag ended');
-    //         // Clean up, snap to grid, etc.
-    //         // rect.draggable = false;
-    //     });
-
-    //     imageCount++;
-    // }
-    
-    // function animate() {
-    //     canvas.render();
-    //     requestAnimationFrame(animate);
-    // }
-    
-    // animate();
-    
-    // window.addEventListener('resize', () => {
-    //     resize(window.innerWidth, window.innerHeight);
-    //     canvas.resize(window.innerWidth, window.innerHeight);
-    // });
 }
 
 main();

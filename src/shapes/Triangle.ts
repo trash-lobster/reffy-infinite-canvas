@@ -25,6 +25,6 @@ export class Triangle extends Shape {
     }
 
     getVertexCount(): number {
-        return 4;
+        return 3;
     }
 }

@@ -20,18 +20,18 @@ async function main() {
         $canvas
     );
 
-    const positions = [
-        0, 0,
-        0, 0.5,
-        0.7, 0,
-    ];
-    const triangle = new Triangle(positions);
+    const triangle = new Triangle([
+        700, 100,
+        200, 100,
+        150, 200,
+    ]);
     const rectangle = new Rect({
         x: 200,
         y: 200,
         width: 300,
         height: 500,
     })
+    canvas.appendChild(triangle);
     canvas.appendChild(rectangle);
 
     const render = () => {

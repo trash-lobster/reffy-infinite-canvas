@@ -1,8 +1,11 @@
-export abstract class Shape {
+import { Renderable } from "shapes";
+
+export abstract class Shape implements Renderable{
     renderDirtyFlag: boolean = true;
     private positionBuffer?: WebGLBuffer;
     private attributeLocation?: number;
     private initialized = false;
+    private vertexArray?: Float32Array;
 
     abstract getPositions(): number[];
     abstract getVertexCount(): number;
@@ -12,19 +15,33 @@ export abstract class Shape {
         if (this.renderDirtyFlag) {
 
             if (!this.initialized) {
-                this.setUpVertextData(gl, program);
+                this.setUpVertexData(gl, program);
                 this.initialized = true;
             }
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.getPositions()), gl.STATIC_DRAW);
+            this.updateVertexData(gl);
             this.renderDirtyFlag = false;
         }
         this.draw(gl, program);
     }
+    
+    private updateVertexData(gl: WebGLRenderingContext) {
+        const positions = this.getPositions();
+        
+        if (!this.vertexArray || this.vertexArray.length !== positions.length) {
+            this.vertexArray = new Float32Array(positions.length);
+        }
+        
+        this.vertexArray.set(positions);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer!);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexArray, gl.STATIC_DRAW);
+    }
 
-    private setUpVertextData(gl: WebGLRenderingContext, program: WebGLProgram) {
-        this.positionBuffer = gl.createBuffer();
+    private setUpVertexData(gl: WebGLRenderingContext, program: WebGLProgram) {
+        if (!this.positionBuffer) {
+            this.positionBuffer = gl.createBuffer();
+        }
         this.attributeLocation = gl.getAttribLocation(program, 'a_position');
     }
 

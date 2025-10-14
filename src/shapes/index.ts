@@ -1,3 +1,5 @@
 export * from './Rect';
 export * from './Shape';
-export * from './triangle'
+export * from './Triangle';
+export * from './Img';
+export * from './Renderable';

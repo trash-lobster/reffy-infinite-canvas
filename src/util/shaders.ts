@@ -4,13 +4,17 @@ export function createProgram(gl: WebGLRenderingContext, vert: string, frag: str
     const program = gl.createProgram();
     gl.attachShader(program, vertShader);
     gl.attachShader(program, fragShader);
+    return program;
+}
+
+export function linkProgram(gl: WebGLRenderingContext, program: WebGLProgram) {
     gl.linkProgram(program);
     const success = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if (success) {
-        return program;
+
+    if (!success) {
+        console.error('Program was not created or the link to shaders was not successful.');
+        gl.deleteProgram(program);
     }
-    console.error('Program was not created or the link to shaders was not successful.');
-    gl.deleteProgram(program);
 }
 
 function createShader(gl:WebGLRenderingContext, type : GLenum, source: string) {

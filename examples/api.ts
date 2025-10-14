@@ -1,5 +1,5 @@
 import { Canvas } from "../src";
-import { Rect, Triangle } from "../src/shapes";
+import { Img, Rect, Triangle } from "../src/shapes";
 
 async function main() {
     const $canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -31,8 +31,35 @@ async function main() {
         width: 300,
         height: 500,
     })
-    canvas.appendChild(triangle);
-    canvas.appendChild(rectangle);
+
+    const otherRect = new Rect({
+        x: 550,
+        y: 200,
+        width: 300,
+        height: 500,
+    })
+
+    const img = new Img({
+        x: 300,
+        y: 200,
+        width: 300,
+        height: 500,
+        src: 'https://i.redd.it/74l6fsbegzuf1.jpeg'
+    })
+
+    const img2 = new Img({
+        x: 700,
+        y: 400,
+        width: 300,
+        height: 500,
+        src: 'https://i.redd.it/e7zyleu06xuf1.jpeg'
+    })
+    
+    canvas.appendRenderables(triangle);
+    canvas.appendRenderables(rectangle);
+    canvas.appendRenderables(img);
+    canvas.appendRenderables(otherRect);
+    canvas.appendRenderables(img2);
 
     const render = () => {
         canvas.render();
@@ -48,6 +75,10 @@ async function main() {
     // )) as ImageBitmap;
 
     let imageCount = 1;
+
+    window.addEventListener('beforeunload', () => {
+        canvas.destroy();
+    })
 }
 
 main();

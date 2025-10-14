@@ -68,13 +68,12 @@ export class Img implements Renderable{
     }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
-        gl.useProgram(program);
         if (this.renderDirtyFlag) {
 
             if (!this.initialized) {
                 this.setUpVertextData(gl, program);
-                this.setTexture(gl);
                 this.setUpTexData(gl, program);
+                this.setTexture(gl);
                 
                 // Only create texture if image is loaded
                 if (this._image.complete && this._image.naturalWidth > 0) {

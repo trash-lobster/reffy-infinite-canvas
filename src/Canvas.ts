@@ -1,5 +1,5 @@
-import { createProgram, linkProgram } from './util';
-import { vert, frag, imageFrag, imageVert } from './sdf';
+import { createProgram } from './util';
+import { vert, frag, imageFrag, imageVert } from './shaders';
 import { Shape, Img, Renderable } from './shapes';
 
 export class Canvas {
@@ -20,7 +20,6 @@ export class Canvas {
 		shadersCreated: 0,
     	shadersDeleted: 0,
     };
-
 	
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
@@ -52,7 +51,8 @@ export class Canvas {
 			}
 			
 			if (currentProgram !== program) {
-				linkProgram(this.gl, program);
+				// linkProgram(this.gl, program);
+				this.gl.useProgram(program);
 				currentProgram = program;
 			}
 			renderable.render(this.gl, currentProgram);
@@ -111,7 +111,7 @@ export class Canvas {
 
 		return gl;
 	}
-	
+
 	static getWebGLStats() {
 		return {
 			...Canvas.webglStats,

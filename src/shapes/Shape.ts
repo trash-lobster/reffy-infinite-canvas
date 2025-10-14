@@ -11,7 +11,6 @@ export abstract class Shape implements Renderable{
     abstract getVertexCount(): number;
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
-        gl.useProgram(program);
         if (this.renderDirtyFlag) {
 
             if (!this.initialized) {

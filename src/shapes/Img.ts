@@ -7,6 +7,16 @@ export class Img implements Renderable{
     private texcoordBuffer?: WebGLBuffer;
     private texcoordLocation?: number;
     private initialized = false;
+    private texture: WebGLTexture;
+    private vertexArray?: Float32Array;
+    private texCoordArray: Float32Array = new Float32Array([
+        0, 0,  // top-left
+        0, 1,  // bottom-left
+        1, 0,  // top-right
+        1, 0,  // top-right
+        0, 1,  // bottom-left
+        1, 1   // bottom-right
+    ])
     
     private _src: string;
     private _x: number;
@@ -63,6 +73,7 @@ export class Img implements Renderable{
 
             if (!this.initialized) {
                 this.setUpVertextData(gl, program);
+                this.setTexture(gl);
                 this.setUpTexData(gl, program);
                 
                 // Only create texture if image is loaded
@@ -75,19 +86,7 @@ export class Img implements Renderable{
                 }
             }
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.getPositions()), gl.STATIC_DRAW);
-            
-            // Upload texture coordinates
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-                0, 0,  // top-left
-                0, 1,  // bottom-left
-                1, 0,  // top-right
-                1, 0,  // top-right
-                0, 1,  // bottom-left
-                1, 1   // bottom-right
-            ]), gl.STATIC_DRAW);
+            this.updateVertexData(gl);
             
             this.renderDirtyFlag = false;
         }
@@ -114,8 +113,27 @@ export class Img implements Renderable{
         ];
     }
 
+    private updateVertexData(gl: WebGLRenderingContext) {
+        const positions = this.getPositions();
+        
+        if (!this.vertexArray || this.vertexArray.length !== positions.length) {
+            this.vertexArray = new Float32Array(positions.length);
+        }
+        
+        this.vertexArray.set(positions);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer!);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexArray, gl.STATIC_DRAW);
+        
+        // Upload texture coordinates
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, this.texCoordArray, gl.STATIC_DRAW);
+    }
+
     private setUpVertextData(gl: WebGLRenderingContext, program: WebGLProgram) {
-        this.positionBuffer = gl.createBuffer();
+        if (!this.positionBuffer) {
+            this.positionBuffer = gl.createBuffer();
+        }
         this.attributeLocation = gl.getAttribLocation(program, 'a_position');
     }
 
@@ -125,13 +143,15 @@ export class Img implements Renderable{
     }
 
     private setUpTexData(gl: WebGLRenderingContext, program: WebGLProgram) {
-        this.texcoordBuffer = gl.createBuffer();
+        if (!this.texcoordBuffer) {
+            this.texcoordBuffer = gl.createBuffer();
+        }
         this.texcoordLocation = gl.getAttribLocation(program, "a_texCoord");
     }
 
     private setTexture(gl: WebGLRenderingContext) {
-        const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        this.texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
         
         // Set the parameters so we can render any size image.
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -144,7 +164,6 @@ export class Img implements Renderable{
     }
     
     private draw(gl: WebGLRenderingContext, program: WebGLProgram) {
-        this.setTexture(gl);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         gl.enableVertexAttribArray(this.attributeLocation);
 
@@ -153,10 +172,11 @@ export class Img implements Renderable{
         const normalize = false; // don't normalize the data
         const stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
         const offset = 0;        // start at the beginning of the buffer
+        
         gl.vertexAttribPointer(
             this.attributeLocation, size, type, normalize, stride, offset);
             
-            
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
         gl.enableVertexAttribArray(this.texcoordLocation);
 
@@ -171,12 +191,14 @@ export class Img implements Renderable{
     destroy(gl: WebGLRenderingContext) {
         if (this.positionBuffer) {
             gl.deleteBuffer(this.positionBuffer);
-            this.positionBuffer = undefined;
         }
 
         if (this.texcoordBuffer) {
             gl.deleteBuffer(this.texcoordBuffer);
-            this.texcoordBuffer = undefined;
+        }
+
+        if (this.texture) {
+            gl.deleteTexture(this.texture);
         }
 
         this.initialized = false;

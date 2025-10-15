@@ -136,7 +136,7 @@ export class Img implements Renderable{
         this.attributeLocation = gl.getAttribLocation(program, 'a_position');
     }
 
-    protected setupUniforms(gl: WebGLRenderingContext, program: WebGLProgram) {
+    protected setUpUniforms(gl: WebGLRenderingContext, program: WebGLProgram) {
         const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
         gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
     }
@@ -182,7 +182,7 @@ export class Img implements Renderable{
         gl.vertexAttribPointer(
             this.texcoordLocation, size, type, normalize, stride, offset);
             
-        this.setupUniforms(gl, program);
+        this.setUpUniforms(gl, program);
 
         gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
     }

@@ -51,7 +51,6 @@ export class Canvas {
 			}
 			
 			if (currentProgram !== program) {
-				// linkProgram(this.gl, program);
 				this.gl.useProgram(program);
 				currentProgram = program;
 			}
@@ -75,9 +74,6 @@ export class Canvas {
     }
 
 	private wrapWebGLContext(gl: WebGLRenderingContext) {
-		// ...existing code...
-
-		// Wrap createTexture/deleteTexture
 		const originalCreateTexture = gl.createTexture.bind(gl);
 		gl.createTexture = () => {
 			Canvas.webglStats.texturesCreated++;
@@ -92,8 +88,6 @@ export class Canvas {
 			}
 			return originalDeleteTexture(texture);
 		};
-
-		// Wrap createShader/deleteShader
 		const originalCreateShader = gl.createShader.bind(gl);
 		gl.createShader = (type: number) => {
 			Canvas.webglStats.shadersCreated++;

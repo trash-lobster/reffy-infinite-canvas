@@ -15,8 +15,16 @@ export abstract class Shape implements Renderable{
     scale: number[] = [1, 1];
     color: number[] = [1, 0, 0.5, 1];
 
-    localMatrix: number[];
-    worldMatrix: number[];
+    localMatrix: number[] = [
+        1, 0, 0,
+        0, 1, 0,
+        0, 0, 1,
+    ];
+    worldMatrix: number[] = [
+        1, 0, 0,
+        0, 1, 0,
+        0, 0, 1,
+    ];
     children: Shape[] = [];
     parent: Shape | null;
 
@@ -42,10 +50,32 @@ export abstract class Shape implements Renderable{
         this.parent = parent;
     }
 
+    setTranslation(x: number, y: number) {
+        this.translation = [this.translation[0] + x, this.translation[1] + y];
+    }
+
+    setAngle(rotationDegree: number) {
+        const angleInDegrees = 360 - rotationDegree;
+        this.angleRadians = angleInDegrees * Math.PI / 180;
+    }
+
+    setScale(x: number, y?: number) {
+        this.scale[0] *= x;
+        this.scale[1] = y ? this.scale[1] * y : this.scale[1] * x;
+    }
+
     updateWorldMatrix(parentWorldMatrix: number[]) {
-        if (parentWorldMatrix) {
-            m3.multiply(parentWorldMatrix, this.worldMatrix);
-        }
+        const translationMatrix = m3.translation(this.translation[0], this.translation[1]);
+        const rotationMatrix = m3.rotation(this.angleRadians);
+        const scaleMatrix = m3.scaling(this.scale[0], this.scale[1]);
+        
+        // Multiply the matrices.
+        const matrix = m3.multiply(translationMatrix, rotationMatrix);
+        this.localMatrix = m3.multiply(matrix, scaleMatrix);
+
+        this.worldMatrix = parentWorldMatrix
+            ? m3.multiply(parentWorldMatrix, this.localMatrix)
+            : this.localMatrix.slice();
 
         const worldMatrix = this.worldMatrix;
         this.children.forEach(child => {
@@ -54,6 +84,8 @@ export abstract class Shape implements Renderable{
     }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
+          this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
+        
         if (this.renderDirtyFlag) {
 
             if (!this.initialized) {
@@ -63,9 +95,10 @@ export abstract class Shape implements Renderable{
             }
 
             this.updateVertexData(gl);
-            this.updateUniforms(gl);
             this.renderDirtyFlag = false;
         }
+
+        this.updateUniforms(gl);
         this.draw(gl);
         
         this.children.forEach(child => {
@@ -99,17 +132,8 @@ export abstract class Shape implements Renderable{
     }
     
     protected updateUniforms(gl: WebGLRenderingContext) {
-        const translationMatrix = m3.translation(this.translation[0], this.translation[1]);
-        const rotationMatrix = m3.rotation(this.angleRadians);
-        const scaleMatrix = m3.scaling(this.scale[0], this.scale[1]);
-        
-        // Multiply the matrices.
-        var matrix = m3.multiply(translationMatrix, rotationMatrix);
-        matrix = m3.multiply(matrix, scaleMatrix);
-
         gl.uniform2f(this.resolutionLocation, gl.canvas.width, gl.canvas.height);
-        // Set the matrix.
-        gl.uniformMatrix3fv(this.matrixLocation, false, matrix);
+        gl.uniformMatrix3fv(this.matrixLocation, false, this.worldMatrix);
     }
     
     private draw(gl: WebGLRenderingContext) {

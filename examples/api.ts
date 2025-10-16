@@ -62,6 +62,10 @@ async function main() {
     canvas.appendRenderables(img);
     canvas.appendRenderables(img2);
 
+    rectangle.setTranslation(900, 100);
+    rectangle.setScale(0.5);
+    rectangle.setAngle(45);
+
     const render = () => {
         canvas.render();
         requestAnimationFrame(render);

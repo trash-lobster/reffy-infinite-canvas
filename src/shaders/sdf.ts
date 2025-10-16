@@ -3,6 +3,7 @@ export const vert = `
 attribute vec2 a_position;
 uniform vec2 u_resolution;
 
+
 // all shaders have a main function
 void main() {
   // convert the position from pixels to 0.0 to 1.0

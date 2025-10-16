@@ -26,9 +26,9 @@ export class Canvas {
 		this.gl = this.wrapWebGLContext(canvas.getContext('webgl'));
 		this.basicShapeProgram = createProgram(this.gl, vert, frag);
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
-		this.gl.viewport(0, 0, canvas.width, canvas.height);
-		this.gl.clearColor(0, 0, 0, 0);
-    	this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+		// this.gl.viewport(0, 0, canvas.width, canvas.height);
+		// this.gl.clearColor(0, 0, 0, 0);
+    	// this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 	}
 
 	appendRenderables(renderable: Renderable) {
@@ -38,6 +38,9 @@ export class Canvas {
 	render() {
 		this.gl.clearColor(0, 0, 0, 0);
     	this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
+		// rerender()
+		this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
 
 		let currentProgram: WebGLProgram | null = null;
 

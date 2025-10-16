@@ -27,8 +27,8 @@ async function main() {
     ]);
     const rectangle = new Rect({
         x: 200,
-        y: 200,
-        width: 300,
+        y: 150,
+        width: 500,
         height: 500,
     })
 

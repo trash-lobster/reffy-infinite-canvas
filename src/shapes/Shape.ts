@@ -8,6 +8,13 @@ export abstract class Shape implements Renderable{
     private initialized = false;
     private vertexArray?: Float32Array;
 
+    resolutionLocation?: WebGLUniformLocation;
+    matrixLocation?: WebGLUniformLocation;
+    translation: number[] = [0, 0];
+    angleRadians: number = 0;
+    scale: number[] = [1, 1];
+    color: number[] = [1, 0, 0.5, 1];
+
     localMatrix: number[];
     worldMatrix: number[];
     children: Shape[] = [];
@@ -51,13 +58,15 @@ export abstract class Shape implements Renderable{
 
             if (!this.initialized) {
                 this.setUpVertexData(gl, program);
+                this.setupUniforms(gl, program);
                 this.initialized = true;
             }
 
             this.updateVertexData(gl);
+            this.updateUniforms(gl);
             this.renderDirtyFlag = false;
         }
-        this.draw(gl, program);
+        this.draw(gl);
         
         this.children.forEach(child => {
             child.render(gl, program);
@@ -85,13 +94,27 @@ export abstract class Shape implements Renderable{
     }
 
     protected setupUniforms(gl: WebGLRenderingContext, program: WebGLProgram) {
-        const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-        gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+        this.resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+        this.matrixLocation = gl.getUniformLocation(program, 'u_matrix');
     }
     
-    private draw(gl: WebGLRenderingContext, program: WebGLProgram) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+    protected updateUniforms(gl: WebGLRenderingContext) {
+        const translationMatrix = m3.translation(this.translation[0], this.translation[1]);
+        const rotationMatrix = m3.rotation(this.angleRadians);
+        const scaleMatrix = m3.scaling(this.scale[0], this.scale[1]);
+        
+        // Multiply the matrices.
+        var matrix = m3.multiply(translationMatrix, rotationMatrix);
+        matrix = m3.multiply(matrix, scaleMatrix);
+
+        gl.uniform2f(this.resolutionLocation, gl.canvas.width, gl.canvas.height);
+        // Set the matrix.
+        gl.uniformMatrix3fv(this.matrixLocation, false, matrix);
+    }
+    
+    private draw(gl: WebGLRenderingContext) {
         gl.enableVertexAttribArray(this.attributeLocation);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
 
         // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
         const size = 2;          // 2 components per iteration since it's a vec2D
@@ -101,7 +124,7 @@ export abstract class Shape implements Renderable{
         const offset = 0;        // start at the beginning of the buffer
         gl.vertexAttribPointer(
             this.attributeLocation, size, type, normalize, stride, offset);
-        this.setupUniforms(gl, program);
+        
         gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
     }
 

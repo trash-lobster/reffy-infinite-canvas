@@ -1,4 +1,5 @@
 import { Renderable } from "shapes";
+import { m3 } from "../util";
 
 export abstract class Shape implements Renderable{
     renderDirtyFlag: boolean = true;
@@ -7,8 +8,43 @@ export abstract class Shape implements Renderable{
     private initialized = false;
     private vertexArray?: Float32Array;
 
+    localMatrix: number[];
+    worldMatrix: number[];
+    children: Shape[] = [];
+    parent: Shape | null;
+
     abstract getPositions(): number[];
     abstract getVertexCount(): number;
+
+    appendChild(child: Shape) {
+        this.children.push(child);
+    }
+
+    setParent(parent: Shape) {
+        if (this.parent) {
+            const i = this.parent.children.indexOf(this);
+            if (i >= 0) {
+                this.parent.children.splice(i, 1);
+            }
+        }
+
+        if (parent) {
+            parent.children.push(this);
+        }
+
+        this.parent = parent;
+    }
+
+    updateWorldMatrix(parentWorldMatrix: number[]) {
+        if (parentWorldMatrix) {
+            m3.multiply(parentWorldMatrix, this.worldMatrix);
+        }
+
+        const worldMatrix = this.worldMatrix;
+        this.children.forEach(child => {
+            child.updateWorldMatrix(worldMatrix);
+        })
+    }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
         if (this.renderDirtyFlag) {
@@ -22,6 +58,10 @@ export abstract class Shape implements Renderable{
             this.renderDirtyFlag = false;
         }
         this.draw(gl, program);
+        
+        this.children.forEach(child => {
+            child.render(gl, program);
+        });
     }
     
     private updateVertexData(gl: WebGLRenderingContext) {

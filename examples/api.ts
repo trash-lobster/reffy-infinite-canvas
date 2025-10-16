@@ -55,10 +55,11 @@ async function main() {
         src: 'https://i.redd.it/e7zyleu06xuf1.jpeg'
     })
     
+    rectangle.appendChild(otherRect);
+
     canvas.appendRenderables(triangle);
     canvas.appendRenderables(rectangle);
     canvas.appendRenderables(img);
-    canvas.appendRenderables(otherRect);
     canvas.appendRenderables(img2);
 
     const render = () => {

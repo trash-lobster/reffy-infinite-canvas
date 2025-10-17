@@ -85,7 +85,8 @@ export abstract class Shape implements Renderable{
     }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
-          this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
+        // camera's matrix is not updated  
+        this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
         
         if (this.renderDirtyFlag) {
 

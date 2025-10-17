@@ -1,4 +1,4 @@
-import { createProgram } from './util';
+import { createProgram, m3 } from './util';
 import { vert, frag, imageFrag, imageVert } from './shaders';
 import { Shape, Img, Renderable } from './shapes';
 
@@ -9,6 +9,14 @@ export class Canvas {
 	basicShapeProgram: WebGLProgram;
 	imageProgram: WebGLProgram;
 	renderables: Renderable[] = [];
+	
+    children: Shape[] = [];
+
+	localMatrix: number[] = [
+        1, 0, 0,
+        0, 1, 0,
+        0, 0, 1,
+    ];
 
 	private static webglStats = {
         buffersCreated: 0,
@@ -31,8 +39,14 @@ export class Canvas {
     	// this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 	}
 
-	appendRenderables(renderable: Renderable) {
-		this.renderables.push(renderable);
+	appendRenderables(renderable: Shape) {
+		this.children.push(renderable);
+	}
+
+	updateWorldMatrix() {
+		this.children.forEach(child => {
+			child.updateWorldMatrix(this.localMatrix);
+		})
 	}
 
 	render() {
@@ -44,13 +58,13 @@ export class Canvas {
 
 		let currentProgram: WebGLProgram | null = null;
 
-		for (const renderable of this.renderables) {
+		for (const renderable of this.children) {
 			let program: WebGLProgram;
 
 			if (renderable instanceof Shape) {
 				program = this.basicShapeProgram;
-			} else if (renderable instanceof Img) {
-				program = this.imageProgram;
+			// } else if (renderable instanceof Img) {
+			// 	program = this.imageProgram;
 			}
 			
 			if (currentProgram !== program) {

@@ -1,4 +1,4 @@
-import { Canvas } from "../src";
+import { Camera, Canvas } from "../src";
 import { Img, Rect, Triangle } from "../src/shapes";
 
 async function main() {
@@ -15,21 +15,22 @@ async function main() {
     };
     resize(window.innerWidth, window.innerHeight);
 
-    
     const canvas = new Canvas(
         $canvas
     );
+
+    const camera = new Camera(canvas);
 
     const triangle = new Triangle([
         700, 100,
         200, 100,
         150, 200,
     ]);
-    
+
     const rectangle = new Rect({
         x: 200,
         y: 150,
-        width: 500,
+        width: 200,
         height: 500,
     })
 
@@ -60,12 +61,12 @@ async function main() {
 
     canvas.appendRenderables(triangle);
     canvas.appendRenderables(rectangle);
-    canvas.appendRenderables(img);
-    canvas.appendRenderables(img2);
+    // canvas.appendRenderables(img);
+    // canvas.appendRenderables(img2);
 
-    rectangle.setTranslation(900, 100);
-    rectangle.setScale(0.5);
-    rectangle.setAngle(45);
+    camera.translate(900, 100);
+    camera.zoomIn(2);
+    camera.rotate(45);
 
     const render = () => {
         canvas.render();

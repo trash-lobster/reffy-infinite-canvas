@@ -1,4 +1,4 @@
-export function getClipSpaceMousePosition(e: PointerEvent, canvas: HTMLCanvasElement) {
+export function getClipSpaceMousePosition(e: MouseEvent, canvas: HTMLCanvasElement) {
     const rect = canvas.getBoundingClientRect();
     const cssX = e.clientX - rect.left;
     const cssY = e.clientY - rect.top;
@@ -10,4 +10,10 @@ export function getClipSpaceMousePosition(e: PointerEvent, canvas: HTMLCanvasEle
     const clipY = normalizedY * -2 + 1;
 
     return [clipX, clipY];
+}
+
+export function clipToCSS(clipX: number, clipY: number, canvas: HTMLCanvasElement): [number, number] {
+    const x = (clipX + 1) * 0.5 * canvas.clientWidth;
+    const y = (1 - clipY) * 0.5 * canvas.clientHeight;
+    return [x, y];
 }

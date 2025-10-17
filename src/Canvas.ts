@@ -9,11 +9,7 @@ export class Canvas extends Renderable {
 	basicShapeProgram: WebGLProgram;
 	imageProgram: WebGLProgram;
 	
-	worldMatrix: number[] = [
-        1, 0, 0,
-        0, 1, 0,
-        0, 0, 1,
-    ];
+	worldMatrix: number[] = m3.identity();
 
 	private static webglStats = {
         buffersCreated: 0,

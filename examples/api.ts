@@ -64,14 +64,21 @@ async function main() {
     canvas.appendChild(img);
     canvas.appendChild(img2);
 
-    camera.translate(500, 100);
-    // camera.zoomIn(-0.5);
-    camera.rotate(45);
-
     const render = () => {
         canvas.render();
         requestAnimationFrame(render);
     }
+
+    function move(e: PointerEvent) {
+        camera.translate(e.movementX, e.movementY);
+    }
+
+    canvas.canvas.addEventListener('pointerdown', () => {
+        document.addEventListener('pointermove', move);
+        canvas.canvas.addEventListener('pointerup', () => {
+            document.removeEventListener('pointermove', move);
+        })
+    })
 
     render();
 

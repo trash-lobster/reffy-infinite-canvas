@@ -1,4 +1,12 @@
 export const m3 = {
+    identity: function() {
+        return [
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1,
+        ]
+    },
+
     translation: function(tx : number, ty: number) {
         return [
             1, 0, 0,
@@ -58,7 +66,7 @@ export const m3 = {
     },
 
     inverse(matrix: number[]) {
-        const dst = new Float32Array(9);
+        const dst = [9];
 
         const m00 = matrix[0 * 3 + 0];
         const m01 = matrix[0 * 3 + 1];
@@ -88,6 +96,34 @@ export const m3 = {
         dst[8] = ( m11 * m00 - m01 * m10) * invDet;
 
         return dst;
-  }
+    },
+
+    projection(width: number, height: number) {
+        const dst = [9];
+        // Note: This matrix flips the Y axis so 0 is at the top.
+
+        dst[0] = 2 / width;
+        dst[1] = 0;
+        dst[2] = 0;
+        dst[3] = 0;
+        dst[4] = -2 / height;
+        dst[5] = 0;
+        dst[6] = -1;
+        dst[7] = 1;
+        dst[8] = 1;
+
+        return dst;
+    },
+
+    transformPoint(m: number[], v: number[]) {
+        var v0 = v[0];
+        var v1 = v[1];
+        var d = v0 * m[0 * 3 + 2] + v1 * m[1 * 3 + 2] + m[2 * 3 + 2];
+        
+        return [
+            (v0 * m[0 * 3 + 0] + v1 * m[1 * 3 + 0] + m[2 * 3 + 0]) / d,
+            (v0 * m[0 * 3 + 1] + v1 * m[1 * 3 + 1] + m[2 * 3 + 1]) / d,
+        ];
+    }
 
 };

@@ -5,16 +5,8 @@ export abstract class Renderable {
     angleRadians: number = 0;
     scale: number[] = [1, 1];
 
-    localMatrix: number[] = [
-        1, 0, 0,
-        0, 1, 0,
-        0, 0, 1,
-    ];
-    worldMatrix: number[] = [
-        1, 0, 0,
-        0, 1, 0,
-        0, 0, 1,
-    ];
+    localMatrix: number[] = m3.identity();
+    worldMatrix: number[] = m3.identity();
 
     children: Renderable[] = [];
     parent: Renderable | null = null;

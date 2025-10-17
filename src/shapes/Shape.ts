@@ -33,6 +33,7 @@ export abstract class Shape implements Renderable{
 
     appendChild(child: Shape) {
         this.children.push(child);
+        child.parent = this;
     }
 
     setParent(parent: Shape) {

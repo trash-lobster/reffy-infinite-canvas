@@ -56,4 +56,38 @@ export const m3 = {
             b20 * a02 + b21 * a12 + b22 * a22,
         ];
     },
+
+    inverse(matrix: number[]) {
+        const dst = new Float32Array(9);
+
+        const m00 = matrix[0 * 3 + 0];
+        const m01 = matrix[0 * 3 + 1];
+        const m02 = matrix[0 * 3 + 2];
+        const m10 = matrix[1 * 3 + 0];
+        const m11 = matrix[1 * 3 + 1];
+        const m12 = matrix[1 * 3 + 2];
+        const m20 = matrix[2 * 3 + 0];
+        const m21 = matrix[2 * 3 + 1];
+        const m22 = matrix[2 * 3 + 2];
+
+        const b01 =  m22 * m11 - m12 * m21;
+        const b11 = -m22 * m10 + m12 * m20;
+        const b21 =  m21 * m10 - m11 * m20;
+
+        const det = m00 * b01 + m01 * b11 + m02 * b21;
+        const invDet = 1.0 / det;
+
+        dst[0] = b01 * invDet;
+        dst[1] = (-m22 * m01 + m02 * m21) * invDet;
+        dst[2] = ( m12 * m01 - m02 * m11) * invDet;
+        dst[3] = b11 * invDet;
+        dst[4] = ( m22 * m00 - m02 * m20) * invDet;
+        dst[5] = (-m12 * m00 + m02 * m10) * invDet;
+        dst[6] = b21 * invDet;
+        dst[7] = (-m21 * m00 + m01 * m20) * invDet;
+        dst[8] = ( m11 * m00 - m01 * m10) * invDet;
+
+        return dst;
+  }
+
 };

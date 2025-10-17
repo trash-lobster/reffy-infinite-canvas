@@ -65,7 +65,7 @@ async function main() {
     canvas.appendChild(img2);
 
     camera.translate(500, 100);
-    camera.zoomIn(-0.5);
+    // camera.zoomIn(-0.5);
     camera.rotate(45);
 
     const render = () => {

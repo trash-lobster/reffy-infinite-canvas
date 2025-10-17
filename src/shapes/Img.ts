@@ -1,14 +1,11 @@
-import { Renderable } from "./Renderable";
+import { WebGLRenderable } from "./Renderable";
 
-export class Img implements Renderable{
-    renderDirtyFlag: boolean = true;
-    private positionBuffer?: WebGLBuffer;
-    private attributeLocation?: number;
+export class Img extends WebGLRenderable {
     private texcoordBuffer?: WebGLBuffer;
     private texcoordLocation?: number;
-    private initialized = false;
+    private samplerLocation?: WebGLUniformLocation;
     private texture: WebGLTexture;
-    private vertexArray?: Float32Array;
+
     private texCoordArray: Float32Array = new Float32Array([
         0, 0,  // top-left
         0, 1,  // bottom-left
@@ -26,6 +23,7 @@ export class Img implements Renderable{
     private _image: HTMLImageElement;
 
     constructor(config: Partial<{x: number, y: number, width: number, height: number, src: string}>) {
+        super();
         this._x = config.x ?? 0;
         this._y = config.y ?? 0;
         this._src = config.src;
@@ -68,13 +66,19 @@ export class Img implements Renderable{
     }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
+        this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
+
         if (this.renderDirtyFlag) {
 
             if (!this.initialized) {
-                this.setUpVertextData(gl, program);
+                this.setUpVertexData(gl, program);
                 this.setUpTexData(gl, program);
                 this.setTexture(gl);
                 
+                super.setUpUniforms(gl, program);
+                this.samplerLocation = gl.getUniformLocation(program, "u_image"); // match your shader name
+                if (this.samplerLocation) gl.uniform1i(this.samplerLocation, 0); // texture unit 0
+
                 // Only create texture if image is loaded
                 if (this._image.complete && this._image.naturalWidth > 0) {
                     // this.createTexture(gl);
@@ -84,11 +88,13 @@ export class Img implements Renderable{
                     return;
                 }
             }
+            
 
             this.updateVertexData(gl);
             
             this.renderDirtyFlag = false;
         }
+        super.updateUniforms(gl);
         this.draw(gl, program);
     }
     
@@ -112,33 +118,12 @@ export class Img implements Renderable{
         ];
     }
 
-    private updateVertexData(gl: WebGLRenderingContext) {
-        const positions = this.getPositions();
-        
-        if (!this.vertexArray || this.vertexArray.length !== positions.length) {
-            this.vertexArray = new Float32Array(positions.length);
-        }
-        
-        this.vertexArray.set(positions);
-        
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer!);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexArray, gl.STATIC_DRAW);
-        
+    updateVertexData(gl: WebGLRenderingContext) {
+        super.updateVertexData(gl);
+
         // Upload texture coordinates
         gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, this.texCoordArray, gl.STATIC_DRAW);
-    }
-
-    private setUpVertextData(gl: WebGLRenderingContext, program: WebGLProgram) {
-        if (!this.positionBuffer) {
-            this.positionBuffer = gl.createBuffer();
-        }
-        this.attributeLocation = gl.getAttribLocation(program, 'a_position');
-    }
-
-    protected setUpUniforms(gl: WebGLRenderingContext, program: WebGLProgram) {
-        const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-        gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
     }
 
     private setUpTexData(gl: WebGLRenderingContext, program: WebGLProgram) {
@@ -182,7 +167,8 @@ export class Img implements Renderable{
         gl.vertexAttribPointer(
             this.texcoordLocation, size, type, normalize, stride, offset);
             
-        this.setUpUniforms(gl, program);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
         gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
     }

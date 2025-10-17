@@ -59,13 +59,13 @@ async function main() {
     
     rectangle.appendChild(otherRect);
 
-    canvas.appendRenderables(triangle);
-    canvas.appendRenderables(rectangle);
-    // canvas.appendRenderables(img);
-    // canvas.appendRenderables(img2);
+    canvas.appendChild(triangle);
+    canvas.appendChild(rectangle);
+    canvas.appendChild(img);
+    canvas.appendChild(img2);
 
-    camera.translate(900, 100);
-    camera.zoomIn(2);
+    camera.translate(500, 100);
+    camera.zoomIn(-0.5);
     camera.rotate(45);
 
     const render = () => {

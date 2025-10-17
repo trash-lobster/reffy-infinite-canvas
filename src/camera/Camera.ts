@@ -6,12 +6,12 @@ export class Camera {
     translation: number[] = [0, 0];
     angleRadians: number = 0;
     zoom: number = 1;
-    // update local matrix
 
     constructor(canvas: Canvas) {
         this.canvas = canvas;
     }
 
+    // TODO: change to inverse camera movement
     translate(x: number, y: number) {
         this.translation[0] = x;
         this.translation[1] = y;
@@ -36,13 +36,16 @@ export class Camera {
         this.updateCanavsMatrix();
     }
 
-    updateCanavsMatrix() {
+    /**
+     * Called once to update the `worldMatrix` of the attached canvas.
+     */
+    private updateCanavsMatrix() {
         const translationMatrix = m3.translation(this.translation[0], this.translation[1]);
         const rotationMatrix = m3.rotation(this.angleRadians);
         const scaleMatrix = m3.scaling(this.zoom, this.zoom);
         
         const matrix = m3.multiply(translationMatrix, rotationMatrix);
-        this.canvas.localMatrix = m3.multiply(matrix, scaleMatrix);
+        this.canvas.worldMatrix = m3.multiply(matrix, scaleMatrix);
         this.canvas.updateWorldMatrix();
     }
 }

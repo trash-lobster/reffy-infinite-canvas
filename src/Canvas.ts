@@ -1,18 +1,15 @@
 import { createProgram, m3 } from './util';
 import { vert, frag, imageFrag, imageVert } from './shaders';
-import { Shape, Img, Renderable } from './shapes';
+import { Shape, Img, Renderable, WebGLRenderable } from './shapes';
 
-export class Canvas {
+export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;
 	instancePromise: Promise<this>;
 	basicShapeProgram: WebGLProgram;
 	imageProgram: WebGLProgram;
-	renderables: Renderable[] = [];
 	
-    children: Shape[] = [];
-
-	localMatrix: number[] = [
+	worldMatrix: number[] = [
         1, 0, 0,
         0, 1, 0,
         0, 0, 1,
@@ -30,22 +27,16 @@ export class Canvas {
     };
 	
 	constructor(canvas: HTMLCanvasElement) {
+		super();
 		this.canvas = canvas;
 		this.gl = this.wrapWebGLContext(canvas.getContext('webgl'));
 		this.basicShapeProgram = createProgram(this.gl, vert, frag);
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
-		// this.gl.viewport(0, 0, canvas.width, canvas.height);
-		// this.gl.clearColor(0, 0, 0, 0);
-    	// this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-	}
-
-	appendRenderables(renderable: Shape) {
-		this.children.push(renderable);
 	}
 
 	updateWorldMatrix() {
 		this.children.forEach(child => {
-			child.updateWorldMatrix(this.localMatrix);
+			child.updateWorldMatrix(this.worldMatrix);
 		})
 	}
 
@@ -63,8 +54,8 @@ export class Canvas {
 
 			if (renderable instanceof Shape) {
 				program = this.basicShapeProgram;
-			// } else if (renderable instanceof Img) {
-			// 	program = this.imageProgram;
+			} else if (renderable instanceof Img) {
+				program = this.imageProgram;
 			}
 			
 			if (currentProgram !== program) {
@@ -81,13 +72,13 @@ export class Canvas {
         this.gl.deleteProgram(this.imageProgram);
         
         // Clean up all renderables
-        this.renderables.forEach(renderable => {
-            if ('destroy' in renderable) {
-                renderable.destroy(this.gl);
+        this.children.forEach(child => {
+            if ('destroy' in child) {
+                child.destroy(this.gl);
             }
         });
         
-        this.renderables = [];
+        this.children = [];
     }
 
 	private wrapWebGLContext(gl: WebGLRenderingContext) {

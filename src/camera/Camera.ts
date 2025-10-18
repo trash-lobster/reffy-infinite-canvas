@@ -13,10 +13,6 @@ export class Camera {
     #rotation: number = 0;
     #zoom: number = 1;
 
-    #startX: number = 0;
-    #startY: number = 0;
-    #startCamX: number = 0;
-    #startCamY: number = 0;
     #startWorldX: number = 0;
     #startWorldY: number = 0;
 
@@ -24,7 +20,7 @@ export class Camera {
     set x (val: number) {
         if (this.#x !== val) {
             this.#x = val;
-            this.updateCanvasMatrix();
+            this.updateViewMatrix();
         }
     }
 
@@ -32,7 +28,7 @@ export class Camera {
     set y (val: number) {
         if (this.#y !== val) {
             this.#y = val;
-            this.updateCanvasMatrix();
+            this.updateViewMatrix();
         }
     }
 
@@ -40,7 +36,7 @@ export class Camera {
     set width (val: number) {
         if (this.#width !== val) {
             this.#width = val;
-            this.updateCanvasMatrix();
+            this.updateViewMatrix();
         }
     }
 
@@ -48,7 +44,7 @@ export class Camera {
     set height (val: number) {
         if (this.#height !== val) {
             this.#height = val;
-            this.updateCanvasMatrix();
+            this.updateViewMatrix();
         }
     }
 
@@ -56,7 +52,7 @@ export class Camera {
     set rotation (val: number) {
         if (this.#rotation !== val) {
             this.#rotation = val;
-            this.updateCanvasMatrix();
+            this.updateViewMatrix();
         }
     }
 
@@ -68,18 +64,13 @@ export class Camera {
 
         if (this.#zoom !== val) {
             this.#zoom = val;
-            this.updateCanvasMatrix();
+            this.updateViewMatrix();
         }
     }
 
     constructor(canvas: Canvas) {
         this.canvas = canvas;
         this.canvas.canvas.addEventListener('pointerdown', (e) => {
-            this.#startX = e.clientX;
-            this.#startY = e.clientY;
-            this.#startCamX = this.x;
-            this.#startCamY = this.y;
-
             const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
             this.#startWorldX = wx;
             this.#startWorldY = wy;
@@ -95,9 +86,9 @@ export class Camera {
     }
 
     /**
-     * Called once to update the `worldMatrix` of the attached canvas.
+     * Called once to update the `worldMatrix` of the attached canvas, which is the view matrix.
      */
-    private updateCanvasMatrix() {
+    private updateViewMatrix() {
         const translationMatrix = m3.translation(this.x, this.y);
         const rotationMatrix = m3.rotation(this.rotation);
         const scaleMatrix = m3.scaling(this.zoom, this.zoom);
@@ -105,11 +96,13 @@ export class Camera {
         const matrix = m3.multiply(translationMatrix, rotationMatrix);
         const cameraMatrix = m3.multiply(matrix, scaleMatrix);
         
-        // obtaining a proper view matrix
+        // obtaining a proper view matrix, which is the inverse of camera matrix
         this.canvas.worldMatrix = m3.inverse(cameraMatrix);
         this.canvas.updateWorldMatrix();
     }
 
+    // Render: clip = P · V · world
+    // Picking: world = (P · V)⁻¹ · clip
     private screenToWorld(clientX: number, clientY: number): [number, number] {
         const rect = this.canvas.canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
@@ -118,15 +111,20 @@ export class Camera {
         const x = (clientX - rect.left) * dpr;
         const y = (clientY - rect.top) * dpr;
 
-        // To clip space (-1..1)
+        // Convert to clip space
         const w = this.canvas.gl.canvas.width;
         const h = this.canvas.gl.canvas.height;
         const xClip = (x / w) * 2 - 1;
         const yClip = (y / h) * -2 + 1;
 
         // inv(P * V) * clip -> world
+
+        // projection matrix transforms pixel space to clip space
         const proj = m3.projection(w, h);
-        const pv = m3.multiply(proj, this.canvas.worldMatrix); // worldMatrix is V
+        // view-projection matrix
+        const pv = m3.multiply(proj, this.canvas.worldMatrix); // worldMatrix is view matrix and calculates the matrix to map world-space to clip-space
+
+        // used to unproject and retrieve world coords
         const invPV = m3.inverse(pv);
         const [wx, wy] = m3.transformPoint(invPV, [xClip, yClip]);
 
@@ -140,11 +138,10 @@ export class Camera {
         const [wx0, wy0] = this.screenToWorld(e.clientX, e.clientY);
 
         // Smooth zoom factor (wheel up => zoom in)
-        const ZOOM_SPEED = 0.002; // tweak to taste
+        const ZOOM_SPEED = 0.003;
         const scale = Math.exp(-e.deltaY * ZOOM_SPEED);
         const target = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, this.zoom * scale));
 
-        // Apply zoom (updates view matrix)
         this.zoom = target;
 
         // Same point after zoom

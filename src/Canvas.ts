@@ -1,6 +1,6 @@
 import { createProgram, m3 } from './util';
-import { vert, frag, imageFrag, imageVert } from './shaders';
-import { Shape, Img, Renderable, WebGLRenderable } from './shapes';
+import { vert, frag, imageFrag, imageVert, gridVert, gridFrag } from './shaders';
+import { Shape, Img, Renderable, Grid } from './shapes';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
@@ -8,6 +8,9 @@ export class Canvas extends Renderable {
 	instancePromise: Promise<this>;
 	basicShapeProgram: WebGLProgram;
 	imageProgram: WebGLProgram;
+	gridProgram: WebGLProgram;
+	
+	grid: Grid;
 	
 	worldMatrix: number[] = m3.identity();
 
@@ -25,9 +28,11 @@ export class Canvas extends Renderable {
 	constructor(canvas: HTMLCanvasElement) {
 		super();
 		this.canvas = canvas;
+		this.grid = new Grid();
 		this.gl = this.wrapWebGLContext(canvas.getContext('webgl'));
 		this.basicShapeProgram = createProgram(this.gl, vert, frag);
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
+		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 	}
 
 	updateWorldMatrix() {
@@ -39,11 +44,13 @@ export class Canvas extends Renderable {
 	render() {
 		this.gl.clearColor(0, 0, 0, 0);
     	this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-
-		// rerender()
 		this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
 
 		let currentProgram: WebGLProgram | null = null;
+
+		// render the grid
+		currentProgram = this.gridProgram;
+		this.grid.render(this.gl, currentProgram);
 
 		for (const renderable of this.children) {
 			let program: WebGLProgram;

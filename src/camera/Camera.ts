@@ -156,19 +156,8 @@ export class Camera {
     };
 
     private onPointerMove = (e: PointerEvent) => {
-        const dpr = window.devicePixelRatio || 1;
-        // Screen-space deltas (CSS px -> device px)
-        const dxScreen = (e.clientX - this.#startX) * dpr;
-        const dyScreen = (e.clientY - this.#startY) * dpr;
-
-        // Convert screen delta to world delta: undo rotation and scale
-        const c = Math.cos(this.rotation), s = Math.sin(this.rotation);
-        const invZoom = 1 / this.zoom;
-        const dxWorld = ( dxScreen * c + dyScreen * s) * invZoom;
-        const dyWorld = (-dxScreen * s + dyScreen * c) * invZoom;
-
-        // Move camera opposite to drag so content follows the cursor
-        this.x = this.#startCamX - dxWorld;
-        this.y = this.#startCamY - dyWorld;
+        const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
+        this.x += (this.#startWorldX - wx);
+        this.y += (this.#startWorldY - wy);
     }
 }

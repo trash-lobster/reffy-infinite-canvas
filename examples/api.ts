@@ -69,17 +69,6 @@ async function main() {
         requestAnimationFrame(render);
     }
 
-    function move(e: PointerEvent) {
-        camera.translate(e.movementX, e.movementY);
-    }
-
-    canvas.canvas.addEventListener('pointerdown', () => {
-        document.addEventListener('pointermove', move);
-        canvas.canvas.addEventListener('pointerup', () => {
-            document.removeEventListener('pointermove', move);
-        })
-    })
-
     render();
 
     // const image = (await load(

@@ -36,6 +36,7 @@ export class Canvas extends Renderable {
 	}
 
 	updateWorldMatrix() {
+		this.grid.updateWorldMatrix(this.worldMatrix);
 		this.children.forEach(child => {
 			child.updateWorldMatrix(this.worldMatrix);
 		})

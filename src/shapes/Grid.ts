@@ -1,7 +1,14 @@
+import { m3 } from "../util";
 import { WebGLRenderable } from "./Renderable";
 
+enum GRID_TYPE {
+    NONE,
+    GRID,
+    DOTS
+}
+
 export class Grid extends WebGLRenderable {
-private buffer: WebGLBuffer | null = null;
+    private buffer: WebGLBuffer | null = null;
     private vertexCount = 0;
 
     projectionMatrixLocation: WebGLUniformLocation;
@@ -9,6 +16,9 @@ private buffer: WebGLBuffer | null = null;
     viewProjectionInvLocation: WebGLUniformLocation;
     zoomScaleLocation: WebGLUniformLocation;
     checkboardStyleLocation: WebGLUniformLocation;
+
+    gridType: GRID_TYPE = GRID_TYPE.GRID;
+    zoom: number = 1;
 
     // Fullscreen big-triangle in clip space: covers [-1,1] without seams
     getPositions() {
@@ -45,17 +55,14 @@ private buffer: WebGLBuffer | null = null;
         // Convert clip [-1,1] to pixel coords using the current drawing buffer size
         const w = gl.drawingBufferWidth;
         const h = gl.drawingBufferHeight;
-        const sx = w * 0.5, sy = h * 0.5, tx = w * 0.5, ty = h * 0.5;
 
-        const clipToPixels = new Float32Array([
-            sx, 0,  0,
-            0,  sy, 0,
-            tx, ty, 1,
-        ]);
+        const invP = m3.inverse(m3.projection(w, h));
+        const invView = m3.inverse(this.worldMatrix);
+        const invVP = m3.multiply(invView, invP);
 
-        if (this.viewProjectionInvLocation) gl.uniformMatrix3fv(this.viewProjectionInvLocation, false, clipToPixels);
-        if (this.zoomScaleLocation)         gl.uniform1f(this.zoomScaleLocation, 1.0);    // adjust if you have real zoom
-        if (this.checkboardStyleLocation)   gl.uniform1f(this.checkboardStyleLocation, 1.0); // 1 = GRID
+        if (this.viewProjectionInvLocation) gl.uniformMatrix3fv(this.viewProjectionInvLocation, false, new Float32Array(invVP));
+        if (this.zoomScaleLocation)         gl.uniform1f(this.zoomScaleLocation, this.zoom);
+        if (this.checkboardStyleLocation)   gl.uniform1f(this.checkboardStyleLocation, this.gridType);
 
         // a_Position is clip-space position (vec2)
         const loc = gl.getAttribLocation(program, "a_Position");
@@ -91,7 +98,7 @@ private buffer: WebGLBuffer | null = null;
         gl.uniformMatrix3fv(this.projectionMatrixLocation, false, I3);
         gl.uniformMatrix3fv(this.viewMatrixLocation, false, I3);
         gl.uniformMatrix3fv(this.viewProjectionInvLocation,  false, I3);
-        gl.uniform1f(this.zoomScaleLocation, 1.0);
+        gl.uniform1f(this.zoomScaleLocation, this.zoom);
         gl.uniform1f(this.checkboardStyleLocation, 1.0);   
     }
 }

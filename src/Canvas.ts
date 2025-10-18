@@ -30,6 +30,9 @@ export class Canvas extends Renderable {
 		this.canvas = canvas;
 		this.grid = new Grid();
 		this.gl = this.wrapWebGLContext(canvas.getContext('webgl'));
+		this.gl.getExtension("OES_standard_derivatives"); // required to enable fwidth
+		
+
 		this.basicShapeProgram = createProgram(this.gl, vert, frag);
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);

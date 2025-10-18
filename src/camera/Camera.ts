@@ -2,7 +2,7 @@ import { Canvas } from "Canvas";
 import { m3 } from "../util";
 
 const ZOOM_MIN = 0.1;
-const ZOOM_MAX = 10;
+const ZOOM_MAX = 3;
 
 export class Camera {
     canvas : Canvas;
@@ -58,8 +58,10 @@ export class Camera {
 
     get zoom () { return this.#zoom };
     set zoom (val: number) {
-        if (Math.abs(val) < ZOOM_MIN) {
+        if (val < ZOOM_MIN) {
             val = ZOOM_MIN;
+        } else if (val > ZOOM_MAX) {
+            val = ZOOM_MAX;
         }
 
         if (this.#zoom !== val) {

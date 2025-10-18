@@ -1,6 +1,12 @@
 export const gridVert = /* glsl */ `
 #extension GL_OES_standard_derivatives : enable
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+precision highp int;
+#else
 precision mediump float;
+precision mediump int;
+#endif
 
 uniform mat3 u_ProjectionMatrix;
 uniform mat3 u_ViewMatrix;
@@ -24,7 +30,13 @@ void main() {
 
 export const gridFrag = /* glsl */ `
 #extension GL_OES_standard_derivatives : enable
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+precision highp int;
+#else
 precision mediump float;
+precision mediump int;
+#endif
 
 uniform mat3 u_ProjectionMatrix;
 uniform mat3 u_ViewMatrix;

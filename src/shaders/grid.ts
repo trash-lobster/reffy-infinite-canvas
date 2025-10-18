@@ -8,8 +8,6 @@ precision mediump float;
 precision mediump int;
 #endif
 
-uniform mat3 u_ProjectionMatrix;
-uniform mat3 u_ViewMatrix;
 uniform mat3 u_ViewProjectionInvMatrix;
 uniform float u_ZoomScale;
 uniform float u_CheckboardStyle;
@@ -38,8 +36,6 @@ precision mediump float;
 precision mediump int;
 #endif
 
-uniform mat3 u_ProjectionMatrix;
-uniform mat3 u_ViewMatrix;
 uniform mat3 u_ViewProjectionInvMatrix;
 uniform float u_ZoomScale;
 uniform float u_CheckboardStyle;

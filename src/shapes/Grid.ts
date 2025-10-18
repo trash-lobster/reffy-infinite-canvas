@@ -11,8 +11,6 @@ export class Grid extends WebGLRenderable {
     private buffer: WebGLBuffer | null = null;
     private vertexCount = 0;
 
-    projectionMatrixLocation: WebGLUniformLocation;
-    viewMatrixLocation: WebGLUniformLocation;
     viewProjectionInvLocation: WebGLUniformLocation;
     zoomScaleLocation: WebGLUniformLocation;
     checkboardStyleLocation: WebGLUniformLocation;
@@ -56,9 +54,9 @@ export class Grid extends WebGLRenderable {
         const w = gl.drawingBufferWidth;
         const h = gl.drawingBufferHeight;
 
-        const invP = m3.inverse(m3.projection(w, h));
-        const invView = m3.inverse(this.worldMatrix);
-        const invVP = m3.multiply(invView, invP);
+        const invP = m3.inverse(m3.projection(w, h));   // clip to pixel space
+        const invView = m3.inverse(this.worldMatrix);   // camera/view -> world
+        const invVP = m3.multiply(invView, invP);       // clip -> world
 
         if (this.viewProjectionInvLocation) gl.uniformMatrix3fv(this.viewProjectionInvLocation, false, new Float32Array(invVP));
         if (this.zoomScaleLocation)         gl.uniform1f(this.zoomScaleLocation, this.zoom);
@@ -89,15 +87,11 @@ export class Grid extends WebGLRenderable {
 
     protected setUpUniforms(gl: WebGLRenderingContext, program: WebGLProgram): void {
         const I3 = new Float32Array([1,0,0, 0,1,0, 0,0,1]);
-        this.projectionMatrixLocation = gl.getUniformLocation(program, "u_ProjectionMatrix");
-        this.viewMatrixLocation = gl.getUniformLocation(program, "u_ViewMatrix");
         this.viewProjectionInvLocation = gl.getUniformLocation(program, "u_ViewProjectionInvMatrix");
         this.zoomScaleLocation = gl.getUniformLocation(program, "u_ZoomScale");
         this.checkboardStyleLocation = gl.getUniformLocation(program, "u_CheckboardStyle");
 
-        gl.uniformMatrix3fv(this.projectionMatrixLocation, false, I3);
-        gl.uniformMatrix3fv(this.viewMatrixLocation, false, I3);
-        gl.uniformMatrix3fv(this.viewProjectionInvLocation,  false, I3);
+         gl.uniformMatrix3fv(this.viewProjectionInvLocation,  false, I3);
         gl.uniform1f(this.zoomScaleLocation, this.zoom);
         gl.uniform1f(this.checkboardStyleLocation, 1.0);   
     }

@@ -15,22 +15,6 @@ export abstract class Renderable {
     _emitter: EventEmitter;
         
     renderDirtyFlag: boolean = true;
-    $positions: number[];
-
-    constructor(positions: number[]) {
-        this.$positions = positions;
-    }
-
-    get positions() {
-        return this.$positions;
-    }
-
-    set positions(newPos: number[]) {
-        if (!arraysEqual(this.$positions, newPos)) {
-            this.$positions = newPos;
-            this.renderDirtyFlag = true;
-        }
-    }
 
     attachEventEmitter() {
         if (!this._emitter) {
@@ -114,7 +98,7 @@ export abstract class WebGLRenderable extends Renderable {
     protected resolutionLocation?: WebGLUniformLocation;
     protected matrixLocation?: WebGLUniformLocation;
 
-    abstract getPositions();
+    abstract getPositions() : number[];
 
     updateVertexData(gl: WebGLRenderingContext) {
         const positions = this.getPositions();

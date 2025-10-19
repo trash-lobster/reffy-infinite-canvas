@@ -1,9 +1,20 @@
 import { Shape } from "./Shape";
 
 export class Triangle extends Shape {
+    private _base: number[];
+
+    constructor(positions: number[]) {
+        super(positions[0], positions[1]);
+        this._base = positions.slice(0, 6);
+    }
     
     getPositions(): number[] {
-        return this.$positions;
+        const x = this.x, y = this.y;
+        return [
+            this._base[0] + x, this._base[1] + y,
+            this._base[2] + x, this._base[3] + y,
+            this._base[4] + x, this._base[5] + y,
+        ];
     }
 
     getVertexCount(): number {
@@ -11,7 +22,7 @@ export class Triangle extends Shape {
     }
 
     hitTest(x: number, y: number) {
-        const p = this.$positions;
+        const p = this.getPositions();
         if (!p || p.length < 6) return false;
 
         const ax = p[0], ay = p[1];

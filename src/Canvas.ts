@@ -33,9 +33,9 @@ export class Canvas extends Renderable {
     };
 	
 	constructor(canvas: HTMLCanvasElement) {
-		super([0, 0]);
+		super();
 		this.canvas = canvas;
-		this.grid = new Grid([0, 0]);
+		this.grid = new Grid();
 		this.gl = this.wrapWebGLContext(canvas.getContext('webgl'));
 		this.gl.getExtension("OES_standard_derivatives"); // required to enable fwidth
 		
@@ -65,10 +65,10 @@ export class Canvas extends Renderable {
 		for (const renderable of this.children) {
 			let program: WebGLProgram;
 
-			if (renderable instanceof Shape) {
-				program = this.basicShapeProgram;
-			} else if (renderable instanceof Img) {
+			if (renderable instanceof Img) {
 				program = this.imageProgram;
+			} else if (renderable instanceof Shape) {
+				program = this.basicShapeProgram;
 			}
 			
 			if (currentProgram !== program) {
@@ -101,6 +101,7 @@ export class Canvas extends Renderable {
 					this._eventManager.impactedShapes.push(child);
 					// child.dispatchEvent(new Event('hover'));
 					this.isGlobalClick = false;
+					console.log('click');
 				}
 			}
 		}

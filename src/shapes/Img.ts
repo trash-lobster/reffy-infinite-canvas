@@ -1,6 +1,6 @@
-import { WebGLRenderable } from "./Renderable";
+import { Rect } from "./Rect";
 
-export class Img extends WebGLRenderable {
+export class Img extends Rect {
     private texcoordBuffer?: WebGLBuffer;
     private texcoordLocation?: number;
     private samplerLocation?: WebGLUniformLocation;
@@ -16,27 +16,19 @@ export class Img extends WebGLRenderable {
     ])
     
     private _src: string;
-    private _x: number;
-    private _y: number;
-    private _width: number;
-    private _height: number;
     private _image: HTMLImageElement;
 
     constructor(config: Partial<{x: number, y: number, width: number, height: number, src: string}>) {
-        super([config.x, config.y]);
-        this._x = config.x ?? 0;
-        this._y = config.y ?? 0;
+        super(config);
         this._src = config.src;
-        this._width = config.width ?? 100;
-        this._height = config.height ?? 100;
         
         this._image = new Image();
         this._image.crossOrigin = 'anonymous'; // Enable CORS
         this._image.onload = () => {
             this.renderDirtyFlag = true;
-            if (!this._width) {
-                this._width = this._image.naturalWidth;
-                this._height = this._image.naturalHeight;
+            if (!this.width) {
+                this.width = this._image.naturalWidth;
+                this.height = this._image.naturalHeight;
             }
         };
         this._image.onerror = (error) => {
@@ -44,18 +36,6 @@ export class Img extends WebGLRenderable {
         };
         this._image.src = config.src;
     }
-
-    get x() { return this._x; }
-    set x(value: number) { if (this._x !== value) { this._x = value; this.renderDirtyFlag = true; } }
-
-    get y() { return this._y; }
-    set y(value: number) { if (this._y !== value) { this._y = value; this.renderDirtyFlag = true; } }
-
-    get width() { return this._width; }
-    set width(value: number) { if (this._width !== value) { this._width = value; this.renderDirtyFlag = true; } }
-
-    get height() { return this._height; }
-    set height(value: number) { if (this._height !== value) { this._height = value; this.renderDirtyFlag = true; } }
 
     get src() { return this._src; }
     set src(val: string) {
@@ -89,13 +69,12 @@ export class Img extends WebGLRenderable {
                 }
             }
             
-
             this.updateVertexData(gl);
             
             this.renderDirtyFlag = false;
         }
         super.updateUniforms(gl);
-        this.draw(gl, program);
+        this.draw(gl);
     }
     
     getVertexCount(): number {
@@ -160,7 +139,7 @@ export class Img extends WebGLRenderable {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._image);
     }
     
-    private draw(gl: WebGLRenderingContext, program: WebGLProgram) {
+    protected draw(gl: WebGLRenderingContext) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         gl.enableVertexAttribArray(this.attributeLocation);
 

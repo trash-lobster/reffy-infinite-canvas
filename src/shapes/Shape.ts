@@ -1,10 +1,22 @@
 import { WebGLRenderable } from "./Renderable";
 
 export abstract class Shape extends WebGLRenderable {
+    private _x: number;
+    private _y: number;
     color: number[] = [1, 0, 0.5, 1];
-
-    abstract getPositions(): number[];
     abstract getVertexCount(): number;
+
+    constructor(x: number, y: number) {
+        super();
+        this._x = x;
+        this._y = x;
+    }
+
+    get x() { return this._x; }
+    set x(v: number) { if (this._x !== v) { this._x = v; this.renderDirtyFlag = true; } }
+
+    get y() { return this._y; }
+    set y(v: number) { if (this._y !== v) { this._y = v; this.renderDirtyFlag = true; } }
 
     setTranslation(x: number, y: number) {
         this.translation = [this.translation[0] + x, this.translation[1] + y];
@@ -44,7 +56,7 @@ export abstract class Shape extends WebGLRenderable {
         });
     }
     
-    private draw(gl: WebGLRenderingContext) {
+    protected draw(gl: WebGLRenderingContext) {
         gl.enableVertexAttribArray(this.attributeLocation);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
 

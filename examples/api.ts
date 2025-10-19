@@ -58,8 +58,6 @@ async function main() {
         src: 'https://i.redd.it/e7zyleu06xuf1.jpeg'
     })
     
-    rectangle.appendChild(otherRect);
-
     canvas.appendChild(triangle);
     canvas.appendChild(rectangle);
     canvas.appendChild(img);

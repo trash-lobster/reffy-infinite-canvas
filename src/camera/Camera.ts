@@ -1,6 +1,6 @@
 import { Canvas } from "Canvas";
 import { m3 } from "../util";
-import { Grid, Triangle, WebGLRenderable } from "../shapes";
+import { Grid, Img, Rect, Triangle, WebGLRenderable } from "../shapes";
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 3;
@@ -16,6 +16,8 @@ export class Camera {
 
     #startWorldX: number = 0;
     #startWorldY: number = 0;
+    #lastWorldX: number = 0;
+    #lastWorldY: number = 0;
 
     get x () { return this.#x };
     set x (val: number) {
@@ -79,6 +81,9 @@ export class Camera {
             const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
             this.#startWorldX = wx;
             this.#startWorldY = wy;
+            this.#lastWorldX = wx;
+            this.#lastWorldY = wy;
+
             this.canvas.hitTest(wx, wy);
 
             document.addEventListener('pointermove', this.onPointerMove);
@@ -162,18 +167,26 @@ export class Camera {
 
     private onPointerMove = (e: PointerEvent) => {
         const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
+        const dx = wx - this.#lastWorldX;
+        const dy = wy - this.#lastWorldY;
 
         if (this.canvas.isGlobalClick) {
-            this.x += (this.#startWorldX - wx);
-            this.y += (this.#startWorldY - wy);
+            this.x += this.#startWorldX - wx;
+            this.y += this.#startWorldY - wy;
         } else {
             this.canvas._eventManager.impactedShapes.forEach(child => {
-                child.positions[0] += (this.#startWorldX - wx);
-                child.positions[1] += (this.#startWorldY - wy);
+                if (child instanceof Triangle || child instanceof Rect || child instanceof Img) {
+                    child.x += dx;
+                    child.y += dy;
+                }
+
                 if (child instanceof WebGLRenderable) {
                     child.updateVertexData(this.canvas.gl);
                 }
             })
         }
+
+        this.#lastWorldX = wx;
+        this.#lastWorldY = wy;
     }
 }

@@ -92,13 +92,14 @@ export class Canvas extends Renderable {
     }
 
 	hitTest(x: number, y: number) {
-		for (const child of this.children) {
+		for (let i = this.children.length - 1; i >= 0; i--) {
+			const child = this.children[i];
 			if (child instanceof Shape) {
 				if (child.hitTest && child.hitTest(x, y)) {
 					this._eventManager.addToImpacted(child);
 					// child.dispatchEvent(new Event('hover'));
 					this.isGlobalClick = false;
-					console.log('click');
+					break;
 				}
 			}
 		}

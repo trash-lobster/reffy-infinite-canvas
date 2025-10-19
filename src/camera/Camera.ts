@@ -1,9 +1,9 @@
 import { Canvas } from "Canvas";
 import { m3 } from "../util";
-import { Grid, Img, Rect, Shape, Triangle, WebGLRenderable } from "../shapes";
+import { Shape } from "../shapes";
 
 const ZOOM_MIN = 0.1;
-const ZOOM_MAX = 3;
+const ZOOM_MAX = 8;
 
 export class Camera {
     canvas : Canvas;

@@ -49,6 +49,7 @@ const int CHECKERBOARD_STYLE_GRID = 1;
 const int CHECKERBOARD_STYLE_DOTS = 2;
 const float BASE_GRID_PIXEL_SIZE = 100.0;
 const float BASE_DOT_SIZE = 2.0;
+const float GRID2_MAX_ZOOM = 4.0;
 
 vec2 scale_grid_size(float zoom) {
   if (zoom < 0.125) return vec2(BASE_GRID_PIXEL_SIZE * 125.0, 0.125);
@@ -78,8 +79,10 @@ vec4 render_grid_checkerboard(vec2 coord) {
   float pixelWorld = clamp(1.0 / max(u_ZoomScale, 1e-6), 1e-4, 1.0);
   float aa = pixelWorld * 0.75; // anti-alias band in world units (~0.75px)
 
+  float minorCut = 1.0 - smoothstep(GRID2_MAX_ZOOM, GRID2_MAX_ZOOM + 0.5, u_ZoomScale);
+
   if (checkboardStyle == CHECKERBOARD_STYLE_GRID) {
-    vec2 grid1 = abs(fract(coord / gridSize1 - 0.5) - 0.5) / fwidth(coord) * gridSize1 / 2.0;
+    vec2 grid1 = abs(fract(coord / gridSize1 - 0.5) - 0.5) / fwidth(coord) * gridSize1 / (1.0 + minorCut);
     vec2 grid2 = abs(fract(coord / gridSize2 - 0.5) - 0.5) / fwidth(coord) * gridSize2;
     float v1 = 1.0 - min(min(grid1.x, grid1.y), 1.0);
     float v2 = 1.0 - min(min(grid2.x, grid2.y), 1.0);
@@ -87,7 +90,7 @@ vec4 render_grid_checkerboard(vec2 coord) {
     if (v1 > 0.0) {
       alpha = v1;
     } else {
-      alpha = v2 * clamp(u_ZoomScale / zoomStep, 0.0, 1.0);
+      alpha = v2 * clamp(u_ZoomScale / zoomStep, 0.0, 1.0) * minorCut;
     }
   } else if (checkboardStyle == CHECKERBOARD_STYLE_DOTS) {
     vec2 grid2 = abs(fract(coord / gridSize2 - 0.5) - 0.5) / fwidth(coord) * gridSize2;

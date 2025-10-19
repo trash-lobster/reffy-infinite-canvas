@@ -1,3 +1,4 @@
+import EventEmitter from "eventemitter3";
 import { Camera, Canvas } from "../src";
 import { Img, Rect, Triangle } from "../src/shapes";
 
@@ -58,6 +59,11 @@ async function main() {
     })
     
     rectangle.appendChild(otherRect);
+
+    triangle.addEventListener('hover', () => {
+        console.log('test event emission');
+    });
+    // triangle.dispatchEvent(new Event('click'));
 
     canvas.appendChild(triangle);
     canvas.appendChild(rectangle);

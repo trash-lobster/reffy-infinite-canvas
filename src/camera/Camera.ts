@@ -1,5 +1,6 @@
 import { Canvas } from "Canvas";
 import { m3 } from "../util";
+import { Triangle } from "../shapes";
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 3;
@@ -78,6 +79,7 @@ export class Camera {
             const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
             this.#startWorldX = wx;
             this.#startWorldY = wy;
+            this.hitTest(wx, wy);
 
             document.addEventListener('pointermove', this.onPointerMove);
             const up = () => {
@@ -87,6 +89,17 @@ export class Camera {
             document.addEventListener('pointerup', up);
         });
         this.canvas.canvas.addEventListener('wheel', this.onWheel, { passive: false });
+    }
+
+    private hitTest(x: number, y: number) {
+        // convert from screen number to world coord
+        for (const child of this.canvas.children) {
+            if (child instanceof Triangle) {
+                if (child.containsPoints(x, y)) {
+                    child.dispatchEvent(new Event('hover'));
+                }
+            }
+        }
     }
 
     /**
@@ -160,5 +173,6 @@ export class Camera {
         const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
         this.x += (this.#startWorldX - wx);
         this.y += (this.#startWorldY - wy);
+        // this.hitTest(wx, wy);
     }
 }

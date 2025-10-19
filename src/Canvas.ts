@@ -21,16 +21,11 @@ export class Canvas extends Renderable {
 	_emitter: EventEmitter = new EventEmitter();
 	_eventManager: EventManager = new EventManager(this._emitter);
 
-	private static webglStats = {
-        buffersCreated: 0,
-        buffersDeleted: 0,
-        programsCreated: 0,
-        programsDeleted: 0,
-        texturesCreated: 0,
-        texturesDeleted: 0,
-		shadersCreated: 0,
-    	shadersDeleted: 0,
-    };
+	private orderDirty = true;
+    private renderList: Shape[] = [];
+
+    // Call this whenever children/layers/z-order change
+    markOrderDirty() { this.orderDirty = true; }
 	
 	constructor(canvas: HTMLCanvasElement) {
 		super();
@@ -52,6 +47,8 @@ export class Canvas extends Renderable {
 	}
 
 	render() {
+		if (this.orderDirty) this.rebuildRenderList();
+
 		this.gl.clearColor(0, 0, 0, 0);
     	this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 		this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
@@ -62,7 +59,7 @@ export class Canvas extends Renderable {
 		currentProgram = this.gridProgram;
 		this.grid.render(this.gl, currentProgram);
 
-		for (const renderable of this.children) {
+		for (const renderable of this.renderList) {
 			let program: WebGLProgram;
 
 			if (renderable instanceof Img) {
@@ -107,6 +104,35 @@ export class Canvas extends Renderable {
 		}
 		return this.isGlobalClick;
 	}
+
+	private collectShapes(node: Renderable, out: Shape[]) {
+        if (node instanceof Shape) out.push(node);
+        for (const c of node.children) this.collectShapes(c, out);
+    }
+
+    private rebuildRenderList() {
+        const list: Shape[] = [];
+        this.collectShapes(this, list);
+        list.sort((a, b) =>
+            a.layer - b.layer ||
+            a.renderOrder - b.renderOrder ||
+            a.seq - b.seq
+        );
+        this.renderList = list;
+        this.orderDirty = false;
+    }
+
+	
+	private static webglStats = {
+        buffersCreated: 0,
+        buffersDeleted: 0,
+        programsCreated: 0,
+        programsDeleted: 0,
+        texturesCreated: 0,
+        texturesDeleted: 0,
+		shadersCreated: 0,
+    	shadersDeleted: 0,
+    };
 
 	private wrapWebGLContext(gl: WebGLRenderingContext) {
 		const originalCreateTexture = gl.createTexture.bind(gl);

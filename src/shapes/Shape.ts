@@ -1,9 +1,14 @@
 import { WebGLRenderable } from "./Renderable";
 
 export abstract class Shape extends WebGLRenderable {
+    private static _seqCounter = 0;
+    private readonly _seq = Shape._seqCounter++;
+
+    private _layer = 0;
+
     private _x: number;
     private _y: number;
-    private _renderOrder: number;
+    private _renderOrder: number = 0;
 
     abstract getVertexCount(): number;
 
@@ -19,8 +24,13 @@ export abstract class Shape extends WebGLRenderable {
     get y() { return this._y; }
     set y(v: number) { if (this._y !== v) { this._y = v; this.renderDirtyFlag = true; } }
 
+    get layer() { return this._layer; }
+    set layer(v: number) { if (this._layer !== v) { this._layer = v; this.renderDirtyFlag = true; } }
+
     get renderOrder() { return this._renderOrder; }
     set renderOrder(v: number) { if (this._renderOrder !== v) { this._renderOrder = v; this.renderDirtyFlag = true; } }
+
+    get seq() { return this._seq; }
 
     setTranslation(x: number, y: number) {
         this.translation = [this.translation[0] + x, this.translation[1] + y];

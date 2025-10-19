@@ -1,6 +1,6 @@
 import { Canvas } from "Canvas";
 import { m3 } from "../util";
-import { Grid, Img, Rect, Triangle, WebGLRenderable } from "../shapes";
+import { Grid, Img, Rect, Shape, Triangle, WebGLRenderable } from "../shapes";
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 3;
@@ -174,16 +174,16 @@ export class Camera {
             this.x += this.#startWorldX - wx;
             this.y += this.#startWorldY - wy;
         } else {
-            this.canvas._eventManager.impactedShapes.forEach(child => {
-                if (child instanceof Triangle || child instanceof Rect || child instanceof Img) {
-                    child.x += dx;
-                    child.y += dy;
-                }
+            const target = this.canvas._eventManager.impactedShapes.find(
+                (child): child is Shape => child instanceof Shape
+            );
 
-                if (child instanceof WebGLRenderable) {
-                    child.updateVertexData(this.canvas.gl);
-                }
-            })
+            if (target) {
+                target.x += dx;
+                target.y += dy;
+
+                target.updateVertexData(this.canvas.gl);
+            }
         }
 
         this.#lastWorldX = wx;

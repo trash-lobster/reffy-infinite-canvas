@@ -85,6 +85,10 @@ export class Grid extends WebGLRenderable {
         }
     }
 
+    hitTest(x: number, y: number): boolean {
+        return false;
+    }
+
     protected setUpUniforms(gl: WebGLRenderingContext, program: WebGLProgram): void {
         const I3 = new Float32Array([1,0,0, 0,1,0, 0,0,1]);
         this.viewProjectionInvLocation = gl.getUniformLocation(program, "u_ViewProjectionInvMatrix");

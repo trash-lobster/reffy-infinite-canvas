@@ -1,27 +1,7 @@
 import { Shape } from "./Shape";
-import { arraysEqual } from "../util/checks";
-import EventEmitter from 'eventemitter3';
 
 export class Triangle extends Shape {
-    $positions: number[];
-    private _emitter = new EventEmitter();
-
-    constructor(positions: number[]) {
-        super();
-        this.$positions = positions;
-    }
-
-    get positions() {
-        return this.$positions;
-    }
-
-    set positions(newPos: number[]) {
-        if (!arraysEqual(this.$positions, newPos)) {
-            this.$positions = newPos;
-            this.renderDirtyFlag = true;
-        }
-    }
-
+    
     getPositions(): number[] {
         return this.$positions;
     }
@@ -30,31 +10,7 @@ export class Triangle extends Shape {
         return 3;
     }
 
-    addEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions,
-    ) {
-         const fn = typeof listener === 'function'
-            ? listener as EventListener
-            : (listener as EventListenerObject).handleEvent.bind(listener);
-        this._emitter.on(type, fn);
-    }
-
-    removeEventListener(
-        type: string,
-        listener?: EventListenerOrEventListenerObject,
-        options?: boolean | EventListenerOptions,
-    ) {
-
-    }
-
-    dispatchEvent(e: Event) {
-        this._emitter.emit(e.type, e);
-        return !e.defaultPrevented;
-    }
-
-    containsPoints(x: number, y: number) {
+    hitTest(x: number, y: number) {
         const p = this.$positions;
         if (!p || p.length < 6) return false;
 

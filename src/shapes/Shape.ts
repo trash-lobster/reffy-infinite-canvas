@@ -6,10 +6,6 @@ export abstract class Shape extends WebGLRenderable {
     abstract getPositions(): number[];
     abstract getVertexCount(): number;
 
-    constructor() {
-        super();
-    }
-
     setTranslation(x: number, y: number) {
         this.translation = [this.translation[0] + x, this.translation[1] + y];
     }

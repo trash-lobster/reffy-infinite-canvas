@@ -1,4 +1,5 @@
-import { m3 } from "../util";
+import EventEmitter from "eventemitter3";
+import { arraysEqual, m3 } from "../util";
 
 export abstract class Renderable {
     translation: number[] = [0, 0];
@@ -10,6 +11,37 @@ export abstract class Renderable {
 
     children: Renderable[] = [];
     parent: Renderable | null = null;
+
+    _emitter: EventEmitter;
+        
+    renderDirtyFlag: boolean = true;
+    $positions: number[];
+
+    constructor(positions: number[]) {
+        this.$positions = positions;
+    }
+
+    get positions() {
+        return this.$positions;
+    }
+
+    set positions(newPos: number[]) {
+        if (!arraysEqual(this.$positions, newPos)) {
+            this.$positions = newPos;
+            this.renderDirtyFlag = true;
+        }
+    }
+
+    attachEventEmitter() {
+        if (!this._emitter) {
+            console.error('Emitter has not been initialised.')
+            return;
+        }
+
+        this.children.forEach(child => {
+            child._emitter = this._emitter;
+        })
+    }
 
     appendChild<T extends Renderable>(child: T): T {
         child.setParent(this);
@@ -46,21 +78,45 @@ export abstract class Renderable {
 
     abstract render(gl: WebGLRenderingContext, program: WebGLProgram): void;
     abstract destroy(gl: WebGLRenderingContext): void;
+    abstract hitTest(x: number, y: number): boolean;
+
+    addEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+    ) {
+         const fn = typeof listener === 'function'
+            ? listener as EventListener
+            : (listener as EventListenerObject).handleEvent.bind(listener);
+        this._emitter.on(type, fn);
+    }
+
+    removeEventListener(
+        type: string,
+        listener?: EventListenerOrEventListenerObject,
+        options?: boolean | EventListenerOptions,
+    ) {
+
+    }
+
+    dispatchEvent(e: Event) {
+        this._emitter.emit(e.type, e);
+        return !e.defaultPrevented;
+    }
 }
 
 export abstract class WebGLRenderable extends Renderable {
-    renderDirtyFlag: boolean = true;
     protected positionBuffer?: WebGLBuffer;
     protected attributeLocation?: number;
     protected initialized = false;
     protected vertexArray?: Float32Array;
-
+    
     protected resolutionLocation?: WebGLUniformLocation;
     protected matrixLocation?: WebGLUniformLocation;
 
     abstract getPositions();
 
-    protected updateVertexData(gl: WebGLRenderingContext) {
+    updateVertexData(gl: WebGLRenderingContext) {
         const positions = this.getPositions();
         
         if (!this.vertexArray || this.vertexArray.length !== positions.length) {

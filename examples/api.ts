@@ -60,15 +60,18 @@ async function main() {
     
     rectangle.appendChild(otherRect);
 
-    triangle.addEventListener('hover', () => {
-        console.log('test event emission');
-    });
-    // triangle.dispatchEvent(new Event('click'));
-
     canvas.appendChild(triangle);
     canvas.appendChild(rectangle);
     canvas.appendChild(img);
     canvas.appendChild(img2);
+
+    canvas.attachEventEmitter();
+
+    
+    triangle.addEventListener('hover', () => {
+        console.log('test event emission');
+    });
+    // triangle.dispatchEvent(new Event('click'));
 
     const render = () => {
         canvas.render();

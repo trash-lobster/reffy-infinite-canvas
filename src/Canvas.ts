@@ -1,6 +1,8 @@
 import { createProgram, m3 } from './util';
 import { vert, frag, imageFrag, imageVert, gridVert, gridFrag } from './shaders';
 import { Shape, Img, Renderable, Grid } from './shapes';
+import EventEmitter from 'eventemitter3';
+import { EventManager } from './events';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
@@ -14,6 +16,11 @@ export class Canvas extends Renderable {
 	
 	worldMatrix: number[] = m3.identity();
 
+	isGlobalClick = true;
+
+	_emitter: EventEmitter = new EventEmitter();
+	_eventManager: EventManager = new EventManager(this._emitter);
+
 	private static webglStats = {
         buffersCreated: 0,
         buffersDeleted: 0,
@@ -26,13 +33,12 @@ export class Canvas extends Renderable {
     };
 	
 	constructor(canvas: HTMLCanvasElement) {
-		super();
+		super([0, 0]);
 		this.canvas = canvas;
-		this.grid = new Grid();
+		this.grid = new Grid([0, 0]);
 		this.gl = this.wrapWebGLContext(canvas.getContext('webgl'));
 		this.gl.getExtension("OES_standard_derivatives"); // required to enable fwidth
 		
-
 		this.basicShapeProgram = createProgram(this.gl, vert, frag);
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
@@ -87,6 +93,19 @@ export class Canvas extends Renderable {
         
         this.children = [];
     }
+
+	hitTest(x: number, y: number) {
+		for (const child of this.children) {
+			if (!(child instanceof Grid)) {
+				if (child.hitTest && child.hitTest(x, y)) {
+					this._eventManager.impactedShapes.push(child);
+					// child.dispatchEvent(new Event('hover'));
+					this.isGlobalClick = false;
+				}
+			}
+		}
+		return this.isGlobalClick;
+	}
 
 	private wrapWebGLContext(gl: WebGLRenderingContext) {
 		const originalCreateTexture = gl.createTexture.bind(gl);

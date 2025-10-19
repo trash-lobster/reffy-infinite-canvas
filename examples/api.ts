@@ -33,28 +33,27 @@ async function main() {
         width: 200,
         height: 500,
     })
-
-    const img2 = new Img({
-        x: 700,
-        y: 400,
-        width: 300,
-        height: 500,
-        src: 'https://i.redd.it/e7zyleu06xuf1.jpeg'
-    })
     
+    const WORLD_HALF_EXTENT = 5000; // world units in each direction from origin
+    const randRange = (min: number, max: number) => Math.random() * (max - min) + min;
+    const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+    const urls = [
+        'https://i.redd.it/74l6fsbegzuf1.jpeg',
+        'https://i.redd.it/e7zyleu06xuf1.jpeg',
+        'https://i.redd.it/gewlibsk5muf1.jpeg',
+    ];
+
     for (let i = 0; i < 100; i++) {
         const img = new Img({
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
-            src: 'https://i.redd.it/74l6fsbegzuf1.jpeg'
+            x: randRange(-WORLD_HALF_EXTENT, WORLD_HALF_EXTENT),
+            y: randRange(-WORLD_HALF_EXTENT, WORLD_HALF_EXTENT),
+            src: pick(urls),
         })
         canvas.appendChild(img);
     }
     
     canvas.appendChild(triangle);
     canvas.appendChild(rectangle);
-    canvas.appendChild(img2);
-
     canvas.attachEventEmitter();
 
     const render = () => {

@@ -15,7 +15,7 @@ export abstract class Shape extends WebGLRenderable {
     constructor(x: number, y: number) {
         super();
         this._x = x;
-        this._y = x;
+        this._y = y;
     }
 
     get x() { return this._x; }

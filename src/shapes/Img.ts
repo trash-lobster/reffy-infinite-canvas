@@ -23,7 +23,7 @@ export class Img extends WebGLRenderable {
     private _image: HTMLImageElement;
 
     constructor(config: Partial<{x: number, y: number, width: number, height: number, src: string}>) {
-        super();
+        super([config.x, config.y]);
         this._x = config.x ?? 0;
         this._y = config.y ?? 0;
         this._src = config.src;
@@ -116,6 +116,19 @@ export class Img extends WebGLRenderable {
             left, bottom,   // bottom-left
             right, bottom   // bottom-right
         ];
+    }
+
+    hitTest(x: number, y: number): boolean {
+        // Handle negative width/height and include edges with a small epsilon
+        const left = Math.min(this.x, this.x + this.width);
+        const right = Math.max(this.x, this.x + this.width);
+        const top = Math.min(this.y, this.y + this.height);
+        const bottom = Math.max(this.y, this.y + this.height);
+        const eps = 1e-8;
+
+        if (x < left - eps || x > right + eps) return false;
+        if (y < top - eps || y > bottom + eps) return false;
+        return true;
     }
 
     updateVertexData(gl: WebGLRenderingContext) {

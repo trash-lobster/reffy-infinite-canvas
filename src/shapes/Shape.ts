@@ -3,7 +3,8 @@ import { WebGLRenderable } from "./Renderable";
 export abstract class Shape extends WebGLRenderable {
     private _x: number;
     private _y: number;
-    color: number[] = [1, 0, 0.5, 1];
+    private _renderOrder: number;
+
     abstract getVertexCount(): number;
 
     constructor(x: number, y: number) {
@@ -17,6 +18,9 @@ export abstract class Shape extends WebGLRenderable {
 
     get y() { return this._y; }
     set y(v: number) { if (this._y !== v) { this._y = v; this.renderDirtyFlag = true; } }
+
+    get renderOrder() { return this._renderOrder; }
+    set renderOrder(v: number) { if (this._renderOrder !== v) { this._renderOrder = v; this.renderDirtyFlag = true; } }
 
     setTranslation(x: number, y: number) {
         this.translation = [this.translation[0] + x, this.translation[1] + y];

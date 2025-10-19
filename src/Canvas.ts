@@ -96,9 +96,9 @@ export class Canvas extends Renderable {
 
 	hitTest(x: number, y: number) {
 		for (const child of this.children) {
-			if (!(child instanceof Grid)) {
+			if (child instanceof Shape) {
 				if (child.hitTest && child.hitTest(x, y)) {
-					this._eventManager.impactedShapes.push(child);
+					this._eventManager.addToImpacted(child);
 					// child.dispatchEvent(new Event('hover'));
 					this.isGlobalClick = false;
 					console.log('click');

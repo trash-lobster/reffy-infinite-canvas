@@ -1,5 +1,5 @@
 import EventEmitter from "eventemitter3";
-import { arraysEqual, m3 } from "../util";
+import { m3 } from "../util";
 
 export abstract class Renderable {
     translation: number[] = [0, 0];
@@ -98,7 +98,7 @@ export abstract class WebGLRenderable extends Renderable {
     protected resolutionLocation?: WebGLUniformLocation;
     protected matrixLocation?: WebGLUniformLocation;
 
-    abstract getPositions() : number[];
+    abstract getPositions() : number[] | Float32Array;
 
     updateVertexData(gl: WebGLRenderingContext) {
         const positions = this.getPositions();

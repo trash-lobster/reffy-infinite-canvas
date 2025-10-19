@@ -91,7 +91,7 @@ export class Camera {
                 document.removeEventListener('pointermove', this.onPointerMove);
                 document.removeEventListener('pointerup', up);
                 this.canvas.isGlobalClick = true;
-                this.canvas._eventManager.impactedShapes = [];
+                this.canvas._eventManager.resetImpactedShapes();
             };
             document.addEventListener('pointerup', up);
         });

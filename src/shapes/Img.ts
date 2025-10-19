@@ -18,23 +18,21 @@ export class Img extends Rect {
     private _src: string;
     private _image: HTMLImageElement;
 
-    constructor(config: Partial<{x: number, y: number, width: number, height: number, src: string}>) {
+    constructor(config: Partial<{x: number, y: number, src: string, width?: number, height?: number, }>) {
         super(config);
         this._src = config.src;
         
         this._image = new Image();
         this._image.crossOrigin = 'anonymous'; // Enable CORS
+        this._image.src = config.src;
         this._image.onload = () => {
             this.renderDirtyFlag = true;
-            if (!this.width) {
-                this.width = this._image.naturalWidth;
-                this.height = this._image.naturalHeight;
-            }
+            this.width = config.width ?? this._image.naturalWidth;
+            this.height = config.height ?? this._image.naturalHeight;
         };
         this._image.onerror = (error) => {
             console.error('Failed to load image:', this._src, error);
         };
-        this._image.src = config.src;
     }
 
     get src() { return this._src; }

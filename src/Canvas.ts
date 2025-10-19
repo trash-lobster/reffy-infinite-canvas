@@ -121,7 +121,6 @@ export class Canvas extends Renderable {
         this.renderList = list;
         this.orderDirty = false;
     }
-
 	
 	private static webglStats = {
         buffersCreated: 0,

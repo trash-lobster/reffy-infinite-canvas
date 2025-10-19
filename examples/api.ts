@@ -34,21 +34,6 @@ async function main() {
         height: 500,
     })
 
-    const otherRect = new Rect({
-        x: 550,
-        y: 200,
-        width: 300,
-        height: 500,
-    })
-
-    const img = new Img({
-        x: 300,
-        y: 200,
-        width: 300,
-        height: 500,
-        src: 'https://i.redd.it/74l6fsbegzuf1.jpeg'
-    })
-
     const img2 = new Img({
         x: 700,
         y: 400,
@@ -57,9 +42,17 @@ async function main() {
         src: 'https://i.redd.it/e7zyleu06xuf1.jpeg'
     })
     
+    for (let i = 0; i < 100; i++) {
+        const img = new Img({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            src: 'https://i.redd.it/74l6fsbegzuf1.jpeg'
+        })
+        canvas.appendChild(img);
+    }
+    
     canvas.appendChild(triangle);
     canvas.appendChild(rectangle);
-    canvas.appendChild(img);
     canvas.appendChild(img2);
 
     canvas.attachEventEmitter();

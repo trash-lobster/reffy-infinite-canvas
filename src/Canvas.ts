@@ -6,8 +6,6 @@ import {
 	imageVert, 
 	gridVert, 
 	gridFrag,
-	boundingBoxFrag,
-	boundingBoxVert,
  } from './shaders';
 import { 
 	Shape, 
@@ -26,7 +24,6 @@ export class Canvas extends Renderable {
 	basicShapeProgram: WebGLProgram;
 	imageProgram: WebGLProgram;
 	gridProgram: WebGLProgram;
-	boundingBoxProgram: WebGLProgram;
 	
 	grid: Grid;
 	boundingBox: BoundingBox;
@@ -54,7 +51,6 @@ export class Canvas extends Renderable {
 		this.basicShapeProgram = createProgram(this.gl, shapeVert, shapeFrag);
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
-		this.boundingBoxProgram = createProgram(this.gl, boundingBoxVert, boundingBoxFrag);
 	}
 
 	attachEventEmitter(): void {
@@ -91,8 +87,6 @@ export class Canvas extends Renderable {
 
 			if (renderable instanceof Img) {
 				program = this.imageProgram;
-			} else if (renderable instanceof BoundingBox) {
-				program = this.boundingBoxProgram;
 			} else if (renderable instanceof Shape) {
 				program = this.basicShapeProgram;
 			}

@@ -105,7 +105,7 @@ export class Canvas extends Renderable {
 		}
 		
 		if (this.boundingBox) {
-			this.boundingBox.render(this.gl, this.boundingBoxProgram);
+			this.boundingBox.render(this.gl, this.basicShapeProgram);
 		}
 	}
 

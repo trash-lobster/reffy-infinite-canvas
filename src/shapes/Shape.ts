@@ -1,5 +1,12 @@
 import { WebGLRenderable } from "./Renderable";
 
+export interface BoundingVal {
+    minX: number,
+    minY: number,
+    maxX: number,
+    maxY: number,
+}
+
 export abstract class Shape extends WebGLRenderable {
     private static _seqCounter = 0;
     private readonly _seq = Shape._seqCounter++;
@@ -31,6 +38,8 @@ export abstract class Shape extends WebGLRenderable {
     set renderOrder(v: number) { if (this._renderOrder !== v) { this._renderOrder = v; this.renderDirtyFlag = true; } }
 
     get seq() { return this._seq; }
+
+    abstract getEdge() : BoundingVal;
 
     setTranslation(x: number, y: number) {
         this.translation = [this.translation[0] + x, this.translation[1] + y];

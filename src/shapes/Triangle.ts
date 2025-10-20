@@ -1,4 +1,4 @@
-import { Shape } from "./Shape";
+import { BoundingVal, Shape } from "./Shape";
 
 export class Triangle extends Shape {
     private _base: number[];
@@ -19,6 +19,25 @@ export class Triangle extends Shape {
 
     getVertexCount(): number {
         return 3;
+    }
+
+    getEdge() {
+        const p = this.getPositions();
+        if (!p || p.length < 6) {
+            console.error('Triangle is missing positions');
+            throw new Error();
+        }
+
+        const ax = p[0], ay = p[1];
+        const bx = p[2], by = p[3];
+        const cx = p[4], cy = p[5];
+
+        return {
+            minX: Math.min(ax, bx, cx),
+            maxX: Math.max(ax, bx, cx),
+            minY: Math.min(ay, by, cy),
+            maxY: Math.max(ay, by, cy),
+        }
     }
 
     hitTest(x: number, y: number) {

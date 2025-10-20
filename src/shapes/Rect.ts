@@ -35,7 +35,16 @@ export class Rect extends Shape {
             right, bottom   // bottom-right
         ];
     }
-    
+
+    getEdge() {
+        return {
+            minX: Math.min(this.x, this.x + this.width),
+            maxX: Math.max(this.x, this.x + this.width),
+            minY: Math.min(this.y, this.y + this.height),
+            maxY: Math.max(this.y, this.y + this.height),
+        }
+    }
+
     hitTest(x: number, y: number): boolean {
         // Handle negative width/height and include edges with a small epsilon
         const left = Math.min(this.x, this.x + this.width);

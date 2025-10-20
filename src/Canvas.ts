@@ -1,16 +1,32 @@
 import { createProgram, m3 } from './util';
-import { vert, frag, imageFrag, imageVert, gridVert, gridFrag } from './shaders';
-import { Shape, Img, Renderable, Grid } from './shapes';
+import { 
+	shapeVert, 
+	shapeFrag, 
+	imageFrag, 
+	imageVert, 
+	gridVert, 
+	gridFrag,
+	boundingBoxFrag,
+	boundingBoxVert,
+ } from './shaders';
+import { 
+	Shape, 
+	Img, 
+	Renderable, 
+	Grid, 
+	BoundingBox,
+} from './shapes';
 import EventEmitter from 'eventemitter3';
 import { EventManager } from './events';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;
-	instancePromise: Promise<this>;
+	
 	basicShapeProgram: WebGLProgram;
 	imageProgram: WebGLProgram;
 	gridProgram: WebGLProgram;
+	boundingBoxProgram: WebGLProgram;
 	
 	grid: Grid;
 	
@@ -34,9 +50,10 @@ export class Canvas extends Renderable {
 		this.gl = this.wrapWebGLContext(canvas.getContext('webgl'));
 		this.gl.getExtension("OES_standard_derivatives"); // required to enable fwidth
 		
-		this.basicShapeProgram = createProgram(this.gl, vert, frag);
+		this.basicShapeProgram = createProgram(this.gl, shapeVert, shapeFrag);
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
+		this.boundingBoxProgram = createProgram(this.gl, boundingBoxVert, boundingBoxFrag);
 	}
 
 	updateWorldMatrix() {
@@ -64,6 +81,8 @@ export class Canvas extends Renderable {
 
 			if (renderable instanceof Img) {
 				program = this.imageProgram;
+			} else if (renderable instanceof BoundingBox) {
+				program = this.boundingBoxProgram;
 			} else if (renderable instanceof Shape) {
 				program = this.basicShapeProgram;
 			}

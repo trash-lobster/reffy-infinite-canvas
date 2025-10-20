@@ -149,6 +149,7 @@ export class Canvas extends Renderable {
 	setBoundingBox(box: BoundingBox) {
 		this.boundingBox = box;
 		this.boundingBox.parent = this;
+		if (!this.boundingBox._emitter) this.boundingBox._emitter = this._emitter;
 		this.renderDirtyFlag = true;
 	}
 

@@ -29,6 +29,7 @@ export abstract class Renderable {
 
     appendChild<T extends Renderable>(child: T): T {
         child.setParent(this);
+		if (!child._emitter && this._emitter) child._emitter = this._emitter;
         return child;
     }
 

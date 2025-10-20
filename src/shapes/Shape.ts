@@ -59,6 +59,8 @@ export abstract class Shape extends WebGLRenderable {
         // camera's matrix is not updated  
         this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
         
+        gl.useProgram(program);
+
         if (this.renderDirtyFlag) {
 
             if (!this.initialized) {

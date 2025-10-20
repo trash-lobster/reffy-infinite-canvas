@@ -1,8 +1,10 @@
 const vert = `
 attribute vec2 a_position;
+
 uniform vec2 u_resolution;
-uniform mat3 u_matrix;
 varying vec2 v_worldPos;
+
+uniform mat3 u_matrix;
 
 void main() {
   vec2 position = (u_matrix * vec3(a_position, 1)).xy;

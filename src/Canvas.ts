@@ -29,6 +29,7 @@ export class Canvas extends Renderable {
 	boundingBoxProgram: WebGLProgram;
 	
 	grid: Grid;
+	boundingBox: BoundingBox;
 	
 	worldMatrix: number[] = m3.identity();
 
@@ -56,11 +57,20 @@ export class Canvas extends Renderable {
 		this.boundingBoxProgram = createProgram(this.gl, boundingBoxVert, boundingBoxFrag);
 	}
 
+	attachEventEmitter(): void {
+		super.attachEventEmitter();
+		
+		if (this.boundingBox) {
+			this.boundingBox._emitter = this._emitter;
+		}
+	}
+
 	updateWorldMatrix() {
 		this.grid.updateWorldMatrix(this.worldMatrix);
 		this.children.forEach(child => {
 			child.updateWorldMatrix(this.worldMatrix);
 		})
+		if (this.boundingBox) this.boundingBox.updateWorldMatrix(this.worldMatrix);
 	}
 
 	render() {
@@ -93,6 +103,10 @@ export class Canvas extends Renderable {
 			}
 			renderable.render(this.gl, currentProgram);
 		}
+		
+		if (this.boundingBox) {
+			this.boundingBox.render(this.gl, this.boundingBoxProgram);
+		}
 	}
 
 	destroy() {
@@ -122,7 +136,20 @@ export class Canvas extends Renderable {
 				}
 			}
 		}
+
+		if (this.boundingBox) {
+			if (this.boundingBox.hitTest(x, y)) {
+				this.isGlobalClick = false;
+			}
+		}
+
 		return this.isGlobalClick;
+	}
+
+	setBoundingBox(box: BoundingBox) {
+		this.boundingBox = box;
+		this.boundingBox.parent = this;
+		this.renderDirtyFlag = true;
 	}
 
 	private collectShapes(node: Renderable, out: Shape[]) {

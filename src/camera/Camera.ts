@@ -1,6 +1,6 @@
 import { Canvas } from "Canvas";
-import { m3 } from "../util";
-import { Shape } from "../shapes";
+import { m3, previewImage } from "../util";
+import { Img, Shape } from "../shapes";
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 8;
@@ -77,6 +77,30 @@ export class Camera {
 
     constructor(canvas: Canvas) {
         this.canvas = canvas;
+
+        window.addEventListener('paste', async (e) => {
+            const files = e.clipboardData.files;
+            if (files) {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if(file.type.startsWith('image/')) {
+                        try {
+                            const src = await previewImage(file);
+                            if (typeof src === 'string') {
+                                this.canvas.appendChild(new Img({
+                                    x: 0,
+                                    y: 0,
+                                    src: src,
+                                }))
+                            } else console.log('Image not added');
+                        } catch {
+                            console.error('Failed to copy image.');
+                        }
+                    }
+                }
+            }
+        });
+
         this.canvas.canvas.addEventListener('pointerdown', (e) => {
             const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
             this.#startWorldX = wx;
@@ -92,8 +116,10 @@ export class Camera {
                 document.removeEventListener('pointerup', up);
                 this.canvas.isGlobalClick = true;
                 this.canvas._eventManager.resetImpactedShapes();
+                this.canvas.canvas.style.cursor = 'default';
             };
             document.addEventListener('pointerup', up);
+
         });
         this.canvas.canvas.addEventListener('wheel', this.onWheel, { passive: false });
     }
@@ -195,5 +221,6 @@ export class Camera {
 
         this.#lastWorldX = wx;
         this.#lastWorldY = wy;
+        this.canvas.canvas.style.cursor = 'grabbing'
     }
 }

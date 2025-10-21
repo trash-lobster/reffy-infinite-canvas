@@ -53,6 +53,12 @@ export class Canvas extends Renderable {
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 	}
 
+	appendChild<T extends Renderable>(child: T): T {
+		super.appendChild(child);
+		this.markOrderDirty();
+		return child;
+	}
+
 	attachEventEmitter(): void {
 		super.attachEventEmitter();
 		

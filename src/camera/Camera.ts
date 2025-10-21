@@ -80,7 +80,9 @@ export class Camera {
 
         window.addEventListener('paste', async (e) => {
             const files = e.clipboardData.files;
-            if (files) {
+            const html = e.clipboardData.getData('text/html');
+            console.log(html);
+            if (files.length > 0) {
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     if(file.type.startsWith('image/')) {
@@ -97,6 +99,18 @@ export class Camera {
                             console.error('Failed to copy image.');
                         }
                     }
+                }
+            } else if (html) {
+                const el = document.createElement('html');
+                el.innerHTML = html;
+                const images = el.getElementsByTagName('img');
+                for (let i = 0; i < images.length; i++) {
+                    const image = images[i];
+                    this.canvas.appendChild(new Img({
+                        x: 0,
+                        y: 0,
+                        src: image.src,
+                    }))
                 }
             }
         });

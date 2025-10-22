@@ -1,4 +1,4 @@
-import { createProgram, m3 } from './util';
+import { createProgram, m3, screenToWorld } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -70,7 +70,14 @@ export class Canvas extends Renderable {
 		this._pointerEventManager = new PointerEventManager(this);
 		
 		canvas.addEventListener('pointermove', (e) => {
-			const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
+			const [wx, wy] = screenToWorld(
+				e.clientX, 
+				e.clientY,
+				this.gl.canvas.width,
+                this.gl.canvas.height,
+                this.canvas,
+                this.worldMatrix,
+			);
 			const hit = this._selectionManager.hitTest(wx, wy);
 			canvas.style.cursor = cursorMap[hit] || 'default';
 		});
@@ -175,34 +182,6 @@ export class Canvas extends Renderable {
         );
         this.renderList = list;
         this.orderDirty = false;
-    }
-
-	private screenToWorld(clientX: number, clientY: number): [number, number] {
-        const rect = this.canvas.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-
-        // Device pixels relative to canvas
-        const x = (clientX - rect.left) * dpr;
-        const y = (clientY - rect.top) * dpr;
-
-        // Convert to clip space
-        const w = this.gl.canvas.width;
-        const h = this.gl.canvas.height;
-        const xClip = (x / w) * 2 - 1;
-        const yClip = (y / h) * -2 + 1;
-
-        // inv(P * V) * clip -> world
-
-        // projection matrix transforms pixel space to clip space
-        const proj = m3.projection(w, h);
-        // view-projection matrix
-        const pv = m3.multiply(proj, this.worldMatrix); // worldMatrix is view matrix and calculates the matrix to map world-space to clip-space
-
-        // used to unproject and retrieve world coords
-        const invPV = m3.inverse(pv);
-        const [wx, wy] = m3.transformPoint(invPV, [xClip, yClip]);
-
-        return [wx, wy];
     }
 	
 	private static webglStats = {

@@ -18,6 +18,17 @@ import EventEmitter from 'eventemitter3';
 import { EventManager } from './events';
 import { SelectionManager } from './manager';
 
+const cursorMap: Record<string, string> = {
+    TOP: 'ns-resize',
+    BOTTOM: 'ns-resize',
+    LEFT: 'ew-resize',
+    RIGHT: 'ew-resize',
+    TOPLEFT: 'nwse-resize',
+    BOTTOMRIGHT: 'nwse-resize',
+    TOPRIGHT: 'nesw-resize',
+    BOTTOMLEFT: 'nesw-resize',
+};
+
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;
@@ -55,6 +66,12 @@ export class Canvas extends Renderable {
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 
 		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram);
+		
+		canvas.addEventListener('pointermove', (e) => {
+			const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
+			const hit = this._selectionManager.hitTest(wx, wy);
+			canvas.style.cursor = cursorMap[hit] || 'default';
+		});
 	}
 
 	appendChild<T extends Renderable>(child: T): T {
@@ -156,6 +173,34 @@ export class Canvas extends Renderable {
         );
         this.renderList = list;
         this.orderDirty = false;
+    }
+
+	private screenToWorld(clientX: number, clientY: number): [number, number] {
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+
+        // Device pixels relative to canvas
+        const x = (clientX - rect.left) * dpr;
+        const y = (clientY - rect.top) * dpr;
+
+        // Convert to clip space
+        const w = this.gl.canvas.width;
+        const h = this.gl.canvas.height;
+        const xClip = (x / w) * 2 - 1;
+        const yClip = (y / h) * -2 + 1;
+
+        // inv(P * V) * clip -> world
+
+        // projection matrix transforms pixel space to clip space
+        const proj = m3.projection(w, h);
+        // view-projection matrix
+        const pv = m3.multiply(proj, this.worldMatrix); // worldMatrix is view matrix and calculates the matrix to map world-space to clip-space
+
+        // used to unproject and retrieve world coords
+        const invPV = m3.inverse(pv);
+        const [wx, wy] = m3.transformPoint(invPV, [xClip, yClip]);
+
+        return [wx, wy];
     }
 	
 	private static webglStats = {

@@ -106,15 +106,13 @@ export class BoundingBox {
         ];
     }
 
-    hitTest(x: number, y: number): boolean {
+    hitTest(x: number, y: number) {
         // checks if the mouse position hits any of the values
         for (const [key, handle] of this.handles.entries()) {
             if (handle.hitTest(x, y)) {
-                return true; // potentially return the type of handle so we know how to react
+                return key;
             }
         }
-
-        return false;
     }
 
     update(cameraZoom?: number) {

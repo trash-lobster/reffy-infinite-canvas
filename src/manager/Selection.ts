@@ -1,4 +1,3 @@
-import { Canvas } from "Canvas";
 import { BoundingBox, Shape } from "../shapes";
 
 export class SelectionManager {
@@ -52,6 +51,15 @@ export class SelectionManager {
                 console.error('No matching bounding box found');
             }
         })
+    }
+
+    hitTest(wx: number, wy: number) {
+        for (const box of this._boundingBox.values()) {
+            const ans = box.hitTest(wx, wy);
+            if (ans) {
+                return ans;
+            }
+        }
     }
 
     /**

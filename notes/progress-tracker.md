@@ -7,3 +7,4 @@
 
 20251022:
 - Add bounding box and manager class
+- Add event listener to detect bounding box and update cursor to reflect interaction

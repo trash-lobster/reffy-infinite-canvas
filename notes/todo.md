@@ -1,4 +1,6 @@
 refactor new node positions so that it will always receive viewport position, but converted to world position
+- x and y should be world coords
+- remake coordination system
 
 extract all the event listener logic from camera to canvas (maybe add a separate component)
 

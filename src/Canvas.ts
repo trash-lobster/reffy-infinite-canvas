@@ -16,7 +16,7 @@ import {
 } from './shapes';
 import EventEmitter from 'eventemitter3';
 import { EventManager } from './events';
-import { SelectionManager } from './manager';
+import { SelectionManager, PointerEventManager } from './manager';
 
 const cursorMap: Record<string, string> = {
     TOP: 'ns-resize',
@@ -45,8 +45,9 @@ export class Canvas extends Renderable {
 	isGlobalClick = true;
 
 	_emitter: EventEmitter = new EventEmitter();
-	_eventManager: EventManager = new EventManager(this._emitter);
 	_selectionManager: SelectionManager;
+	_pointerEventManager: PointerEventManager;
+	_eventManager: EventManager = new EventManager(this._emitter);
 
 	private orderDirty = true;
     private renderList: Shape[] = [];
@@ -66,6 +67,7 @@ export class Canvas extends Renderable {
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 
 		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram);
+		this._pointerEventManager = new PointerEventManager(this);
 		
 		canvas.addEventListener('pointermove', (e) => {
 			const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);

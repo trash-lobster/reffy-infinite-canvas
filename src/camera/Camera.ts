@@ -84,43 +84,43 @@ export class Camera {
             lastPointerPos.y = e.clientY;
         });
 
-        // TODO: POINTER POSITION NEEDS TO BE TRACKED OUTSIDE OF CAMERA AND THE VALUE SHOULD REFLECT WORLD POSITION
-        window.addEventListener('paste', async (e) => {
-            const files = e.clipboardData.files;
-            const html = e.clipboardData.getData('text/html');
-            console.log(lastPointerPos.x, lastPointerPos.y);
-            if (files.length > 0) {
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    if(file.type.startsWith('image/')) {
-                        try {
-                            const src = await previewImage(file);
-                            if (typeof src === 'string') {
-                                this.canvas.appendChild(new Img({
-                                    x: lastPointerPos.x,
-                                    y: lastPointerPos.y,
-                                    src: src,
-                                }))
-                            } else console.log('Image not added');
-                        } catch {
-                            console.error('Failed to copy image.');
-                        }
-                    }
-                }
-            } else if (html) {
-                const el = document.createElement('html');
-                el.innerHTML = html;
-                const images = el.getElementsByTagName('img');
-                for (let i = 0; i < images.length; i++) {
-                    const image = images[i];
-                    this.canvas.appendChild(new Img({
-                        x: lastPointerPos.x,
-                        y: lastPointerPos.y,
-                        src: image.src,
-                    }))
-                }
-            }
-        });
+        // // TODO: POINTER POSITION NEEDS TO BE TRACKED OUTSIDE OF CAMERA AND THE VALUE SHOULD REFLECT WORLD POSITION
+        // window.addEventListener('paste', async (e) => {
+        //     const files = e.clipboardData.files;
+        //     const html = e.clipboardData.getData('text/html');
+        //     console.log(lastPointerPos.x, lastPointerPos.y);
+        //     if (files.length > 0) {
+        //         for (let i = 0; i < files.length; i++) {
+        //             const file = files[i];
+        //             if(file.type.startsWith('image/')) {
+        //                 try {
+        //                     const src = await previewImage(file);
+        //                     if (typeof src === 'string') {
+        //                         this.canvas.appendChild(new Img({
+        //                             x: lastPointerPos.x,
+        //                             y: lastPointerPos.y,
+        //                             src: src,
+        //                         }))
+        //                     } else console.log('Image not added');
+        //                 } catch {
+        //                     console.error('Failed to copy image.');
+        //                 }
+        //             }
+        //         }
+        //     } else if (html) {
+        //         const el = document.createElement('html');
+        //         el.innerHTML = html;
+        //         const images = el.getElementsByTagName('img');
+        //         for (let i = 0; i < images.length; i++) {
+        //             const image = images[i];
+        //             this.canvas.appendChild(new Img({
+        //                 x: lastPointerPos.x,
+        //                 y: lastPointerPos.y,
+        //                 src: image.src,
+        //             }))
+        //         }
+        //     }
+        // });
 
         this.canvas.canvas.addEventListener('pointerdown', (e) => {
             const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
@@ -232,12 +232,6 @@ export class Camera {
                 target.updateVertexData(this.canvas.gl);
 
             }
-
-            // if (this.canvas.boundingBox) {
-            //     this.canvas.boundingBox.x += dx;
-            //     this.canvas.boundingBox.y += dy;
-            //     this.canvas.boundingBox.updateVertexData(this.canvas.gl);
-            // }
         }
 
         this.#lastWorldX = wx;

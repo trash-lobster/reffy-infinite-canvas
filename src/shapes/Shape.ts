@@ -16,6 +16,7 @@ export abstract class Shape extends WebGLRenderable {
     private _x: number;
     private _y: number;
     private _renderOrder: number = 0;
+    private _selected: boolean = false;
 
     abstract getVertexCount(): number;
 
@@ -36,6 +37,12 @@ export abstract class Shape extends WebGLRenderable {
 
     get renderOrder() { return this._renderOrder; }
     set renderOrder(v: number) { if (this._renderOrder !== v) { this._renderOrder = v; this.renderDirtyFlag = true; } }
+
+    get selected() { return this._selected }
+    set selected(v: boolean) { 
+        this._selected = v;
+        this.renderDirtyFlag = true;
+    }
 
     get seq() { return this._seq; }
 

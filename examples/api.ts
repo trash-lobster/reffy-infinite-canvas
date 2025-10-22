@@ -1,5 +1,5 @@
 import { Camera, Canvas } from "../src";
-import { BoundingBox, Img, Rect } from "../src/shapes";
+import { Img, Rect } from "../src/shapes";
 
 async function main() {
     const $canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -22,13 +22,6 @@ async function main() {
     new Camera(canvas);
 
     const rectangle = new Rect({
-        x: 200,
-        y: 150,
-        width: 200,
-        height: 500,
-    })
-
-    const boundingBox = new BoundingBox({
         x: 200,
         y: 150,
         width: 200,

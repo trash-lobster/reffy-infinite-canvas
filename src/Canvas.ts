@@ -16,6 +16,7 @@ import {
 } from './shapes';
 import EventEmitter from 'eventemitter3';
 import { EventManager } from './events';
+import { SelectionManager } from './manager';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
@@ -34,6 +35,7 @@ export class Canvas extends Renderable {
 
 	_emitter: EventEmitter = new EventEmitter();
 	_eventManager: EventManager = new EventManager(this._emitter);
+	_selectionManager: SelectionManager;
 
 	private orderDirty = true;
     private renderList: Shape[] = [];
@@ -51,6 +53,8 @@ export class Canvas extends Renderable {
 		this.basicShapeProgram = createProgram(this.gl, shapeVert, shapeFrag);
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
+
+		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram);
 	}
 
 	appendChild<T extends Renderable>(child: T): T {
@@ -59,20 +63,12 @@ export class Canvas extends Renderable {
 		return child;
 	}
 
-	attachEventEmitter(): void {
-		super.attachEventEmitter();
-		
-		if (this.boundingBox) {
-			this.boundingBox._emitter = this._emitter;
-		}
-	}
-
 	updateWorldMatrix() {
 		this.grid.updateWorldMatrix(this.worldMatrix);
 		this.children.forEach(child => {
 			child.updateWorldMatrix(this.worldMatrix);
 		})
-		if (this.boundingBox) this.boundingBox.updateWorldMatrix(this.worldMatrix);
+		this._selectionManager.update();
 	}
 
 	render() {
@@ -104,9 +100,7 @@ export class Canvas extends Renderable {
 			renderable.render(this.gl, currentProgram);
 		}
 		
-		if (this.boundingBox) {
-			this.boundingBox.render(this.gl, this.basicShapeProgram);
-		}
+		this._selectionManager.render();
 	}
 
 	destroy() {
@@ -132,6 +126,7 @@ export class Canvas extends Renderable {
 					this._eventManager.addToImpacted(child);
 					// child.dispatchEvent(new Event('hover'));
 					this.isGlobalClick = false;
+					this._selectionManager.add([child]);
 					break;
 				}
 			}
@@ -144,13 +139,6 @@ export class Canvas extends Renderable {
 		}
 
 		return this.isGlobalClick;
-	}
-
-	setBoundingBox(box: BoundingBox) {
-		this.boundingBox = box;
-		this.boundingBox.parent = this;
-		if (!this.boundingBox._emitter) this.boundingBox._emitter = this._emitter;
-		this.renderDirtyFlag = true;
 	}
 
 	private collectShapes(node: Renderable, out: Shape[]) {

@@ -233,11 +233,11 @@ export class Camera {
 
             }
 
-            if (this.canvas.boundingBox) {
-                this.canvas.boundingBox.x += dx;
-                this.canvas.boundingBox.y += dy;
-                this.canvas.boundingBox.updateVertexData(this.canvas.gl);
-            }
+            // if (this.canvas.boundingBox) {
+            //     this.canvas.boundingBox.x += dx;
+            //     this.canvas.boundingBox.y += dy;
+            //     this.canvas.boundingBox.updateVertexData(this.canvas.gl);
+            // }
         }
 
         this.#lastWorldX = wx;

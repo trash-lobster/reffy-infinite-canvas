@@ -1,6 +1,6 @@
 import { Canvas } from "Canvas";
 import { Img } from "../shapes";
-import { previewImage } from "../util";
+import { previewImage, screenToWorld } from "../util";
 
 export interface Point {
     x: number,
@@ -14,13 +14,28 @@ export class PointerEventManager {
     constructor(canvas: Canvas) {
         this.canvas = canvas;
         this.addPaste();
+        this.addPointerMove();
+    }
+
+    private addPointerMove() {
+        this.canvas.canvas.addEventListener('pointermove', (e) => {
+            // Convert to clip space
+            [this.lastPointerPos.x, this.lastPointerPos.y] = screenToWorld(
+                e.clientX, 
+                e.clientY, 
+                this.canvas.gl.canvas.width,
+                this.canvas.gl.canvas.height,
+                this.canvas.canvas,
+                this.canvas.worldMatrix,
+            );            
+        });
     }
 
     private addPaste() {
         window.addEventListener('paste', async (e) => {
             const files = e.clipboardData.files;
             const html = e.clipboardData.getData('text/html');
-            console.log(this.lastPointerPos.x, this.lastPointerPos.y);
+
             if (files.length > 0) {
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
@@ -54,4 +69,5 @@ export class PointerEventManager {
             }
         });
     }
+
 }

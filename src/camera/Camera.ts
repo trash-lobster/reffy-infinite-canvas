@@ -78,50 +78,6 @@ export class Camera {
     constructor(canvas: Canvas) {
         this.canvas = canvas;
 
-        let lastPointerPos = { x: 0, y: 0 };
-        canvas.canvas.addEventListener('pointermove', (e) => {
-            lastPointerPos.x = e.clientX;
-            lastPointerPos.y = e.clientY;
-        });
-
-        // // TODO: POINTER POSITION NEEDS TO BE TRACKED OUTSIDE OF CAMERA AND THE VALUE SHOULD REFLECT WORLD POSITION
-        // window.addEventListener('paste', async (e) => {
-        //     const files = e.clipboardData.files;
-        //     const html = e.clipboardData.getData('text/html');
-        //     console.log(lastPointerPos.x, lastPointerPos.y);
-        //     if (files.length > 0) {
-        //         for (let i = 0; i < files.length; i++) {
-        //             const file = files[i];
-        //             if(file.type.startsWith('image/')) {
-        //                 try {
-        //                     const src = await previewImage(file);
-        //                     if (typeof src === 'string') {
-        //                         this.canvas.appendChild(new Img({
-        //                             x: lastPointerPos.x,
-        //                             y: lastPointerPos.y,
-        //                             src: src,
-        //                         }))
-        //                     } else console.log('Image not added');
-        //                 } catch {
-        //                     console.error('Failed to copy image.');
-        //                 }
-        //             }
-        //         }
-        //     } else if (html) {
-        //         const el = document.createElement('html');
-        //         el.innerHTML = html;
-        //         const images = el.getElementsByTagName('img');
-        //         for (let i = 0; i < images.length; i++) {
-        //             const image = images[i];
-        //             this.canvas.appendChild(new Img({
-        //                 x: lastPointerPos.x,
-        //                 y: lastPointerPos.y,
-        //                 src: image.src,
-        //             }))
-        //         }
-        //     }
-        // });
-
         this.canvas.canvas.addEventListener('pointerdown', (e) => {
             const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
             this.#startWorldX = wx;
@@ -136,7 +92,7 @@ export class Camera {
                 document.removeEventListener('pointermove', this.onPointerMove);
                 document.removeEventListener('pointerup', up);
                 this.canvas.isGlobalClick = true;
-                this.canvas._eventManager.resetImpactedShapes();
+                // this.canvas._eventManager.resetImpactedShapes();
                 this.canvas.canvas.style.cursor = 'default';
             };
             document.addEventListener('pointerup', up);

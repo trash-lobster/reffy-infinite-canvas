@@ -107,12 +107,24 @@ export class BoundingBox {
     }
 
     hitTest(x: number, y: number) {
-        // checks if the mouse position hits any of the values
-        for (const [key, handle] of this.handles.entries()) {
-            if (handle.hitTest(x, y)) {
-                return key;
+        const HIT_MARGIN = 4;
+
+        const cornerTypes = ['TOPLEFT', 'TOPRIGHT', 'BOTTOMLEFT', 'BOTTOMRIGHT'];
+        for (const type of cornerTypes) {
+            const handle = this.handles.get(type);
+            if (handle && this._expandedHit(handle, x, y, HIT_MARGIN)) {
+                return type;
             }
         }
+        
+        const edgeTypes = ['TOP', 'BOTTOM', 'LEFT', 'RIGHT'];
+        for (const type of edgeTypes) {
+            const handle = this.handles.get(type);
+            if (handle && this._expandedHit(handle, x, y, HIT_MARGIN)) {
+                return type;
+            }
+        }
+        return null;
     }
 
     update(cameraZoom?: number) {
@@ -147,5 +159,14 @@ export class BoundingBox {
         for (const [_, handle] of this.handles.entries()) {
             handle.destroy(gl);
         }
+    }
+
+    private _expandedHit(handle: Rect, x: number, y: number, margin: number): boolean {
+        return (
+            x >= handle.x - margin &&
+            x <= handle.x + handle.width + margin &&
+            y >= handle.y - margin &&
+            y <= handle.y + handle.height + margin
+        );
     }
 }

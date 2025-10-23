@@ -13,6 +13,7 @@ import {
 	Renderable, 
 	Grid, 
 	BoundingBox,
+	Rect,
 } from './shapes';
 import EventEmitter from 'eventemitter3';
 import { EventManager } from './events';
@@ -152,7 +153,7 @@ export class Canvas extends Renderable {
 					this._eventManager.addToImpacted(child);
 					// child.dispatchEvent(new Event('hover'));
 					this.isGlobalClick = false;
-					this._selectionManager.add([child]);
+					this._selectionManager.add([child as Rect]);
 					break;
 				}
 			}

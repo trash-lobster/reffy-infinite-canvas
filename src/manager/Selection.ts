@@ -1,16 +1,22 @@
-import { BoundingBox, Shape } from "../shapes";
+import { 
+    BoundingBox, 
+    MultiBoundingBox, 
+    Rect, 
+    Shape,
+} from "../shapes";
 
 export class SelectionManager {
-    private _selected: Set<Shape> = new Set();
+    private _selected: Set<Rect> = new Set();
     private _boundingBox: Set<BoundingBox> = new Set();
+    private _multiBoundingBox : MultiBoundingBox;
     renderDirtyFlag = true;
     private zoomFactor = 1;
 
     private gl: WebGLRenderingContext;
     private rectProgram: WebGLProgram;
 
-    get selected(): Shape[] { return Array.from(this._selected); }
-    set selected(shapes: Shape[]) {
+    get selected(): Rect[] { return Array.from(this._selected); }
+    set selected(shapes: Rect[]) {
         // clear out previous set
         this._selected.clear();
 
@@ -21,7 +27,6 @@ export class SelectionManager {
     }
 
     /**
-     * 
      * @param gl 
      * @param program Add reference to program to allow easy linking
      */
@@ -31,7 +36,7 @@ export class SelectionManager {
     }
 
     // add, remove selected
-    add(shapes: Shape[]) {
+    add(shapes: Rect[]) {
         shapes.forEach(shape => {
             if (!this._selected.has(shape)) {
                 this._selected.add(shape);
@@ -41,10 +46,17 @@ export class SelectionManager {
 
         if (this._boundingBox.size > 1) {
             this._boundingBox.forEach(box => box.setPassive());
+            
+            if (!this._multiBoundingBox) {
+                console.log('bounding box created');
+                this._multiBoundingBox = new MultiBoundingBox();
+            }
+
+            this.selected.forEach(shape => this._multiBoundingBox.add(shape));
         }
     }
 
-    remove(shapes: Shape[]) {
+    remove(shapes: Rect[]) {
         shapes.forEach(shape => {
             if (!this._selected.has(shape)) return;
             this._selected.delete(shape);
@@ -53,6 +65,10 @@ export class SelectionManager {
                 this._boundingBox.delete(matchingBoundingBox);
             } else {
                 console.error('No matching bounding box found');
+            }
+
+            if (this._multiBoundingBox) {
+                this._multiBoundingBox.remove(shape);
             }
         })
 
@@ -85,6 +101,10 @@ export class SelectionManager {
         if (this.renderDirtyFlag) {
             this.gl.useProgram(this.rectProgram);
             this._boundingBox.forEach(box => box.render(this.gl, this.rectProgram));
+        }
+
+        if (this._multiBoundingBox) {
+            this._multiBoundingBox.render(this.gl, this.rectProgram);
         }
     }
 

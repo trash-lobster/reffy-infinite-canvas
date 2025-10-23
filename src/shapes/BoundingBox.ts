@@ -1,29 +1,17 @@
+import { 
+    BASE_BLUE, 
+    BORDERPX, 
+    corners, 
+    HANDLEPX, 
+    sides,
+} from "../util";
 import { Rect } from "./Rect";
 import { Shape } from "./Shape";
-
-const sides = [
-    'TOP',
-    'BOTTOM',
-    'LEFT',
-    'RIGHT',
-];
-
-const corners = [
-    'TOPLEFT',
-    'TOPRIGHT',
-    'BOTTOMLEFT',
-    'BOTTOMRIGHT',
-]
-
-const HANDLEPX = 8;
-const BORDERPX = 2;
 
 enum BoundingBoxMode {
     ACTIVE,     // direct interaction allowed
     PASSIVE,    // when just display the rect but not the corner handles - no direct interaction allowed
 }
-
-const BLUE: [number, number, number, number] = [0.33, 0.6, 0.95, 1];
 
 export class BoundingBox {
     target: Shape;
@@ -87,7 +75,7 @@ export class BoundingBox {
             width: this.boxSize * 2,
             height: this.boxSize * 2,
         }),
-    }
+    };
 
     constructor(target: Shape, mode?: BoundingBoxMode) {
         this.target = target;
@@ -100,7 +88,7 @@ export class BoundingBox {
         for (const type of sides) {            
             if (Object.keys(this.getBoundingBoxSides).includes(type)) {
                 const r = new Rect(this.getBoundingBoxSides[type]());
-                r.color = BLUE;
+                r.color = BASE_BLUE;
                 this.sides.set(type, r);
             }
         }
@@ -114,7 +102,7 @@ export class BoundingBox {
         for (const type of corners) {            
             if (Object.keys(this.getBoundingBoxCorners).includes(type)) {
                 const r = new Rect(this.getBoundingBoxCorners[type]());
-                r.color = BLUE;
+                r.color = BASE_BLUE;
                 this.corners.set(type, r);
             }
         }
@@ -148,16 +136,14 @@ export class BoundingBox {
 
         const HIT_MARGIN = 4;
 
-        const cornerTypes = ['TOPLEFT', 'TOPRIGHT', 'BOTTOMLEFT', 'BOTTOMRIGHT'];
-        for (const type of cornerTypes) {
+        for (const type of corners) {
             const handle = this.sides.get(type);
             if (handle && this._expandedHit(handle, x, y, HIT_MARGIN)) {
                 return type;
             }
         }
         
-        const edgeTypes = ['TOP', 'BOTTOM', 'LEFT', 'RIGHT'];
-        for (const type of edgeTypes) {
+        for (const type of sides) {
             const handle = this.sides.get(type);
             if (handle && this._expandedHit(handle, x, y, HIT_MARGIN)) {
                 return type;

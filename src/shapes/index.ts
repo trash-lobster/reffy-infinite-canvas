@@ -5,3 +5,4 @@ export * from './Img';
 export * from './Renderable';
 export * from './Grid';
 export * from './BoundingBox';
+export * from './MultiBoundingBox';

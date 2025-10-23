@@ -38,6 +38,10 @@ export class SelectionManager {
                 this._boundingBox.add(new BoundingBox(shape));
             }
         })
+
+        if (this._boundingBox.size > 1) {
+            this._boundingBox.forEach(box => box.setPassive());
+        }
     }
 
     remove(shapes: Shape[]) {
@@ -51,11 +55,15 @@ export class SelectionManager {
                 console.error('No matching bounding box found');
             }
         })
+
+        if (this._boundingBox.size <= 1) {
+            this._boundingBox.forEach(box => box.setActive());
+        }
     }
 
     hitTest(wx: number, wy: number) {
         for (const box of this._boundingBox.values()) {
-            const ans = box.hitTest(wx, wy);
+            const ans = box.hitHandleTest(wx, wy);
             if (ans) {
                 return ans;
             }

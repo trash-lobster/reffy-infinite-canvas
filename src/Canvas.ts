@@ -159,7 +159,7 @@ export class Canvas extends Renderable {
 		}
 
 		if (this.boundingBox) {
-			if (this.boundingBox.hitTest(x, y)) {
+			if (this.boundingBox.hitHandleTest(x, y)) {
 				this.isGlobalClick = false;
 			}
 		}

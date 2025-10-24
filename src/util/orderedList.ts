@@ -3,14 +3,12 @@ import { Rect, Shape } from "shapes";
 export class OrderedList {
     private shapes: Rect[] = [];
     private getter: (shape: Rect) => number;
-    private setter: (shape: Rect, val: number) => void;
 
     constructor(
         getter: (shape: Rect) => number,
-        setter: (shape: Rect, val: number) => void,
+        // setter: (shape: Rect, val: number) => void,
     ) {
         this.getter = getter;
-        this.setter = setter;
     }
 
     add(shape: Rect) {
@@ -23,9 +21,8 @@ export class OrderedList {
         if (idx !== -1) this.shapes.splice(idx, 1);
     }
 
-    update(shape: Rect, newVal: number) {
+    update(shape: Rect) {
         this.remove(shape);
-        this.setter(shape, newVal);
         this.add(shape);
     }
 
@@ -54,26 +51,35 @@ export class OrderedList {
     }
 }
 
-export function getX(shape: Rect) {
+function getX(shape: Rect) {
     return shape.x;
 }
 
-export function setX(shape: Rect, val: number) {
-    shape.x = val;
-}
-
-export function getY(shape: Rect) {
+function getY(shape: Rect) {
     return shape.y;
 }
 
-export function setY(shape: Rect, val: number) {
-    shape.y = val;
+function getWidth(shape: Rect) {
+    return shape.x + shape.width;
 }
 
-export function createOrderedByXShapeList() {
-    return new OrderedList(getX, setX);
+function getHeight(shape: Rect) {
+    return shape.y + shape.height;
 }
 
-export function createOrderedByYShapeList() {
-    return new OrderedList(getY, setY);
+
+export function createOrderedByStartX() {
+    return new OrderedList(getX);
+}
+
+export function createOrderedByStartY() {
+    return new OrderedList(getY);
+}
+
+export function createOrderedByEndX() {
+    return new OrderedList(getWidth);
+}
+
+export function createOrderedByEndY() {
+    return new OrderedList(getHeight);
 }

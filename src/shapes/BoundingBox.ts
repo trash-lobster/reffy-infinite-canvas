@@ -3,6 +3,7 @@ import {
     BORDERPX, 
     corners, 
     HANDLEPX, 
+    LIGHT_BLUE, 
     sides,
 } from "../util";
 import { Rect } from "./Rect";
@@ -88,7 +89,7 @@ export class BoundingBox {
         for (const type of sides) {            
             if (Object.keys(this.getBoundingBoxSides).includes(type)) {
                 const r = new Rect(this.getBoundingBoxSides[type]());
-                r.color = BASE_BLUE;
+                r.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
                 this.sides.set(type, r);
             }
         }
@@ -102,7 +103,7 @@ export class BoundingBox {
         for (const type of corners) {            
             if (Object.keys(this.getBoundingBoxCorners).includes(type)) {
                 const r = new Rect(this.getBoundingBoxCorners[type]());
-                r.color = BASE_BLUE;
+                r.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
                 this.corners.set(type, r);
             }
         }
@@ -176,6 +177,7 @@ export class BoundingBox {
                     handle.y = side.y;
                     handle.width = side.width;
                     handle.height = side.height;
+                    handle.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
                 }
             }
         }

@@ -5,6 +5,7 @@ import {
     HANDLEPX, 
     corners, 
     sides,
+    BoundingBoxCollisionType,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
@@ -30,88 +31,35 @@ export class BoundingBox {
         const edge = this.target.getEdge();
         this.width = edge.maxX - edge.minX;
         this.height = edge.maxY - edge.minY;
-
         this.mode = mode ?? BoundingBoxMode.ACTIVE;
 
-        for (const type of sides) {            
-            if (Object.keys(this.getBoundingBoxSides).includes(type)) {
-                const r = new Rect(this.getBoundingBoxSides[type]());
-                r.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
-                this.sides.set(type, r);
-            }
-        }
+        this.addSides();
 
         if (this.mode === BoundingBoxMode.ACTIVE) {
             this.addCorners();
         }
     }
 
-    getBoundingBoxSides = {
-        TOP: () => ({
-            x: this.target.x,
-            y: this.target.y,
-            width: this.width,
-            height: this.borderSize,
-        }),
-        BOTTOM: () => ({
-            x: this.target.x,
-            y: this.target.y + this.height - this.borderSize,
-            width: this.width,
-            height: this.borderSize,
-        }),
-        LEFT: () => ({
-            x: this.target.x,
-            y: this.target.y,
-            width: this.borderSize,
-            height: this.height
-        }),
-        RIGHT: () => ({
-            x: this.target.x + this.width - this.borderSize,
-            y: this.target.y,
-            width: this.borderSize,
-            height: this.height
-        })
-    };
-
-    getBoundingBoxCorners = {
-        TOPLEFT: () => ({
-            x: this.target.x - this.boxSize,
-            y: this.target.y - this.boxSize,
-            width: this.boxSize * 2,
-            height: this.boxSize * 2,
-        }),
-        TOPRIGHT: () => ({
-            x: this.target.x - this.boxSize + this.width,
-            y: this.target.y - this.boxSize,
-            width: this.boxSize * 2,
-            height: this.boxSize * 2,
-        }),
-        BOTTOMLEFT: () => ({
-            x: this.target.x - this.boxSize,
-            y: this.target.y - this.boxSize + this.height,
-            width: this.boxSize * 2,
-            height: this.boxSize * 2,
-        }),
-        BOTTOMRIGHT: () => ({
-            x: this.target.x - this.boxSize + this.width,
-            y: this.target.y - this.boxSize + this.height,
-            width: this.boxSize * 2,
-            height: this.boxSize * 2,
-        }),
-    };
-    
-    private addCorners() {
-        for (const type of corners) {            
-            if (Object.keys(this.getBoundingBoxCorners).includes(type)) {
-                const r = new Rect(this.getBoundingBoxCorners[type]());
-                r.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
-                this.corners.set(type, r);
-            }
-        }
+    private getSideConfig(type: string) {
+        const { width, height, borderSize } = this;
+        const x = this.target.x, y = this.target.y;
+        return {
+            TOP:        { x, y, width, height: borderSize },
+            BOTTOM:     { x, y: y + height - borderSize, width, height: borderSize },
+            LEFT:       { x, y, width: borderSize, height },
+            RIGHT:      { x: x + width - borderSize, y, width: borderSize, height }
+        }[type];
     }
 
-    private removeCorners() {
-        this.corners.clear();
+    private getCornerConfig(type: string) {
+        const { width, height, boxSize } = this;
+        const x = this.target.x, y = this.target.y;
+        return {
+        TOPLEFT:    { x: x - boxSize, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
+            TOPRIGHT:   { x: x - boxSize + width, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMLEFT: { x: x - boxSize, y: y - boxSize + height, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMRIGHT:{ x: x - boxSize + width, y: y - boxSize + height, width: boxSize * 2, height: boxSize * 2 },
+        }[type];
     }
 
     setPassive() {
@@ -133,7 +81,7 @@ export class BoundingBox {
         ];
     }
 
-    hitHandleTest(x: number, y: number) {
+    hitHandleTest(x: number, y: number): (BoundingBoxCollisionType | null) {
         if (this.mode === BoundingBoxMode.PASSIVE) return;
 
         const HIT_MARGIN = 4;
@@ -141,26 +89,27 @@ export class BoundingBox {
         for (const type of corners) {
             const handle = this.corners.get(type);
             if (handle && this._expandedHit(handle, x, y, HIT_MARGIN)) {
-                return type;
+                return type as BoundingBoxCollisionType;
             }
         }
         
         for (const type of sides) {
             const handle = this.sides.get(type);
             if (handle && this._expandedHit(handle, x, y, HIT_MARGIN)) {
-                return type;
+                return type as BoundingBoxCollisionType;
             }
         }
         return null;
     }
 
-    hitTest(x: number, y: number) {
-        return (
+    hitTest(x: number, y: number): (BoundingBoxCollisionType | null) {
+        if (
             x >= this.target.x &&
             x <= this.target.x + this.width &&
             y >= this.target.y &&
             y <= this.target.y + this.height
-        );
+        ) return 'CENTER';
+        return null;
     }
 
     update(cameraZoom?: number) {
@@ -169,32 +118,8 @@ export class BoundingBox {
         if (cameraZoom) {
         }
 
-        for (const type of sides) {
-            if (Object.keys(this.getBoundingBoxSides).includes(type)) {
-              const side = this.getBoundingBoxSides[type]();
-                const handle = this.sides.get(type);
-                if (handle) {
-                    handle.x = side.x;
-                    handle.y = side.y;
-                    handle.width = side.width;
-                    handle.height = side.height;
-                    handle.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
-                }
-            }
-        }
-
-        for (const type of corners) {
-            if (Object.keys(this.getBoundingBoxCorners).includes(type)) {
-              const corner = this.getBoundingBoxCorners[type]();
-                const handle = this.corners.get(type);
-                if (handle) {
-                    handle.x = corner.x;
-                    handle.y = corner.y;
-                    handle.width = corner.width;
-                    handle.height = corner.height;
-                }
-            }
-        }
+        this.updateSides();
+        this.updateCorners();
     }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram): void {
@@ -226,5 +151,53 @@ export class BoundingBox {
             y >= handle.y - margin &&
             y <= handle.y + handle.height + margin
         );
+    }
+
+    private addCorners() {
+        for (const type of corners) {            
+            const r = new Rect(this.getCornerConfig(type));
+            r.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
+            this.corners.set(type, r);
+        }
+    }
+
+    private removeCorners() {
+        this.corners.clear();
+    }
+
+    private updateCorners() {
+        for (const type of corners) {
+            const config = this.getCornerConfig(type);
+            const corner = this.corners.get(type);
+            if (corner) {
+                corner.x = config.x;
+                corner.y = config.y;
+                corner.width = config.width;
+                corner.height = config.height;
+                corner.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
+            }
+        }
+    }
+
+    private addSides() {
+        for (const type of sides) {            
+            const r = new Rect(this.getSideConfig(type));
+            r.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
+            this.sides.set(type, r);
+        }
+    }
+
+    private updateSides() {
+        for (const type of sides) {
+            const config = this.getSideConfig(type);
+            const side = this.sides.get(type);
+            if (side) {
+                side.x = config.x;
+                side.y = config.y;
+                side.width = config.width;
+                side.height = config.height;
+                side.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
+            }
+        }
     }
 }

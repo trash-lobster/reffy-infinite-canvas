@@ -20,4 +20,5 @@
 20251026:
 - there is no specific reason to separate bounding box hit test from handle to body
 - prioritise handle due to hit margin
-- refact multibounding box and bouning box
+- refact multibounding box and bounding box
+- bounding boxes are now moved on pointer drag and move

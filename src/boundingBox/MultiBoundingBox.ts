@@ -91,6 +91,17 @@ export class MultiBoundingBox {
         }
     }
 
+    move(dx: number, dy: number, gl: WebGLRenderingContext) {
+        this.x += dx;
+        this.y += dy;
+        for (const target of this.targets) {
+            target.x += dx;
+            target.y += dy;
+
+            target.updateVertexData(gl);
+        }
+    }
+
     getPositions(): number[] {
         return [
             this.x, this.y, // Top-left

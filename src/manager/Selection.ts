@@ -125,4 +125,15 @@ export class SelectionManager {
         this._selected.clear();
         this._boundingBox.clear();
     }
+
+    move(dx: number, dy: number) {
+        // check if there is multi bounding  box
+        if (this._multiBoundingBox) {
+            this._multiBoundingBox.move(dx, dy, this.gl);
+        } else {
+            for (const box of this._boundingBox) {
+                box.move(dx, dy, this.gl);
+            }
+        }
+    }
 }

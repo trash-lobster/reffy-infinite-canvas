@@ -122,6 +122,7 @@ export class PointerEventManager {
             this.canvas._camera.updateCameraPos(this.#startWorldX - wx, this.#startWorldY - wy);
         } else {
             // selection manager move
+            this.canvas._selectionManager.move(dx, dy);
         }
 
         this.#lastWorldX = wx;

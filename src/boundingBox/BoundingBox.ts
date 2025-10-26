@@ -145,6 +145,13 @@ export class BoundingBox {
         }
     }
 
+    move(dx: number, dy: number, gl: WebGLRenderingContext) {
+        this.target.x += dx;
+        this.target.y += dy;
+
+        this.target.updateVertexData(gl);
+    }
+
     private _expandedHit(handle: Rect, x: number, y: number, margin: number): boolean {
         return (
             x >= handle.x - margin &&

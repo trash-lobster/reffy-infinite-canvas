@@ -116,33 +116,6 @@ export class Camera {
         this.y += (wy0 - wy1);
     };
 
-    onPointerMove = (e: PointerEvent) => {
-        const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-        const dx = wx - this.#lastWorldX;
-        const dy = wy - this.#lastWorldY;
-
-        if (this.canvas.isGlobalClick) {
-            this.x += this.#startWorldX - wx;
-            this.y += this.#startWorldY - wy;
-        } else {
-            const target = this.canvas._eventManager.impactedShapes.find(
-                (child): child is Shape => child instanceof Shape
-            );
-
-            if (target) {
-                target.x += dx;
-                target.y += dy;
-
-                target.updateVertexData(this.canvas.gl);
-
-            }
-        }
-
-        this.#lastWorldX = wx;
-        this.#lastWorldY = wy;
-        this.canvas.canvas.style.cursor = 'grabbing'
-    }
-
     updateCameraPos(dx: number, dy: number) {
         this.x += dx;
         this.y += dy;

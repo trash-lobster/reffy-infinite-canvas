@@ -6,8 +6,8 @@ import {
     LIGHT_BLUE, 
     sides,
 } from "../util";
-import { Rect } from "./Rect";
-import { Shape } from "./Shape";
+import { Rect } from "../shapes/Rect";
+import { Shape } from "../shapes/Shape";
 
 enum BoundingBoxMode {
     ACTIVE,     // direct interaction allowed

@@ -4,5 +4,5 @@ export * from './Triangle';
 export * from './Img';
 export * from './Renderable';
 export * from './Grid';
-export * from './BoundingBox';
-export * from './MultiBoundingBox';
+export * from '../boundingBox/BoundingBox';
+export * from '../boundingBox/MultiBoundingBox';

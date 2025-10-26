@@ -1,8 +1,7 @@
 import { 
     BoundingBox, 
     MultiBoundingBox, 
-    Rect, 
-    Shape,
+    Rect,
 } from "../shapes";
 
 export class SelectionManager {
@@ -74,10 +73,24 @@ export class SelectionManager {
 
         if (this._boundingBox.size <= 1) {
             this._boundingBox.forEach(box => box.setActive());
+            this._multiBoundingBox = null;
         }
     }
 
+    /**
+     * Checks first if there is a hit in a multibounding and its handles. If not, check the one bounding box that is active.
+     */
     hitTest(wx: number, wy: number) {
+        // check if the individual bounding box has been selected
+        // check their handles
+        // check if there is a multibounding box
+        // check its handles
+        if (this._multiBoundingBox) {
+            if (this._multiBoundingBox.hitTest(wx, wy)) {
+                
+            }
+        }
+
         for (const box of this._boundingBox.values()) {
             const ans = box.hitHandleTest(wx, wy);
             if (ans) {

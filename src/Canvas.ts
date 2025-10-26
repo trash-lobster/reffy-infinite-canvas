@@ -18,6 +18,7 @@ import {
 import EventEmitter from 'eventemitter3';
 import { EventManager } from './events';
 import { SelectionManager, PointerEventManager } from './manager';
+import { Camera } from './camera';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
@@ -28,7 +29,6 @@ export class Canvas extends Renderable {
 	gridProgram: WebGLProgram;
 	
 	grid: Grid;
-	boundingBox: BoundingBox;
 	
 	worldMatrix: number[] = m3.identity();
 
@@ -38,6 +38,7 @@ export class Canvas extends Renderable {
 	_selectionManager: SelectionManager;
 	_pointerEventManager: PointerEventManager;
 	_eventManager: EventManager = new EventManager(this._emitter);
+	_camera: Camera;
 
 	private orderDirty = true;
     private renderList: Shape[] = [];
@@ -56,6 +57,7 @@ export class Canvas extends Renderable {
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 
+		this._camera = new Camera(this);
 		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram);
 		this._pointerEventManager = new PointerEventManager(this);
 	}
@@ -128,7 +130,6 @@ export class Canvas extends Renderable {
 			if (child instanceof Shape) {
 				if (child.hitTest && child.hitTest(x, y)) {
 					this._eventManager.addToImpacted(child);
-					// child.dispatchEvent(new Event('hover'));
 					this.isGlobalClick = false;
 					this._selectionManager.add([child as Rect]);
 					break;

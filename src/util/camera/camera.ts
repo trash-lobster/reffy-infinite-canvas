@@ -1,3 +1,4 @@
+import { Canvas } from "Canvas";
 import { m3 } from "../webgl/m3";
 
 export function getClipSpaceMousePosition(e: MouseEvent, canvas: HTMLCanvasElement) {
@@ -43,4 +44,15 @@ export function screenToWorld(clientX: number, clientY: number, w: number, h: nu
     const [wx, wy] = m3.transformPoint(invPV, [xClip, yClip]);
 
     return [wx, wy];
+}
+
+export function getWorldCoords(x: number, y: number, canvas: Canvas) {
+    return screenToWorld(
+        x, 
+        y,
+        canvas.gl.canvas.width,
+        canvas.gl.canvas.height,
+        canvas.canvas,
+        canvas.worldMatrix,
+    );
 }

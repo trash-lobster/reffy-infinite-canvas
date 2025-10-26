@@ -1,5 +1,5 @@
 import { Canvas } from "Canvas";
-import { m3, screenToWorld } from "../util";
+import { getWorldCoords, m3, screenToWorld } from "../util";
 import { Shape } from "../shapes";
 
 const ZOOM_MIN = 0.1;
@@ -77,28 +77,6 @@ export class Camera {
 
     constructor(canvas: Canvas) {
         this.canvas = canvas;
-
-        this.canvas.canvas.addEventListener('pointerdown', (e) => {
-            const [wx, wy] = this.getWorldCoords(e.clientX, e.clientY);
-            this.#startWorldX = wx;
-            this.#startWorldY = wy;
-            this.#lastWorldX = wx;
-            this.#lastWorldY = wy;
-
-            this.canvas.hitTest(wx, wy);
-
-            document.addEventListener('pointermove', this.onPointerMove);
-            const up = () => {
-                document.removeEventListener('pointermove', this.onPointerMove);
-                document.removeEventListener('pointerup', up);
-                this.canvas.isGlobalClick = true;
-                // this.canvas._eventManager.resetImpactedShapes();
-                this.canvas.canvas.style.cursor = 'default';
-            };
-            document.addEventListener('pointerup', up);
-
-        });
-        this.canvas.canvas.addEventListener('wheel', this.onWheel, { passive: false });
     }
 
     /**
@@ -117,11 +95,11 @@ export class Camera {
         this.canvas.updateWorldMatrix();
     }
 
-    private onWheel = (e: WheelEvent) => {
+    onWheel = (e: WheelEvent) => {
         e.preventDefault();
 
         // Point under cursor in world space before zoom
-        const [wx0, wy0] = this.getWorldCoords(e.clientX, e.clientY);
+        const [wx0, wy0] = getWorldCoords(e.clientX, e.clientY, this.canvas);
 
         // Smooth zoom factor (wheel up => zoom in)
         const ZOOM_SPEED = 0.003;
@@ -131,15 +109,15 @@ export class Camera {
         this.zoom = target;
 
         // Same point after zoom
-        const [wx1, wy1] = this.getWorldCoords(e.clientX, e.clientY);
+        const [wx1, wy1] = getWorldCoords(e.clientX, e.clientY, this.canvas);
 
         // Shift camera so the world point stays under the cursor
         this.x += (wx0 - wx1);
         this.y += (wy0 - wy1);
     };
 
-    private onPointerMove = (e: PointerEvent) => {
-        const [wx, wy] = this.getWorldCoords(e.clientX, e.clientY);
+    onPointerMove = (e: PointerEvent) => {
+        const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
         const dx = wx - this.#lastWorldX;
         const dy = wy - this.#lastWorldY;
 
@@ -165,14 +143,9 @@ export class Camera {
         this.canvas.canvas.style.cursor = 'grabbing'
     }
 
-    private getWorldCoords(x: number, y: number) {
-        return screenToWorld(
-            x, 
-            y,
-            this.canvas.gl.canvas.width,
-            this.canvas.gl.canvas.height,
-            this.canvas.canvas,
-            this.canvas.worldMatrix,
-        );
+    updateCameraPos(dx: number, dy: number) {
+        this.x += dx;
+        this.y += dy;
+        this.updateViewMatrix();
     }
 }

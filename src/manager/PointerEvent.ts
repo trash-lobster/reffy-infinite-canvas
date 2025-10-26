@@ -1,6 +1,6 @@
 import { Canvas } from "Canvas";
 import { Img } from "../shapes";
-import { previewImage, screenToWorld } from "../util";
+import { getWorldCoords, previewImage, screenToWorld } from "../util";
 
 export interface Point {
     x: number,
@@ -23,27 +23,76 @@ export class PointerEventManager {
     canvas: Canvas;
     lastPointerPos: Point = { x: 0, y: 0 };
 
+    #startWorldX: number = 0;
+    #startWorldY: number = 0;
+    #lastWorldX: number = 0;
+    #lastWorldY: number = 0;
+
     constructor(canvas: Canvas) {
         this.canvas = canvas;
+        
+        this.onPointerDown = this.onPointerDown.bind(this);
+        this.onPointerMoveWhileDown = this.onPointerMoveWhileDown.bind(this);
+        this.onPointerUp = this.onPointerUp.bind(this);
+
         this.addPaste();
         this.addPointerMove();
+        this.addOnWheel();
+        this.addPointerDown();
     }
 
+    private addPointerDown() {
+        this.canvas.canvas.addEventListener('pointerdown', this.onPointerDown);
+    }
+    
+    onPointerDown(e: PointerEvent) {
+        const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
+        this.#startWorldX = wx;
+        this.#startWorldY = wy;
+        this.#lastWorldY = wy;
+        this.#lastWorldX = wx;
+
+        const isGlobalClick = this.canvas.hitTest(wx, wy);
+
+        document.addEventListener('pointermove', this.onPointerMoveWhileDown);
+        document.addEventListener('pointerup', this.onPointerUp);
+    }
+
+    // always on
     private addPointerMove() {
         this.canvas.canvas.addEventListener('pointermove', (e) => {
-            // Convert to clip space
-            [this.lastPointerPos.x, this.lastPointerPos.y] = screenToWorld(
-                e.clientX, 
-                e.clientY, 
-                this.canvas.gl.canvas.width,
-                this.canvas.gl.canvas.height,
-                this.canvas.canvas,
-                this.canvas.worldMatrix,
-            );
+            [this.lastPointerPos.x, this.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY, this.canvas);
 
             const hit = this.canvas._selectionManager.hitTest(this.lastPointerPos.x, this.lastPointerPos.y);
 			this.canvas.canvas.style.cursor = cursorMap[hit] || 'default';
         });
+    }
+
+    private onPointerMoveWhileDown(e: PointerEvent) {
+        const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
+        const dx = wx - this.#lastWorldX;
+        const dy = wy - this.#lastWorldY;
+
+        if (this.canvas.isGlobalClick) {
+            this.canvas._camera.updateCameraPos(this.#startWorldX - wx, this.#startWorldY - wy);
+        } else {
+            // selection manager move
+        }
+
+        this.#lastWorldX = wx;
+        this.#lastWorldY = wy;
+        this.canvas.canvas.style.cursor = 'grabbing'; 
+    }
+
+    private onPointerUp(e: PointerEvent) {
+        document.removeEventListener('pointermove', this.onPointerMoveWhileDown);
+        document.removeEventListener('pointerup', this.onPointerUp);
+        this.canvas.isGlobalClick = true;
+        this.canvas.canvas.style.cursor = 'default';
+    }
+
+    private addOnWheel() {
+        this.canvas.canvas.addEventListener('wheel', this.canvas._camera.onWheel, { passive: false });
     }
 
     private addPaste() {

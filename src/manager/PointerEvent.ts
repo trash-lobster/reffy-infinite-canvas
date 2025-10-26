@@ -7,6 +7,18 @@ export interface Point {
     y: number,
 }
 
+const cursorMap: Record<string, string> = {
+    TOP: 'ns-resize',
+    BOTTOM: 'ns-resize',
+    LEFT: 'ew-resize',
+    RIGHT: 'ew-resize',
+    TOPLEFT: 'nwse-resize',
+    BOTTOMRIGHT: 'nwse-resize',
+    TOPRIGHT: 'nesw-resize',
+    BOTTOMLEFT: 'nesw-resize',
+	CENTER: 'grab',
+};
+
 export class PointerEventManager {
     canvas: Canvas;
     lastPointerPos: Point = { x: 0, y: 0 };
@@ -27,7 +39,10 @@ export class PointerEventManager {
                 this.canvas.gl.canvas.height,
                 this.canvas.canvas,
                 this.canvas.worldMatrix,
-            );            
+            );
+
+            const hit = this.canvas._selectionManager.hitTest(this.lastPointerPos.x, this.lastPointerPos.y);
+			this.canvas.canvas.style.cursor = cursorMap[hit] || 'default';
         });
     }
 

@@ -19,18 +19,6 @@ import EventEmitter from 'eventemitter3';
 import { EventManager } from './events';
 import { SelectionManager, PointerEventManager } from './manager';
 
-const cursorMap: Record<string, string> = {
-    TOP: 'ns-resize',
-    BOTTOM: 'ns-resize',
-    LEFT: 'ew-resize',
-    RIGHT: 'ew-resize',
-    TOPLEFT: 'nwse-resize',
-    BOTTOMRIGHT: 'nwse-resize',
-    TOPRIGHT: 'nesw-resize',
-    BOTTOMLEFT: 'nesw-resize',
-	CENTER: 'grab',
-};
-
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;
@@ -70,19 +58,6 @@ export class Canvas extends Renderable {
 
 		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram);
 		this._pointerEventManager = new PointerEventManager(this);
-		
-		canvas.addEventListener('pointermove', (e) => {
-			const [wx, wy] = screenToWorld(
-				e.clientX, 
-				e.clientY,
-				this.gl.canvas.width,
-                this.gl.canvas.height,
-                this.canvas,
-                this.worldMatrix,
-			);
-			const hit = this._selectionManager.hitTest(wx, wy);
-			canvas.style.cursor = cursorMap[hit] || 'default';
-		});
 	}
 
 	appendChild<T extends Renderable>(child: T): T {

@@ -1,9 +1,9 @@
 import { 
     BASE_BLUE, 
-    BORDERPX, 
-    corners, 
-    HANDLEPX, 
     LIGHT_BLUE, 
+    BORDERPX, 
+    HANDLEPX, 
+    corners, 
     sides,
 } from "../util";
 import { Rect } from "../shapes/Rect";
@@ -14,6 +14,7 @@ enum BoundingBoxMode {
     PASSIVE,    // when just display the rect but not the corner handles - no direct interaction allowed
 }
 
+// different from multi bounding box, the corners and handles are separated here because they need to be individually toggled
 export class BoundingBox {
     target: Shape;
     width: number;
@@ -23,6 +24,27 @@ export class BoundingBox {
     borderSize: number = 0;
     boxSize: number = 0;
     mode: BoundingBoxMode = BoundingBoxMode.ACTIVE;
+    
+    constructor(target: Shape, mode?: BoundingBoxMode) {
+        this.target = target;
+        const edge = this.target.getEdge();
+        this.width = edge.maxX - edge.minX;
+        this.height = edge.maxY - edge.minY;
+
+        this.mode = mode ?? BoundingBoxMode.ACTIVE;
+
+        for (const type of sides) {            
+            if (Object.keys(this.getBoundingBoxSides).includes(type)) {
+                const r = new Rect(this.getBoundingBoxSides[type]());
+                r.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
+                this.sides.set(type, r);
+            }
+        }
+
+        if (this.mode === BoundingBoxMode.ACTIVE) {
+            this.addCorners();
+        }
+    }
 
     getBoundingBoxSides = {
         TOP: () => ({
@@ -77,27 +99,6 @@ export class BoundingBox {
             height: this.boxSize * 2,
         }),
     };
-
-    constructor(target: Shape, mode?: BoundingBoxMode) {
-        this.target = target;
-        const edge = this.target.getEdge();
-        this.width = edge.maxX - edge.minX;
-        this.height = edge.maxY - edge.minY;
-
-        this.mode = mode ?? BoundingBoxMode.ACTIVE;
-
-        for (const type of sides) {            
-            if (Object.keys(this.getBoundingBoxSides).includes(type)) {
-                const r = new Rect(this.getBoundingBoxSides[type]());
-                r.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
-                this.sides.set(type, r);
-            }
-        }
-
-        if (this.mode === BoundingBoxMode.ACTIVE) {
-            this.addCorners();
-        }
-    }
     
     private addCorners() {
         for (const type of corners) {            
@@ -138,7 +139,7 @@ export class BoundingBox {
         const HIT_MARGIN = 4;
 
         for (const type of corners) {
-            const handle = this.sides.get(type);
+            const handle = this.corners.get(type);
             if (handle && this._expandedHit(handle, x, y, HIT_MARGIN)) {
                 return type;
             }

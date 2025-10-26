@@ -81,7 +81,10 @@ export class BoundingBox {
         ];
     }
 
-    hitHandleTest(x: number, y: number): (BoundingBoxCollisionType | null) {
+    /**
+     * Prioritise collision with corners, then sides, then body
+     */
+    hitTest(x: number, y: number): (BoundingBoxCollisionType | null) {
         if (this.mode === BoundingBoxMode.PASSIVE) return;
 
         const HIT_MARGIN = 4;
@@ -99,16 +102,14 @@ export class BoundingBox {
                 return type as BoundingBoxCollisionType;
             }
         }
-        return null;
-    }
 
-    hitTest(x: number, y: number): (BoundingBoxCollisionType | null) {
         if (
             x >= this.target.x &&
             x <= this.target.x + this.width &&
             y >= this.target.y &&
             y <= this.target.y + this.height
         ) return 'CENTER';
+        
         return null;
     }
 

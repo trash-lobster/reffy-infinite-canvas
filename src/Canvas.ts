@@ -28,6 +28,7 @@ const cursorMap: Record<string, string> = {
     BOTTOMRIGHT: 'nwse-resize',
     TOPRIGHT: 'nesw-resize',
     BOTTOMLEFT: 'nesw-resize',
+	CENTER: 'grab',
 };
 
 export class Canvas extends Renderable {
@@ -145,6 +146,7 @@ export class Canvas extends Renderable {
         this.children = [];
     }
 
+	// check with selection manager first, then add images
 	hitTest(x: number, y: number) {
 		for (let i = this.children.length - 1; i >= 0; i--) {
 			const child = this.children[i];
@@ -156,12 +158,6 @@ export class Canvas extends Renderable {
 					this._selectionManager.add([child as Rect]);
 					break;
 				}
-			}
-		}
-
-		if (this.boundingBox) {
-			if (this.boundingBox.hitHandleTest(x, y)) {
-				this.isGlobalClick = false;
 			}
 		}
 

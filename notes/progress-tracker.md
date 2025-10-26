@@ -16,3 +16,8 @@
 
 20251024:
 - fix width and height calculation of border box - will need to revisit to decide a better way to calculate it
+
+20251026:
+- there is no specific reason to separate bounding box hit test from handle to body
+- prioritise handle due to hit margin
+- refact multibounding box and bouning box

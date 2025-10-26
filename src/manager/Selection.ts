@@ -1,3 +1,4 @@
+import { BoundingBoxCollisionType } from "util";
 import { 
     BoundingBox, 
     MultiBoundingBox, 
@@ -80,23 +81,22 @@ export class SelectionManager {
     /**
      * Checks first if there is a hit in a multibounding and its handles. If not, check the one bounding box that is active.
      */
-    hitTest(wx: number, wy: number) {
-        // check if the individual bounding box has been selected
-        // check their handles
-        // check if there is a multibounding box
-        // check its handles
+    hitTest(wx: number, wy: number): (BoundingBoxCollisionType | null) {
         if (this._multiBoundingBox) {
-            if (this._multiBoundingBox.hitTest(wx, wy)) {
-                
-            }
+            const ans = this._multiBoundingBox.hitTest(wx, wy);
+            if (ans) {
+                return ans;
+            }            
         }
 
         for (const box of this._boundingBox.values()) {
-            const ans = box.hitHandleTest(wx, wy);
+            const ans = box.hitTest(wx, wy);
             if (ans) {
                 return ans;
             }
         }
+
+        return null;
     }
 
     /**

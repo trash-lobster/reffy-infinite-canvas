@@ -100,7 +100,7 @@ export class MultiBoundingBox {
         ];
     }
 
-    hitHandleTest(x: number, y: number): (BoundingBoxCollisionType | null) {
+    hitTest(x: number, y: number): (BoundingBoxCollisionType | null) {
         const HIT_MARGIN = 4;
 
         for (const type of HANDLE_TYPES) {
@@ -109,10 +109,7 @@ export class MultiBoundingBox {
                 return type;
             }
         }
-        return null;
-    }
 
-    hitTest(x: number, y: number): (BoundingBoxCollisionType | null) {
         if (
             x >= this.x &&
             x <= this.x + this.width &&

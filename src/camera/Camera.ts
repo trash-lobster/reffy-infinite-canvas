@@ -1,6 +1,6 @@
 import { Canvas } from "Canvas";
-import { m3, previewImage } from "../util";
-import { Img, Shape } from "../shapes";
+import { m3, screenToWorld } from "../util";
+import { Shape } from "../shapes";
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 8;
@@ -79,7 +79,7 @@ export class Camera {
         this.canvas = canvas;
 
         this.canvas.canvas.addEventListener('pointerdown', (e) => {
-            const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
+            const [wx, wy] = this.getWorldCoords(e.clientX, e.clientY);
             this.#startWorldX = wx;
             this.#startWorldY = wy;
             this.#lastWorldX = wx;
@@ -117,41 +117,11 @@ export class Camera {
         this.canvas.updateWorldMatrix();
     }
 
-    // Render: clip = P · V · world
-    // Picking: world = (P · V)⁻¹ · clip
-    private screenToWorld(clientX: number, clientY: number): [number, number] {
-        const rect = this.canvas.canvas.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-
-        // Device pixels relative to canvas
-        const x = (clientX - rect.left) * dpr;
-        const y = (clientY - rect.top) * dpr;
-
-        // Convert to clip space
-        const w = this.canvas.gl.canvas.width;
-        const h = this.canvas.gl.canvas.height;
-        const xClip = (x / w) * 2 - 1;
-        const yClip = (y / h) * -2 + 1;
-
-        // inv(P * V) * clip -> world
-
-        // projection matrix transforms pixel space to clip space
-        const proj = m3.projection(w, h);
-        // view-projection matrix
-        const pv = m3.multiply(proj, this.canvas.worldMatrix); // worldMatrix is view matrix and calculates the matrix to map world-space to clip-space
-
-        // used to unproject and retrieve world coords
-        const invPV = m3.inverse(pv);
-        const [wx, wy] = m3.transformPoint(invPV, [xClip, yClip]);
-
-        return [wx, wy];
-    }
-
     private onWheel = (e: WheelEvent) => {
         e.preventDefault();
 
         // Point under cursor in world space before zoom
-        const [wx0, wy0] = this.screenToWorld(e.clientX, e.clientY);
+        const [wx0, wy0] = this.getWorldCoords(e.clientX, e.clientY);
 
         // Smooth zoom factor (wheel up => zoom in)
         const ZOOM_SPEED = 0.003;
@@ -161,7 +131,7 @@ export class Camera {
         this.zoom = target;
 
         // Same point after zoom
-        const [wx1, wy1] = this.screenToWorld(e.clientX, e.clientY);
+        const [wx1, wy1] = this.getWorldCoords(e.clientX, e.clientY);
 
         // Shift camera so the world point stays under the cursor
         this.x += (wx0 - wx1);
@@ -169,7 +139,7 @@ export class Camera {
     };
 
     private onPointerMove = (e: PointerEvent) => {
-        const [wx, wy] = this.screenToWorld(e.clientX, e.clientY);
+        const [wx, wy] = this.getWorldCoords(e.clientX, e.clientY);
         const dx = wx - this.#lastWorldX;
         const dy = wy - this.#lastWorldY;
 
@@ -193,5 +163,16 @@ export class Camera {
         this.#lastWorldX = wx;
         this.#lastWorldY = wy;
         this.canvas.canvas.style.cursor = 'grabbing'
+    }
+
+    private getWorldCoords(x: number, y: number) {
+        return screenToWorld(
+            x, 
+            y,
+            this.canvas.gl.canvas.width,
+            this.canvas.gl.canvas.height,
+            this.canvas.canvas,
+            this.canvas.worldMatrix,
+        );
     }
 }

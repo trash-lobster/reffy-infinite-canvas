@@ -20,6 +20,8 @@ export function clipToCSS(clipX: number, clipY: number, canvas: HTMLCanvasElemen
     return [x, y];
 }
 
+// Render: clip = P · V · world
+// Picking: world = inverse(P · V) · clip
 export function screenToWorld(clientX: number, clientY: number, w: number, h: number, canvas: HTMLCanvasElement, worldMatrix: number[]): [number, number] {
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;

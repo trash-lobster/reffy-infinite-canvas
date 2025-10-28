@@ -26,3 +26,4 @@
 20251028:
 - Fix multibounding box problem that have inconsistent movement (due to not using set of targets)
 - Add world matrix reference to enable bounding box reaction to camera movement
+- Refactor pointer event to move pointer events control to pointer event manager (including adding and removing images from selection)

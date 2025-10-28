@@ -129,7 +129,7 @@ export class PointerEventManager {
                     }
                     this.canvas._selectionManager.add([child as Rect]);
                     this.canvas.isGlobalClick = false;
-                } else if (this.canvas.hitTest(wx, wy)) {
+                } else {
                     this.canvas._selectionManager.clear();
                 }
             }

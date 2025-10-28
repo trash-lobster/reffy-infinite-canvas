@@ -118,18 +118,8 @@ export class Canvas extends Renderable {
         this.children = [];
     }
 
-	// check with selection manager first, then add images
 	hitTest(x: number, y: number) {
-		for (let i = this.children.length - 1; i >= 0; i--) {
-			const child = this.children[i];
-			if (child instanceof Shape) {
-				if (child.hitTest && child.hitTest(x, y)) {
-					this.isGlobalClick = false;
-					break;
-				}
-			}
-		}
-
+		this.isGlobalClick = true;
 		return this.isGlobalClick;
 	}
 

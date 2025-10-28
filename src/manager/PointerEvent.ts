@@ -111,30 +111,25 @@ export class PointerEventManager {
         this.#lastWorldY = wy;
         this.#lastWorldX = wx;
 
-        // if bounding box is selected
         if (e.button === 2) {
-            e.preventDefault();
+            const child = this.checkCollidingChild(wx, wy);
+            if (child) {
+                this.canvas._selectionManager.remove([child as Rect]);
+            } else if (this.canvas.hitTest(wx, wy)) {
+                this.canvas._selectionManager.clear();
+            }
         } else {
             if (this.canvas._selectionManager.hitTest(wx, wy)) {
                 this.canvas.isGlobalClick = false;
             } else {
-                let isChildAdded = false;
-                // check if any children is clicked
-                for (let i = this.canvas.children.length - 1; i >= 0; i--) {
-                    const child = this.canvas.children[i];
-                    if (child instanceof Shape) {
-                        if (child.hitTest && child.hitTest(wx, wy)) {
-                            if (!e.shiftKey) {                            
-                                this.canvas._selectionManager.clear();
-                            }
-                            this.canvas._selectionManager.add([child as Rect]);
-                            this.canvas.isGlobalClick = false;
-                            isChildAdded = true;
-                            break;
-                        }
+                const child = this.checkCollidingChild(wx, wy);
+                if (child) {
+                    if (!e.shiftKey) {                            
+                        this.canvas._selectionManager.clear();
                     }
-                }
-                if (!isChildAdded && this.canvas.hitTest(wx, wy)) {
+                    this.canvas._selectionManager.add([child as Rect]);
+                    this.canvas.isGlobalClick = false;
+                } else if (this.canvas.hitTest(wx, wy)) {
                     this.canvas._selectionManager.clear();
                 }
             }

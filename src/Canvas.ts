@@ -1,4 +1,4 @@
-import { createProgram, m3, screenToWorld } from './util';
+import { createProgram, m3 } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -11,12 +11,9 @@ import {
 	Shape, 
 	Img, 
 	Renderable, 
-	Grid, 
-	BoundingBox,
+	Grid,
 	Rect,
 } from './shapes';
-import EventEmitter from 'eventemitter3';
-import { EventManager } from './events';
 import { SelectionManager, PointerEventManager } from './manager';
 import { Camera } from './camera';
 
@@ -34,10 +31,8 @@ export class Canvas extends Renderable {
 
 	isGlobalClick = true;
 
-	_emitter: EventEmitter = new EventEmitter();
 	_selectionManager: SelectionManager;
 	_pointerEventManager: PointerEventManager;
-	_eventManager: EventManager = new EventManager(this._emitter);
 	_camera: Camera;
 
 	private orderDirty = true;
@@ -129,9 +124,7 @@ export class Canvas extends Renderable {
 			const child = this.children[i];
 			if (child instanceof Shape) {
 				if (child.hitTest && child.hitTest(x, y)) {
-					this._eventManager.addToImpacted(child);
 					this.isGlobalClick = false;
-					this._selectionManager.add([child as Rect]);
 					break;
 				}
 			}

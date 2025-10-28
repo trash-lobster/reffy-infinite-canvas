@@ -10,7 +10,6 @@ export class SelectionManager {
     private _boundingBox: Set<BoundingBox> = new Set();
     private _multiBoundingBox : MultiBoundingBox;
     renderDirtyFlag = true;
-    private zoomFactor = 1;
 
     private gl: WebGLRenderingContext;
     private rectProgram: WebGLProgram;
@@ -118,6 +117,7 @@ export class SelectionManager {
     clear() {
         this._selected.clear();
         this._boundingBox.clear();
+        this._multiBoundingBox = null;
     }
 
     move(dx: number, dy: number) {

@@ -1,5 +1,5 @@
 import { Canvas } from "Canvas";
-import { Img } from "../shapes";
+import { Img, Rect, Shape } from "../shapes";
 import { 
     getWorldCoords, 
     previewImage
@@ -42,6 +42,7 @@ export class PointerEventManager {
         this.addOnPointerMove();
         this.addOnWheel();
         this.addOnPointerDown();
+        this.canvas.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     }
     
     // #region Add events
@@ -110,7 +111,34 @@ export class PointerEventManager {
         this.#lastWorldY = wy;
         this.#lastWorldX = wx;
 
-        this.canvas.hitTest(wx, wy);
+        // if bounding box is selected
+        if (e.button === 2) {
+            e.preventDefault();
+        } else {
+            if (this.canvas._selectionManager.hitTest(wx, wy)) {
+                this.canvas.isGlobalClick = false;
+            } else {
+                let isChildAdded = false;
+                // check if any children is clicked
+                for (let i = this.canvas.children.length - 1; i >= 0; i--) {
+                    const child = this.canvas.children[i];
+                    if (child instanceof Shape) {
+                        if (child.hitTest && child.hitTest(wx, wy)) {
+                            if (!e.shiftKey) {                            
+                                this.canvas._selectionManager.clear();
+                            }
+                            this.canvas._selectionManager.add([child as Rect]);
+                            this.canvas.isGlobalClick = false;
+                            isChildAdded = true;
+                            break;
+                        }
+                    }
+                }
+                if (!isChildAdded && this.canvas.hitTest(wx, wy)) {
+                    this.canvas._selectionManager.clear();
+                }
+            }
+        }
 
         document.addEventListener('pointermove', this.onPointerMoveWhileDown);
         document.addEventListener('pointerup', this.onPointerUp);
@@ -137,5 +165,17 @@ export class PointerEventManager {
         document.removeEventListener('pointerup', this.onPointerUp);
         this.canvas.isGlobalClick = true;
         this.canvas.canvas.style.cursor = 'default';
+    }
+
+    private checkCollidingChild(wx: number, wy: number) {
+        for (let i = this.canvas.children.length - 1; i >= 0; i--) {
+            const child = this.canvas.children[i];
+            if (child instanceof Shape) {
+                if (child.hitTest && child.hitTest(wx, wy)) {
+                    return child;
+                }
+            }
+        }
+        return null;
     }
 }

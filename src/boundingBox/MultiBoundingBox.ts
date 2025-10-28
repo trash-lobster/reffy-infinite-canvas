@@ -161,6 +161,9 @@ export class MultiBoundingBox {
         for (const type of HANDLE_TYPES) {
             const config = this.getHandleConfig(type);
             const handle = this.handles.get(type);
+
+            const fixedSize = corners.includes(type) ? this.boxSize : this.borderSize;
+
             if (handle) {
                 let [tx, ty] = [config.x, config.y];
                 if (worldMatrix) {
@@ -168,8 +171,8 @@ export class MultiBoundingBox {
                 }
                 handle.x = tx;
                 handle.y = ty;
-                handle.width = config.width * scale;
-                handle.height = config.height * scale;
+                handle.width = corners.includes(type) ? config.width : config.width === this.borderSize ? config.width : config.width * scale;
+                handle.height = corners.includes(type) ? config.height : config.height === this.borderSize ? config.height : config.height * scale;
                 this.isRendering = false;
             }
         }

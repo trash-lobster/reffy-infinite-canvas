@@ -203,6 +203,7 @@ export class BoundingBox {
         for (const type of sides) {
             const config = this.getSideConfig(type);
             const side = this.sides.get(type);
+            // only scale the side that should change, e.g. if it grows horizontally, scale only the width with scale and not height
             if (side) {
                 let [tx, ty] = [config.x, config.y];
                 if (worldMatrix) {
@@ -210,8 +211,8 @@ export class BoundingBox {
                 }
                 side.x = tx;
                 side.y = ty;
-                side.width = config.width * scale;
-                side.height = config.height * scale;
+                side.width = config.width === this.borderSize ? config.width : config.width * scale;
+                side.height = config.height === this.borderSize ? config.height : config.height * scale;
                 side.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
             }
         }

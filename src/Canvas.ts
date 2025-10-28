@@ -73,7 +73,7 @@ export class Canvas extends Renderable {
 		this.children.forEach(child => {
 			child.updateWorldMatrix(this.worldMatrix);
 		})
-		this._selectionManager.update();
+		this._selectionManager.update(this.worldMatrix);
 	}
 
 	render() {
@@ -105,7 +105,7 @@ export class Canvas extends Renderable {
 			renderable.render(this.gl, currentProgram);
 		}
 		
-		this._selectionManager.render();
+		this._selectionManager.render(this.worldMatrix);
 	}
 
 	destroy() {

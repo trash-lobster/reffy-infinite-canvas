@@ -56,3 +56,11 @@ export function getWorldCoords(x: number, y: number, canvas: Canvas) {
         canvas.worldMatrix,
     );
 }
+
+export function applyMatrixToPoint(matrix: number[], x: number, y: number): [number, number] {
+    // Assumes 3x3 matrix, point as [x, y, 1]
+    return [
+        matrix[0] * x + matrix[3] * y + matrix[6],
+        matrix[1] * x + matrix[4] * y + matrix[7]
+    ];
+}

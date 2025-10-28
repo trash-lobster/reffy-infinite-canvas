@@ -6,6 +6,7 @@ import {
     corners, 
     sides,
     BoundingBoxCollisionType,
+    applyMatrixToPoint
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
@@ -113,18 +114,16 @@ export class BoundingBox {
         return null;
     }
 
-    update(cameraZoom?: number) {
+    update(worldMatrix?: number[]) {
         this.borderSize = BORDERPX;
         this.boxSize = HANDLEPX / 2;
-        if (cameraZoom) {
-        }
 
-        this.updateSides();
-        this.updateCorners();
+        this.updateSides(worldMatrix);
+        this.updateCorners(worldMatrix);
     }
 
-    render(gl: WebGLRenderingContext, program: WebGLProgram): void {
-        this.update(1);
+    render(gl: WebGLRenderingContext, program: WebGLProgram, worldMatrix: number[]): void {
+        this.update(worldMatrix);
 
         for (const [key, handle] of this.sides.entries()) {
             handle.render(gl, program);
@@ -171,13 +170,17 @@ export class BoundingBox {
         this.corners.clear();
     }
 
-    private updateCorners() {
+    private updateCorners(worldMatrix?: number[]) {
         for (const type of corners) {
             const config = this.getCornerConfig(type);
             const corner = this.corners.get(type);
             if (corner) {
-                corner.x = config.x;
-                corner.y = config.y;
+                let [tx, ty] = [config.x, config.y];
+                if (worldMatrix) {
+                    [tx, ty] = applyMatrixToPoint(worldMatrix, config.x, config.y);
+                }
+                corner.x = tx;
+                corner.y = ty;
                 corner.width = config.width;
                 corner.height = config.height;
                 corner.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
@@ -193,13 +196,17 @@ export class BoundingBox {
         }
     }
 
-    private updateSides() {
+    private updateSides(worldMatrix?: number[]) {
         for (const type of sides) {
             const config = this.getSideConfig(type);
             const side = this.sides.get(type);
             if (side) {
-                side.x = config.x;
-                side.y = config.y;
+                let [tx, ty] = [config.x, config.y];
+                if (worldMatrix) {
+                    [tx, ty] = applyMatrixToPoint(worldMatrix, config.x, config.y);
+                }
+                side.x = tx;
+                side.y = ty;
                 side.width = config.width;
                 side.height = config.height;
                 side.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;

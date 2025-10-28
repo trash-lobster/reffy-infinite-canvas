@@ -10,6 +10,7 @@ import {
     createOrderedByEndX,
     createOrderedByEndY,
     BoundingBoxCollisionType,
+    applyMatrixToPoint,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 
@@ -66,23 +67,20 @@ export class MultiBoundingBox {
         this.orderByMaxY.remove(shape);
     }
 
-    render(gl: WebGLRenderingContext, program: WebGLProgram): void {
-        this.update();
+    render(gl: WebGLRenderingContext, program: WebGLProgram, worldMatrix: number[]): void {
+        this.update(worldMatrix);
 
         for (const [key, handle] of this.handles.entries()) {
             handle.render(gl, program);
         }
     }
 
-    update() {
+    update(worldMatrix: number[]) {
         this.borderSize = BORDERPX;
         this.boxSize = HANDLEPX / 2;
 
-        // if (cameraZoom) {
-        // }
-
         this.recalculateBounds();
-        this.updateHandles();
+        this.updateHandles(worldMatrix);
     }
 
     destroy(gl: WebGLRenderingContext) {
@@ -92,10 +90,6 @@ export class MultiBoundingBox {
     }
 
     move(dx: number, dy: number) {
-        // this.targets[0].x += dx;
-        // this.targets[0].y += dy;
-        // this.targets[1].x += dx;
-        // this.targets[1].y += dy;
         for (const target of this.targets) {
             target.x += dx;
             target.y += dy;
@@ -160,13 +154,17 @@ export class MultiBoundingBox {
         }
     }
 
-    private updateHandles() {
+    private updateHandles(worldMatrix: number[]) {
         for (const type of HANDLE_TYPES) {
             const config = this.getHandleConfig(type);
             const handle = this.handles.get(type);
             if (handle) {
-                handle.x = config.x;
-                handle.y = config.y;
+                let [tx, ty] = [config.x, config.y];
+                if (worldMatrix) {
+                    [tx, ty] = applyMatrixToPoint(worldMatrix, config.x, config.y);
+                }
+                handle.x = tx;
+                handle.y = ty;
                 handle.width = config.width;
                 handle.height = config.height;
                 this.isRendering = false;

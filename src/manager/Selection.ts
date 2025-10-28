@@ -100,22 +100,18 @@ export class SelectionManager {
     /**
      * Update the existing bounding boxes
      */
-    update(zoomFactor?: number) {
-        if (zoomFactor && zoomFactor !== this.zoomFactor) {
-            this.zoomFactor = zoomFactor;
-            this.renderDirtyFlag = true;
-        }
-        this._boundingBox.forEach(box => box.update(zoomFactor));
+    update(worldMatrix: number[]) {
+        this._boundingBox.forEach(box => box.update(worldMatrix));
     }
 
-    render() {
+    render(worldMatrix? : number[]) {
         if (this.renderDirtyFlag) {
             this.gl.useProgram(this.rectProgram);
-            this._boundingBox.forEach(box => box.render(this.gl, this.rectProgram));
+            this._boundingBox.forEach(box => box.render(this.gl, this.rectProgram, worldMatrix));
         }
 
         if (this._multiBoundingBox) {
-            this._multiBoundingBox.render(this.gl, this.rectProgram);
+            this._multiBoundingBox.render(this.gl, this.rectProgram, worldMatrix);
         }
     }
 

@@ -22,3 +22,7 @@
 - prioritise handle due to hit margin
 - refact multibounding box and bounding box
 - bounding boxes are now moved on pointer drag and move
+
+20251028:
+- Fix multibounding box problem that have inconsistent movement (due to not using set of targets)
+- Add world matrix reference to enable bounding box reaction to camera movement

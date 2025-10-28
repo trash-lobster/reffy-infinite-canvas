@@ -17,7 +17,6 @@ export class SelectionManager {
 
     get selected(): Rect[] { return Array.from(this._selected); }
     set selected(shapes: Rect[]) {
-        // clear out previous set
         this._selected.clear();
 
         shapes.forEach(shape => {
@@ -48,7 +47,6 @@ export class SelectionManager {
             this._boundingBox.forEach(box => box.setPassive());
             
             if (!this._multiBoundingBox) {
-                console.log('bounding box created');
                 this._multiBoundingBox = new MultiBoundingBox();
             }
 
@@ -127,12 +125,11 @@ export class SelectionManager {
     }
 
     move(dx: number, dy: number) {
-        // check if there is multi bounding  box
         if (this._multiBoundingBox) {
-            this._multiBoundingBox.move(dx, dy, this.gl);
+            this._multiBoundingBox.move(dx, dy);
         } else {
             for (const box of this._boundingBox) {
-                box.move(dx, dy, this.gl);
+                box.move(dx, dy);
             }
         }
     }

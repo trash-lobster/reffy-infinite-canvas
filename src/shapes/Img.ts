@@ -42,7 +42,7 @@ export class Img extends Rect {
             this.renderDirtyFlag = true;
         }
     }
-
+    
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
         this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
 

@@ -16,7 +16,7 @@ import { Rect } from "../shapes/Rect";
 const HANDLE_TYPES: BoundingBoxCollisionType[] = [...corners, ...sides] as BoundingBoxCollisionType[];
 
 export class MultiBoundingBox {
-    targets: Rect[] = [];
+    targets: Set<Rect> = new Set();
     x: number;
     y: number;
     width: number;
@@ -24,6 +24,7 @@ export class MultiBoundingBox {
     handles: Map<string, Rect> = new Map(); // unlike regular bounding box, since there is no different modes, there is no need to distinguish sidess and corners
     borderSize: number = 0;
     boxSize: number = 0;
+    isRendering = false;
 
     orderByMinX: OrderedList = createOrderedByStartX();
     orderByMinY: OrderedList = createOrderedByStartY();
@@ -50,7 +51,7 @@ export class MultiBoundingBox {
     }
 
     add(shape: Rect) {
-        this.targets.push(shape);
+        this.targets.add(shape);
         this.orderByMinX.add(shape);
         this.orderByMinY.add(shape);
         this.orderByMaxX.add(shape);
@@ -58,8 +59,7 @@ export class MultiBoundingBox {
     }
 
     remove(shape: Rect) {
-        const idx = this.targets.indexOf(shape);
-        this.targets.splice(idx, 0);
+        this.targets.delete(shape);
         this.orderByMinX.remove(shape);
         this.orderByMinY.remove(shape);
         this.orderByMaxX.remove(shape);
@@ -91,14 +91,14 @@ export class MultiBoundingBox {
         }
     }
 
-    move(dx: number, dy: number, gl: WebGLRenderingContext) {
-        this.x += dx;
-        this.y += dy;
+    move(dx: number, dy: number) {
+        // this.targets[0].x += dx;
+        // this.targets[0].y += dy;
+        // this.targets[1].x += dx;
+        // this.targets[1].y += dy;
         for (const target of this.targets) {
             target.x += dx;
             target.y += dy;
-
-            target.updateVertexData(gl);
         }
     }
 
@@ -162,13 +162,14 @@ export class MultiBoundingBox {
 
     private updateHandles() {
         for (const type of HANDLE_TYPES) {
-            const side = this.getHandleConfig(type);
+            const config = this.getHandleConfig(type);
             const handle = this.handles.get(type);
             if (handle) {
-                handle.x = side.x;
-                handle.y = side.y;
-                handle.width = side.width;
-                handle.height = side.height;
+                handle.x = config.x;
+                handle.y = config.y;
+                handle.width = config.width;
+                handle.height = config.height;
+                this.isRendering = false;
             }
         }
     }

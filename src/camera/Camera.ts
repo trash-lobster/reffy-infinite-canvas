@@ -1,6 +1,5 @@
 import { Canvas } from "Canvas";
-import { getWorldCoords, m3, screenToWorld } from "../util";
-import { Shape } from "../shapes";
+import { getWorldCoords, m3 } from "../util";
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 8;
@@ -13,11 +12,6 @@ export class Camera {
     #height: number = 0;
     #rotation: number = 0;
     #zoom: number = 1;
-
-    #startWorldX: number = 0;
-    #startWorldY: number = 0;
-    #lastWorldX: number = 0;
-    #lastWorldY: number = 0;
 
     get x () { return this.#x };
     set x (val: number) {
@@ -114,33 +108,6 @@ export class Camera {
         // Shift camera so the world point stays under the cursor
         this.x += (wx0 - wx1);
         this.y += (wy0 - wy1);
-    };
-
-    onPointerMove = (e: PointerEvent) => {
-        const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-        const dx = wx - this.#lastWorldX;
-        const dy = wy - this.#lastWorldY;
-
-        if (this.canvas.isGlobalClick) {
-            this.x += this.#startWorldX - wx;
-            this.y += this.#startWorldY - wy;
-        } else {
-            const target = this.canvas._eventManager.impactedShapes.find(
-                (child): child is Shape => child instanceof Shape
-            );
-
-            if (target) {
-                target.x += dx;
-                target.y += dy;
-
-                target.updateVertexData(this.canvas.gl);
-
-            }
-        }
-
-        this.#lastWorldX = wx;
-        this.#lastWorldY = wy;
-        this.canvas.canvas.style.cursor = 'grabbing'
     }
 
     updateCameraPos(dx: number, dy: number) {

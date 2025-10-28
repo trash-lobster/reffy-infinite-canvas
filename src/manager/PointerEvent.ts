@@ -1,6 +1,9 @@
 import { Canvas } from "Canvas";
 import { Img } from "../shapes";
-import { getWorldCoords, previewImage, screenToWorld } from "../util";
+import { 
+    getWorldCoords, 
+    previewImage
+} from "../util";
 
 export interface Point {
     x: number,
@@ -107,7 +110,7 @@ export class PointerEventManager {
         this.#lastWorldY = wy;
         this.#lastWorldX = wx;
 
-        const isGlobalClick = this.canvas.hitTest(wx, wy);
+        this.canvas.hitTest(wx, wy);
 
         document.addEventListener('pointermove', this.onPointerMoveWhileDown);
         document.addEventListener('pointerup', this.onPointerUp);
@@ -121,7 +124,6 @@ export class PointerEventManager {
         if (this.canvas.isGlobalClick) {
             this.canvas._camera.updateCameraPos(this.#startWorldX - wx, this.#startWorldY - wy);
         } else {
-            // selection manager move
             this.canvas._selectionManager.move(dx, dy);
         }
 
@@ -130,11 +132,10 @@ export class PointerEventManager {
         this.canvas.canvas.style.cursor = 'grabbing'; 
     }
 
-    private onPointerUp(e: PointerEvent) {
+    private onPointerUp() {
         document.removeEventListener('pointermove', this.onPointerMoveWhileDown);
         document.removeEventListener('pointerup', this.onPointerUp);
         this.canvas.isGlobalClick = true;
         this.canvas.canvas.style.cursor = 'default';
     }
-
 }

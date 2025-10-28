@@ -6,7 +6,8 @@ import {
     corners, 
     sides,
     BoundingBoxCollisionType,
-    applyMatrixToPoint
+    applyMatrixToPoint,
+    getScaleFromMatrix
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
@@ -197,6 +198,8 @@ export class BoundingBox {
     }
 
     private updateSides(worldMatrix?: number[]) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
+        
         for (const type of sides) {
             const config = this.getSideConfig(type);
             const side = this.sides.get(type);
@@ -207,8 +210,8 @@ export class BoundingBox {
                 }
                 side.x = tx;
                 side.y = ty;
-                side.width = config.width;
-                side.height = config.height;
+                side.width = config.width * scale;
+                side.height = config.height * scale;
                 side.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
             }
         }

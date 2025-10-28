@@ -64,3 +64,8 @@ export function applyMatrixToPoint(matrix: number[], x: number, y: number): [num
         matrix[1] * x + matrix[4] * y + matrix[7]
     ];
 }
+
+export function getScaleFromMatrix(matrix: number[]): number {
+    // For uniform scaling, use sqrt(a^2 + b^2) where a = matrix[0], b = matrix[1]
+    return Math.sqrt(matrix[0] * matrix[0] + matrix[1] * matrix[1]);
+}

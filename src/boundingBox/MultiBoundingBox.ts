@@ -11,6 +11,7 @@ import {
     createOrderedByEndY,
     BoundingBoxCollisionType,
     applyMatrixToPoint,
+    getScaleFromMatrix,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 
@@ -155,6 +156,8 @@ export class MultiBoundingBox {
     }
 
     private updateHandles(worldMatrix: number[]) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
+        
         for (const type of HANDLE_TYPES) {
             const config = this.getHandleConfig(type);
             const handle = this.handles.get(type);
@@ -165,8 +168,8 @@ export class MultiBoundingBox {
                 }
                 handle.x = tx;
                 handle.y = ty;
-                handle.width = config.width;
-                handle.height = config.height;
+                handle.width = config.width * scale;
+                handle.height = config.height * scale;
                 this.isRendering = false;
             }
         }

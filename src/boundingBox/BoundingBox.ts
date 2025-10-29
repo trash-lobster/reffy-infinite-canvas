@@ -34,6 +34,8 @@ export class BoundingBox {
         this.width = edge.maxX - edge.minX;
         this.height = edge.maxY - edge.minY;
         this.mode = mode ?? BoundingBoxMode.ACTIVE;
+        this.borderSize = BORDERPX;
+        this.boxSize = HANDLEPX / 2;
 
         this.addSides();
 
@@ -42,25 +44,30 @@ export class BoundingBox {
         }
     }
 
-    private getSideConfig(type: string) {
+    // TODO: FIX WHY THE POSITION IS OFF WHEN RENDERING THE CORNERS AND SIDE RECTS
+    // the world position (x, y)
+
+    private getSideConfig(type: string, worldMatrix?: number[]) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         const { width, height, borderSize } = this;
         const x = this.target.x, y = this.target.y;
         return {
-            TOP:        { x, y, width, height: borderSize },
-            BOTTOM:     { x, y: y + height - borderSize, width, height: borderSize },
-            LEFT:       { x, y, width: borderSize, height },
-            RIGHT:      { x: x + width - borderSize, y, width: borderSize, height }
+            TOP:        { x, y, width, height: borderSize / scale },
+            BOTTOM:     { x, y: y + height - borderSize / scale, width, height: borderSize / scale },
+            LEFT:       { x, y, width: borderSize / scale, height },
+            RIGHT:      { x: x + width - borderSize / scale, y, width: borderSize / scale, height }
         }[type];
     }
 
-    private getCornerConfig(type: string) {
+    private getCornerConfig(type: string, worldMatrix?: number[]) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         const { width, height, boxSize } = this;
-        const x = this.target.x, y = this.target.y;
+        let x = this.target.x, y = this.target.y;
         return {
-        TOPLEFT:    { x: x - boxSize, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
-            TOPRIGHT:   { x: x - boxSize + width, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMLEFT: { x: x - boxSize, y: y - boxSize + height, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMRIGHT:{ x: x - boxSize + width, y: y - boxSize + height, width: boxSize * 2, height: boxSize * 2 },
+            TOPLEFT:    { x: x - boxSize / scale, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
+            TOPRIGHT:   { x: x - boxSize / scale + width, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMLEFT: { x: x - boxSize / scale, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMRIGHT:{ x: x - boxSize / scale + width, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
         }[type];
     }
 
@@ -86,9 +93,12 @@ export class BoundingBox {
     /**
      * Prioritise collision with corners, then sides, then body
      */
-    hitTest(x: number, y: number): (BoundingBoxCollisionType | null) {
+    hitTest(x: number, y: number, worldMatrix: number[]): (BoundingBoxCollisionType | null) {
         if (this.mode === BoundingBoxMode.PASSIVE) return;
 
+        this.update(worldMatrix);
+
+        // ths hit margin should be in screen size
         const HIT_MARGIN = 4;
 
         for (const type of corners) {
@@ -116,9 +126,6 @@ export class BoundingBox {
     }
 
     update(worldMatrix?: number[]) {
-        this.borderSize = BORDERPX;
-        this.boxSize = HANDLEPX / 2;
-
         this.updateSides(worldMatrix);
         this.updateCorners(worldMatrix);
     }
@@ -173,7 +180,7 @@ export class BoundingBox {
 
     private updateCorners(worldMatrix?: number[]) {
         for (const type of corners) {
-            const config = this.getCornerConfig(type);
+            const config = this.getCornerConfig(type, worldMatrix);
             const corner = this.corners.get(type);
             if (corner) {
                 let [tx, ty] = [config.x, config.y];
@@ -201,7 +208,7 @@ export class BoundingBox {
         const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         
         for (const type of sides) {
-            const config = this.getSideConfig(type);
+            const config = this.getSideConfig(type, worldMatrix);
             const side = this.sides.get(type);
             // only scale the side that should change, e.g. if it grows horizontally, scale only the width with scale and not height
             if (side) {

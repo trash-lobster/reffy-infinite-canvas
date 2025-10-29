@@ -38,17 +38,18 @@ export class MultiBoundingBox {
         this.addHandles();
     }
 
-    private getHandleConfig(type: string) {
+    private getHandleConfig(type: string, worldMatrix?: number[]) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         const { x, y, width, height, borderSize, boxSize } = this;
         return {
             TOP:        { x, y, width, height: borderSize },
-            BOTTOM:     { x, y: y + height - borderSize, width, height: borderSize },
+            BOTTOM:     { x, y: y + height - borderSize / scale, width, height: borderSize },
             LEFT:       { x, y, width: borderSize, height },
-            RIGHT:      { x: x + width - borderSize, y, width: borderSize, height },
-            TOPLEFT:    { x: x - boxSize, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
-            TOPRIGHT:   { x: x - boxSize + width, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMLEFT: { x: x - boxSize, y: y - boxSize + height, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMRIGHT:{ x: x - boxSize + width, y: y - boxSize + height, width: boxSize * 2, height: boxSize * 2 },
+            RIGHT:      { x: x + width - borderSize / scale, y, width: borderSize, height },
+            TOPLEFT:    { x: x - boxSize / scale, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
+            TOPRIGHT:   { x: x - boxSize / scale + width, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMLEFT: { x: x - boxSize / scale, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMRIGHT:{ x: x - boxSize / scale + width, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
         }[type];
     }
 
@@ -159,10 +160,8 @@ export class MultiBoundingBox {
         const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         
         for (const type of HANDLE_TYPES) {
-            const config = this.getHandleConfig(type);
+            const config = this.getHandleConfig(type, worldMatrix);
             const handle = this.handles.get(type);
-
-            const fixedSize = corners.includes(type) ? this.boxSize : this.borderSize;
 
             if (handle) {
                 let [tx, ty] = [config.x, config.y];

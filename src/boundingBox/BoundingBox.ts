@@ -47,8 +47,7 @@ export class BoundingBox {
     // TODO: FIX WHY THE POSITION IS OFF WHEN RENDERING THE CORNERS AND SIDE RECTS
     // the world position (x, y)
 
-    private getSideConfig(type: string, worldMatrix?: number[]) {
-        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
+    private getSideConfig(type: string, scale?: number) {
         const { width, height, borderSize } = this;
         const x = this.target.x, y = this.target.y;
         return {
@@ -59,8 +58,7 @@ export class BoundingBox {
         }[type];
     }
 
-    private getCornerConfig(type: string, worldMatrix?: number[]) {
-        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
+    private getCornerConfig(type: string, scale?: number) {
         const { width, height, boxSize } = this;
         let x = this.target.x, y = this.target.y;
         return {
@@ -179,8 +177,10 @@ export class BoundingBox {
     }
 
     private updateCorners(worldMatrix?: number[]) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
+
         for (const type of corners) {
-            const config = this.getCornerConfig(type, worldMatrix);
+            const config = this.getCornerConfig(type, scale);
             const corner = this.corners.get(type);
             if (corner) {
                 let [tx, ty] = [config.x, config.y];
@@ -208,7 +208,7 @@ export class BoundingBox {
         const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         
         for (const type of sides) {
-            const config = this.getSideConfig(type, worldMatrix);
+            const config = this.getSideConfig(type, scale);
             const side = this.sides.get(type);
             // only scale the side that should change, e.g. if it grows horizontally, scale only the width with scale and not height
             if (side) {

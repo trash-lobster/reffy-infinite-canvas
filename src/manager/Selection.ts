@@ -4,8 +4,10 @@ import {
     MultiBoundingBox, 
     Rect,
 } from "../shapes";
+import { Canvas } from "Canvas";
 
 export class SelectionManager {
+    private canvas: Canvas;
     private _selected: Set<Rect> = new Set();
     private _boundingBox: Set<BoundingBox> = new Set();
     private _multiBoundingBox : MultiBoundingBox;
@@ -20,7 +22,7 @@ export class SelectionManager {
 
         shapes.forEach(shape => {
             this._selected.add(shape)
-            this._boundingBox.add(new BoundingBox(shape));
+            this._boundingBox.add(new BoundingBox(shape, this.canvas.worldMatrix));
         });
     }
 
@@ -28,9 +30,10 @@ export class SelectionManager {
      * @param gl 
      * @param program Add reference to program to allow easy linking
      */
-    constructor(gl: WebGLRenderingContext, program: WebGLProgram) {
+    constructor(gl: WebGLRenderingContext, program: WebGLProgram, canvas: Canvas) {
         this.gl = gl;
         this.rectProgram = program;
+        this.canvas = canvas;
     }
 
     // add, remove selected
@@ -38,7 +41,7 @@ export class SelectionManager {
         shapes.forEach(shape => {
             if (!this._selected.has(shape)) {
                 this._selected.add(shape);
-                this._boundingBox.add(new BoundingBox(shape));
+                this._boundingBox.add(new BoundingBox(shape, this.canvas.worldMatrix));
             }
         })
 
@@ -46,7 +49,7 @@ export class SelectionManager {
             this._boundingBox.forEach(box => box.setPassive());
             
             if (!this._multiBoundingBox) {
-                this._multiBoundingBox = new MultiBoundingBox();
+                this._multiBoundingBox = new MultiBoundingBox([], this.canvas.worldMatrix);
             }
 
             this.selected.forEach(shape => this._multiBoundingBox.add(shape));
@@ -70,7 +73,7 @@ export class SelectionManager {
         })
 
         if (this._boundingBox.size <= 1) {
-            this._boundingBox.forEach(box => box.setActive());
+            this._boundingBox.forEach(box => box.setActive(this.canvas.worldMatrix));
             this._multiBoundingBox = null;
         }
     }
@@ -78,7 +81,7 @@ export class SelectionManager {
     /**
      * Checks first if there is a hit in a multibounding and its handles. If not, check the one bounding box that is active.
      */
-    hitTest(wx: number, wy: number, worldMatrix: number[]): (BoundingBoxCollisionType | null) {        
+    hitTest(wx: number, wy: number): (BoundingBoxCollisionType | null) {        
         if (this._multiBoundingBox) {
             const ans = this._multiBoundingBox.hitTest(wx, wy);
             if (ans) {
@@ -87,7 +90,7 @@ export class SelectionManager {
         }
 
         for (const box of this._boundingBox.values()) {
-            const ans = box.hitTest(wx, wy, worldMatrix);
+            const ans = box.hitTest(wx, wy, this.canvas.worldMatrix);
             if (ans) {
                 return ans;
             }
@@ -99,18 +102,22 @@ export class SelectionManager {
     /**
      * Update the existing bounding boxes
      */
-    update(worldMatrix: number[]) {
-        this._boundingBox.forEach(box => box.update(worldMatrix));
+    update() {
+        this._boundingBox.forEach(box => box.update(this.canvas.worldMatrix));
+
+        if (this._multiBoundingBox) {
+            this._multiBoundingBox.update(this.canvas.worldMatrix);
+        }
     }
 
-    render(worldMatrix? : number[]) {
+    render() {
         if (this.renderDirtyFlag) {
             this.gl.useProgram(this.rectProgram);
-            this._boundingBox.forEach(box => box.render(this.gl, this.rectProgram, worldMatrix));
+            this._boundingBox.forEach(box => box.render(this.gl, this.rectProgram, this.canvas.worldMatrix));
         }
 
         if (this._multiBoundingBox) {
-            this._multiBoundingBox.render(this.gl, this.rectProgram, worldMatrix);
+            this._multiBoundingBox.render(this.gl, this.rectProgram, this.canvas.worldMatrix);
         }
     }
 

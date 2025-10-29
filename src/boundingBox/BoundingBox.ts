@@ -7,7 +7,7 @@ import {
     sides,
     BoundingBoxCollisionType,
     applyMatrixToPoint,
-    getScaleFromMatrix
+    getScaleFromMatrix,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
@@ -28,7 +28,7 @@ export class BoundingBox {
     boxSize: number = 0;
     mode: BoundingBoxMode = BoundingBoxMode.ACTIVE;
     
-    constructor(target: Shape, mode?: BoundingBoxMode) {
+    constructor(target: Shape, worldMatrix: number[], mode?: BoundingBoxMode) {
         this.target = target;
         const edge = this.target.getEdge();
         this.width = edge.maxX - edge.minX;
@@ -40,7 +40,7 @@ export class BoundingBox {
         this.addSides();
 
         if (this.mode === BoundingBoxMode.ACTIVE) {
-            this.addCorners();
+            this.addCorners(worldMatrix);
         }
     }
 
@@ -51,10 +51,10 @@ export class BoundingBox {
         const { width, height, borderSize } = this;
         const x = this.target.x, y = this.target.y;
         return {
-            TOP:        { x, y, width, height: borderSize / scale },
-            BOTTOM:     { x, y: y + height - borderSize / scale, width, height: borderSize / scale },
-            LEFT:       { x, y, width: borderSize / scale, height },
-            RIGHT:      { x: x + width - borderSize / scale, y, width: borderSize / scale, height }
+            TOP:        { x, y, width: width * scale, height: borderSize },
+            BOTTOM:     { x, y: y + height - borderSize / scale, width : width * scale, height: borderSize },
+            LEFT:       { x, y, width: borderSize, height: height * scale },
+            RIGHT:      { x: x + width - borderSize / scale, y, width: borderSize, height: height * scale }
         }[type];
     }
 
@@ -74,9 +74,9 @@ export class BoundingBox {
         this.removeCorners();
     }
 
-    setActive() {
+    setActive(worldMatrix: number[]) {
         this.mode = BoundingBoxMode.ACTIVE;
-        this.addCorners();
+        this.addCorners(worldMatrix);
     }
 
     getPositions(): number[] {
@@ -89,41 +89,42 @@ export class BoundingBox {
     }
 
     /**
-     * Prioritise collision with corners, then sides, then body
+     * x and y should be world position
      */
-    hitTest(x: number, y: number, worldMatrix: number[]): (BoundingBoxCollisionType | null) {
+    hitTest(wx: number, wy: number, worldMatrix: number[]): (BoundingBoxCollisionType | null) {
         if (this.mode === BoundingBoxMode.PASSIVE) return;
 
         this.update(worldMatrix);
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
 
         // ths hit margin should be in screen size
         const HIT_MARGIN = 4;
 
         for (const type of corners) {
             const handle = this.corners.get(type);
-            if (handle && this._expandedHit(handle, x, y, HIT_MARGIN)) {
+            if (handle && this.expandedHit(handle, wx, wy, HIT_MARGIN, scale)) {
                 return type as BoundingBoxCollisionType;
             }
         }
         
         for (const type of sides) {
             const handle = this.sides.get(type);
-            if (handle && this._expandedHit(handle, x, y, HIT_MARGIN)) {
+            if (handle && this.expandedHit(handle, wx, wy, HIT_MARGIN, scale)) {
                 return type as BoundingBoxCollisionType;
             }
         }
 
         if (
-            x >= this.target.x &&
-            x <= this.target.x + this.width &&
-            y >= this.target.y &&
-            y <= this.target.y + this.height
+            wx >= this.target.x &&
+            wx <= this.target.x + this.width &&
+            wy >= this.target.y &&
+            wy <= this.target.y + this.height
         ) return 'CENTER';
         
         return null;
     }
 
-    update(worldMatrix?: number[]) {
+    update(worldMatrix: number[]) {
         this.updateSides(worldMatrix);
         this.updateCorners(worldMatrix);
     }
@@ -155,16 +156,18 @@ export class BoundingBox {
         this.target.y += dy;
     }
 
-    private _expandedHit(handle: Rect, x: number, y: number, margin: number): boolean {
+    private expandedHit(handle: Rect, x: number, y: number, margin: number, scale: number): boolean {
         return (
-            x >= handle.x - margin &&
-            x <= handle.x + handle.width + margin &&
+            x >= handle.x - margin / scale &&
+            x <= handle.x + handle.width + margin / scale &&
             y >= handle.y - margin &&
             y <= handle.y + handle.height + margin
         );
     }
 
-    private addCorners() {
+    private addCorners(worldMatrix: number[]) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
+
         for (const type of corners) {            
             const r = new Rect(this.getCornerConfig(type));
             r.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
@@ -206,7 +209,7 @@ export class BoundingBox {
 
     private updateSides(worldMatrix?: number[]) {
         const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
-        
+        console.log(scale);
         for (const type of sides) {
             const config = this.getSideConfig(type, scale);
             const side = this.sides.get(type);
@@ -215,11 +218,13 @@ export class BoundingBox {
                 let [tx, ty] = [config.x, config.y];
                 if (worldMatrix) {
                     [tx, ty] = applyMatrixToPoint(worldMatrix, config.x, config.y);
+                    console.log(tx, ty);
+                    
                 }
                 side.x = tx;
                 side.y = ty;
-                side.width = config.width === this.borderSize ? config.width : config.width * scale;
-                side.height = config.height === this.borderSize ? config.height : config.height * scale;
+                side.width = config.width;
+                side.height = config.height;
                 side.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
             }
         }

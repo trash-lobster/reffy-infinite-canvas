@@ -55,7 +55,7 @@ export class PointerEventManager {
         this.canvas.canvas.addEventListener('pointermove', (e) => {
             [this.lastPointerPos.x, this.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY, this.canvas);
             
-            const hit = this.canvas._selectionManager.hitTest(this.lastPointerPos.x, this.lastPointerPos.y, this.canvas.worldMatrix);
+            const hit = this.canvas._selectionManager.hitTest(this.lastPointerPos.x, this.lastPointerPos.y);
 			this.canvas.canvas.style.cursor = cursorMap[hit] || 'default';
         });
     }
@@ -119,7 +119,7 @@ export class PointerEventManager {
                 this.canvas._selectionManager.clear();
             }
         } else {
-            if (this.canvas._selectionManager.hitTest(wx, wy, this.canvas.worldMatrix)) {
+            if (this.canvas._selectionManager.hitTest(wx, wy)) {
                 this.canvas.isGlobalClick = false;
             } else {
                 const child = this.checkCollidingChild(wx, wy);

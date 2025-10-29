@@ -33,13 +33,12 @@ export class MultiBoundingBox {
     orderByMaxX: OrderedList = createOrderedByEndX();
     orderByMaxY: OrderedList = createOrderedByEndY();
 
-    constructor(shapes?: Rect[]) {
+    constructor(shapes?: Rect[], worldMatrix?: number[]) {
         if (shapes) shapes.forEach(shape => this.add(shape));
-        this.addHandles();
+        this.addHandles(worldMatrix);
     }
 
-    private getHandleConfig(type: string, worldMatrix?: number[]) {
-        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
+    private getHandleConfig(type: string, scale: number) {
         const { x, y, width, height, borderSize, boxSize } = this;
         return {
             TOP:        { x, y, width, height: borderSize },
@@ -147,20 +146,21 @@ export class MultiBoundingBox {
         );
     }
 
-    private addHandles() {
+    private addHandles(worldMatrix?: number[]) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         for (const type of HANDLE_TYPES) {            
-            const config = this.getHandleConfig(type);
+            const config = this.getHandleConfig(type, scale);
             const rect = new Rect(config);
             rect.color = BASE_BLUE;
             this.handles.set(type, rect);
         }
     }
 
-    private updateHandles(worldMatrix: number[]) {
+    private updateHandles(worldMatrix?: number[]) {
         const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         
         for (const type of HANDLE_TYPES) {
-            const config = this.getHandleConfig(type, worldMatrix);
+            const config = this.getHandleConfig(type, scale);
             const handle = this.handles.get(type);
 
             if (handle) {

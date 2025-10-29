@@ -65,7 +65,6 @@ export class Camera {
             this.#zoom = val;
             this.canvas.grid.zoom = val;
             this.updateViewMatrix();
-            console.log(val);
         }
     }
 

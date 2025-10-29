@@ -53,7 +53,7 @@ export class Canvas extends Renderable {
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 
 		this._camera = new Camera(this);
-		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram);
+		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram, this);
 		this._pointerEventManager = new PointerEventManager(this);
 	}
 
@@ -68,7 +68,7 @@ export class Canvas extends Renderable {
 		this.children.forEach(child => {
 			child.updateWorldMatrix(this.worldMatrix);
 		})
-		this._selectionManager.update(this.worldMatrix);
+		this._selectionManager.update();
 	}
 
 	render() {
@@ -100,7 +100,7 @@ export class Canvas extends Renderable {
 			renderable.render(this.gl, currentProgram);
 		}
 		
-		this._selectionManager.render(this.worldMatrix);
+		this._selectionManager.render();
 	}
 
 	destroy() {

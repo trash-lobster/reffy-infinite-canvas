@@ -83,7 +83,7 @@ export class SelectionManager {
      */
     hitTest(wx: number, wy: number): (BoundingBoxCollisionType | null) {        
         if (this._multiBoundingBox) {
-            const ans = this._multiBoundingBox.hitTest(wx, wy);
+            const ans = this._multiBoundingBox.hitTest(wx, wy, this.canvas.worldMatrix);
             if (ans) {
                 return ans;
             }            

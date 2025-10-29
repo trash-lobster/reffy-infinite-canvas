@@ -17,6 +17,13 @@ import { Rect } from "../shapes/Rect";
 
 const HANDLE_TYPES: BoundingBoxCollisionType[] = [...corners, ...sides] as BoundingBoxCollisionType[];
 
+interface Data {
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+}
+
 export class MultiBoundingBox {
     targets: Set<Rect> = new Set();
     x: number;
@@ -41,16 +48,15 @@ export class MultiBoundingBox {
     private getHandleConfig(type: string, worldMatrix? : number[]) {
         const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         let { x, y, width, height, borderSize, boxSize } = this;
-        [x, y] = applyMatrixToPoint(worldMatrix, x, y);
         return {
             TOP:        { x, y, width: width * scale, height: borderSize },
-            BOTTOM:     { x, y: y + height * scale, width : width * scale, height: borderSize },
+            BOTTOM:     { x, y: y + height, width : width * scale, height: borderSize },
             LEFT:       { x, y, width: borderSize, height: height * scale },
-            RIGHT:      { x: x + width * scale , y, width: borderSize, height: height * scale },
-            TOPLEFT:    { x: x - boxSize, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
-            TOPRIGHT:   { x: x - boxSize + width * scale, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMLEFT: { x: x - boxSize, y: y - boxSize + height * scale, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMRIGHT:{ x: x - boxSize + width * scale, y: y - boxSize + height * scale, width: boxSize * 2, height: boxSize * 2 },
+            RIGHT:      { x: x + width , y, width: borderSize, height: height * scale },
+            TOPLEFT:    { x: x - boxSize / scale, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
+            TOPRIGHT:   { x: x - boxSize / scale + width, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMLEFT: { x: x - boxSize / scale, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMRIGHT:{ x: x - boxSize / scale + width, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
         }[type];
     }
 
@@ -108,12 +114,14 @@ export class MultiBoundingBox {
         ];
     }
 
-    hitTest(x: number, y: number): (BoundingBoxCollisionType | null) {
+    hitTest(x: number, y: number, worldMatrix: number[]): (BoundingBoxCollisionType | null) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         const HIT_MARGIN = 4;
 
         for (const type of HANDLE_TYPES) {
             const handle = this.handles.get(type);
-            if (handle && this.expandedHit(handle, x, y, HIT_MARGIN)) {
+            const config = this.getHandleConfig(type, worldMatrix);
+            if (handle && this.expandedHit(config, x, y, HIT_MARGIN, scale)) {
                 return type;
             }
         }
@@ -139,12 +147,12 @@ export class MultiBoundingBox {
         this.height = maxY.height + maxY.y - minY.y;
     }
 
-    private expandedHit(handle: Rect, x: number, y: number, margin: number): boolean {
+    private expandedHit(config: Data, x: number, y: number, margin: number, scale: number): boolean {
         return (
-            x >= handle.x - margin &&
-            x <= handle.x + handle.width + margin &&
-            y >= handle.y - margin &&
-            y <= handle.y + handle.height + margin
+            x >= config.x - margin / scale &&
+            x <= config.x + config.width / scale + margin / scale &&
+            y >= config.y - margin / scale &&
+            y <= config.y + config.height / scale + margin / scale
         );
     }
 
@@ -161,10 +169,11 @@ export class MultiBoundingBox {
         for (const type of HANDLE_TYPES) {
             const config = this.getHandleConfig(type, worldMatrix);
             const handle = this.handles.get(type);
+            const [x, y] = applyMatrixToPoint(worldMatrix, config.x, config.y);
 
             if (handle) {
-                handle.x = config.x;
-                handle.y = config.y;
+                handle.x = x;
+                handle.y = y;
                 handle.width = config.width;
                 handle.height = config.height;
                 this.isRendering = false;

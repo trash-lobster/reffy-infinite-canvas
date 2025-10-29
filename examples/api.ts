@@ -69,25 +69,13 @@ async function main() {
 
     canvas.appendChild(img);
     canvas.appendChild(img2);
-
-    canvas.attachEventEmitter();
-    // canvas.appendChild(rectangle);
-    // canvas.setBoundingBox(boundingBox);
-
+    
     const render = () => {
         canvas.render();
         requestAnimationFrame(render);
     }
 
     render();
-
-    // const image = (await load(
-    //     'https://i.redd.it/gewlibsk5muf1.jpeg',
-    //     // 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAADElEQVQImWNgoBMAAABpAAFEI8ARAAAAAElFTkSuQmCC',
-    //     ImageLoader,
-    // )) as ImageBitmap;
-
-    let imageCount = 1;
 
     window.addEventListener('beforeunload', () => {
         canvas.destroy();

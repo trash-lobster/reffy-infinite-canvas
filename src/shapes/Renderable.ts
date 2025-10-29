@@ -16,17 +16,6 @@ export abstract class Renderable {
         
     renderDirtyFlag: boolean = true;
 
-    attachEventEmitter() {
-        if (!this._emitter) {
-            console.error('Emitter has not been initialised.')
-            return;
-        }
-
-        this.children.forEach(child => {
-            child._emitter = this._emitter;
-        })
-    }
-
     appendChild<T extends Renderable>(child: T): T {
         child.setParent(this);
 		if (!child._emitter && this._emitter) child._emitter = this._emitter;

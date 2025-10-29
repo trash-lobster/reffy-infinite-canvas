@@ -17,6 +17,13 @@ enum BoundingBoxMode {
     PASSIVE,    // when just display the rect but not the corner handles - no direct interaction allowed
 }
 
+interface Data {
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+}
+
 // different from multi bounding box, the corners and handles are separated here because they need to be individually toggled
 export class BoundingBox {
     target: Shape;
@@ -51,12 +58,11 @@ export class BoundingBox {
         const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         const { width, height, borderSize } = this;
         let x = this.target.x, y = this.target.y;
-        [x, y] = applyMatrixToPoint(worldMatrix, x, y);
         return {
             TOP:        { x, y, width: width * scale, height: borderSize },
-            BOTTOM:     { x, y: y + height * scale, width : width * scale, height: borderSize },
+            BOTTOM:     { x, y: y + height, width : width * scale, height: borderSize },
             LEFT:       { x, y, width: borderSize, height: height * scale },
-            RIGHT:      { x: x + width * scale , y, width: borderSize, height: height * scale }
+            RIGHT:      { x: x + width , y, width: borderSize, height: height * scale }
         }[type];
     }
 
@@ -64,12 +70,11 @@ export class BoundingBox {
         const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         const { width, height, boxSize } = this;
         let x = this.target.x, y = this.target.y;
-        [x, y] = applyMatrixToPoint(worldMatrix, x, y);
         return {
-            TOPLEFT:    { x: x - boxSize, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
-            TOPRIGHT:   { x: x - boxSize + width * scale, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMLEFT: { x: x - boxSize, y: y - boxSize + height * scale, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMRIGHT:{ x: x - boxSize + width * scale, y: y - boxSize + height * scale, width: boxSize * 2, height: boxSize * 2 },
+            TOPLEFT:    { x: x - boxSize / scale, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
+            TOPRIGHT:   { x: x - boxSize / scale + width, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMLEFT: { x: x - boxSize / scale, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMRIGHT:{ x: x - boxSize / scale + width, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
         }[type];
     }
 
@@ -104,14 +109,16 @@ export class BoundingBox {
 
         for (const type of corners) {
             const handle = this.corners.get(type);
-            if (handle && this.expandedHit(handle, wx, wy, HIT_MARGIN, scale)) {
+            const config = this.getCornerConfig(type, worldMatrix);
+            if (handle && this.expandedHit(config, wx, wy, HIT_MARGIN, scale)) {
                 return type as BoundingBoxCollisionType;
             }
         }
         
         for (const type of sides) {
             const handle = this.sides.get(type);
-            if (handle && this.expandedHit(handle, wx, wy, HIT_MARGIN, scale)) {
+            const config = this.getSideConfig(type, worldMatrix);
+            if (handle && this.expandedHit(config, wx, wy, HIT_MARGIN, scale)) {
                 return type as BoundingBoxCollisionType;
             }
         }
@@ -158,12 +165,13 @@ export class BoundingBox {
         this.target.y += dy;
     }
 
-    private expandedHit(handle: Rect, x: number, y: number, margin: number, scale: number): boolean {
+    private expandedHit(config: Data, x: number, y: number, margin: number, scale: number): boolean {
+
         return (
-            x >= handle.x - margin &&
-            x <= handle.x + handle.width + margin &&
-            y >= handle.y - margin &&
-            y <= handle.y + handle.height + margin
+            x >= config.x - margin / scale &&
+            x <= config.x + config.width / scale + margin / scale &&
+            y >= config.y - margin / scale &&
+            y <= config.y + config.height / scale + margin / scale
         );
     }
 
@@ -185,9 +193,11 @@ export class BoundingBox {
         for (const type of corners) {
             const config = this.getCornerConfig(type, worldMatrix);
             const corner = this.corners.get(type);
+            const [x, y] = applyMatrixToPoint(worldMatrix, config.x, config.y);
+
             if (corner) {
-                corner.x = config.x;
-                corner.y = config.y;
+                corner.x = x;
+                corner.y = y;
                 corner.width = config.width;
                 corner.height = config.height;
                 corner.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
@@ -209,10 +219,12 @@ export class BoundingBox {
         for (const type of sides) {
             const config = this.getSideConfig(type, worldMatrix);
             const side = this.sides.get(type);
+            const [x, y] = applyMatrixToPoint(worldMatrix, config.x, config.y);
+
             // only scale the side that should change, e.g. if it grows horizontally, scale only the width with scale and not height
             if (side) {
-                side.x = config.x;
-                side.y = config.y;
+                side.x = x;
+                side.y = y;
                 side.width = config.width;
                 side.height = config.height;
                 side.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;

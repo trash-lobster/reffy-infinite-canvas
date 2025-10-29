@@ -165,6 +165,38 @@ export class BoundingBox {
         this.target.y += dy;
     }
 
+    resize(
+        dx: number, 
+        dy: number, 
+        direction: BoundingBoxCollisionType
+    ) {
+        if (this.target instanceof Rect) {
+
+            // move the x and y if the correct one is touched
+            if (direction === 'LEFT' || direction === 'TOPLEFT' || direction === 'BOTTOMLEFT') {                
+                this.target.x += dx;
+                this.target.width -= dx;
+                this.width -= dx;
+            }
+            
+            if (direction === 'RIGHT' || direction === 'TOPRIGHT' || direction === 'BOTTOMRIGHT') {
+                this.target.width += dx;
+                this.width += dx;
+            }
+            
+            if (direction === 'TOP' || direction === 'TOPLEFT' || direction === 'TOPRIGHT') {
+                this.target.y += dy;
+                this.target.height -= dy;
+                this.height -= dy;
+            }
+
+            if (direction === 'BOTTOM' || direction === 'BOTTOMLEFT' || direction === 'BOTTOMRIGHT') {
+                this.target.height += dy;
+                this.height += dy;
+            }
+        }
+    }
+
     private expandedHit(config: Data, x: number, y: number, margin: number, scale: number): boolean {
 
         return (

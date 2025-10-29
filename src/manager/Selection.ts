@@ -136,4 +136,10 @@ export class SelectionManager {
             }
         }
     }
+
+    resize(dx: number, dy: number, direction: BoundingBoxCollisionType) {
+        for (const box of this._boundingBox) {
+            box.resize(dx, dy, direction);
+        }
+    }
 }

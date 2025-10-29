@@ -1,6 +1,7 @@
 import { Canvas } from "Canvas";
 import { Img, Rect, Shape } from "../shapes";
 import { 
+    BoundingBoxCollisionType,
     getWorldCoords, 
     previewImage
 } from "../util";
@@ -30,6 +31,8 @@ export class PointerEventManager {
     #startWorldY: number = 0;
     #lastWorldX: number = 0;
     #lastWorldY: number = 0;
+
+    resizingDirection: BoundingBoxCollisionType | null = null;
 
     constructor(canvas: Canvas) {
         this.canvas = canvas;
@@ -110,6 +113,7 @@ export class PointerEventManager {
         this.#startWorldY = wy;
         this.#lastWorldY = wy;
         this.#lastWorldX = wx;
+        this.resizingDirection = null;
 
         if (e.button === 2) {
             const child = this.checkCollidingChild(wx, wy);
@@ -119,7 +123,12 @@ export class PointerEventManager {
                 this.canvas._selectionManager.clear();
             }
         } else {
-            if (this.canvas._selectionManager.hitTest(wx, wy)) {
+            const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
+            if (boundingBoxType) {
+                // hit test to first check if the handle is selected
+                if (boundingBoxType !== 'CENTER') {
+                    this.resizingDirection = boundingBoxType;
+                }
                 this.canvas.isGlobalClick = false;
             } else {
                 const child = this.checkCollidingChild(wx, wy);
@@ -146,6 +155,8 @@ export class PointerEventManager {
 
         if (this.canvas.isGlobalClick) {
             this.canvas._camera.updateCameraPos(this.#startWorldX - wx, this.#startWorldY - wy);
+        } else if (this.resizingDirection) {
+            this.canvas._selectionManager.resize(dx, dy, this.resizingDirection);
         } else {
             this.canvas._selectionManager.move(dx, dy);
         }

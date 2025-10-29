@@ -11,18 +11,7 @@ import {
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
-
-enum BoundingBoxMode {
-    ACTIVE,     // direct interaction allowed
-    PASSIVE,    // when just display the rect but not the corner handles - no direct interaction allowed
-}
-
-interface Data {
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-}
+import { BoundingBoxMode, PositionData } from "./type";
 
 // different from multi bounding box, the corners and handles are separated here because they need to be individually toggled
 export class BoundingBox {
@@ -197,7 +186,7 @@ export class BoundingBox {
         }
     }
 
-    private expandedHit(config: Data, x: number, y: number, margin: number, scale: number): boolean {
+    private expandedHit(config: PositionData, x: number, y: number, margin: number, scale: number): boolean {
 
         return (
             x >= config.x - margin / scale &&

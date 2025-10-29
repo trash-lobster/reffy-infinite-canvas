@@ -14,15 +14,9 @@ import {
     getScaleFromMatrix,
 } from "../util";
 import { Rect } from "../shapes/Rect";
+import { PositionData } from "./type";
 
 const HANDLE_TYPES: BoundingBoxCollisionType[] = [...corners, ...sides] as BoundingBoxCollisionType[];
-
-interface Data {
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-}
 
 export class MultiBoundingBox {
     targets: Set<Rect> = new Set();
@@ -147,7 +141,7 @@ export class MultiBoundingBox {
         this.height = maxY.height + maxY.y - minY.y;
     }
 
-    private expandedHit(config: Data, x: number, y: number, margin: number, scale: number): boolean {
+    private expandedHit(config: PositionData, x: number, y: number, margin: number, scale: number): boolean {
         return (
             x >= config.x - margin / scale &&
             x <= config.x + config.width / scale + margin / scale &&

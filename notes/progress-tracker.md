@@ -27,3 +27,8 @@
 - Fix multibounding box problem that have inconsistent movement (due to not using set of targets)
 - Add world matrix reference to enable bounding box reaction to camera movement
 - Refactor pointer event to move pointer events control to pointer event manager (including adding and removing images from selection)
+
+20251029:
+- Fix bounding box edges and corners not showing up at the right place (visual scaling problem)
+- Fix bounding box (and multi bounding box) pointer hovering issue (the problem was because the dimensions of the bounding box boxes were not scaling properly with the world matrix)
+- Add resizing capability for single bounding boxes

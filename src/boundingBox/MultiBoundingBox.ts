@@ -38,17 +38,19 @@ export class MultiBoundingBox {
         this.addHandles(worldMatrix);
     }
 
-    private getHandleConfig(type: string, scale: number) {
-        const { x, y, width, height, borderSize, boxSize } = this;
+    private getHandleConfig(type: string, worldMatrix? : number[]) {
+        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
+        let { x, y, width, height, borderSize, boxSize } = this;
+        [x, y] = applyMatrixToPoint(worldMatrix, x, y);
         return {
-            TOP:        { x, y, width, height: borderSize },
-            BOTTOM:     { x, y: y + height - borderSize / scale, width, height: borderSize },
-            LEFT:       { x, y, width: borderSize, height },
-            RIGHT:      { x: x + width - borderSize / scale, y, width: borderSize, height },
-            TOPLEFT:    { x: x - boxSize / scale, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
-            TOPRIGHT:   { x: x - boxSize / scale + width, y: y - boxSize / scale, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMLEFT: { x: x - boxSize / scale, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
-            BOTTOMRIGHT:{ x: x - boxSize / scale + width, y: y - boxSize / scale + height, width: boxSize * 2, height: boxSize * 2 },
+            TOP:        { x, y, width: width * scale, height: borderSize },
+            BOTTOM:     { x, y: y + height * scale, width : width * scale, height: borderSize },
+            LEFT:       { x, y, width: borderSize, height: height * scale },
+            RIGHT:      { x: x + width * scale , y, width: borderSize, height: height * scale },
+            TOPLEFT:    { x: x - boxSize, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
+            TOPRIGHT:   { x: x - boxSize + width * scale, y: y - boxSize, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMLEFT: { x: x - boxSize, y: y - boxSize + height * scale, width: boxSize * 2, height: boxSize * 2 },
+            BOTTOMRIGHT:{ x: x - boxSize + width * scale, y: y - boxSize + height * scale, width: boxSize * 2, height: boxSize * 2 },
         }[type];
     }
 
@@ -147,9 +149,8 @@ export class MultiBoundingBox {
     }
 
     private addHandles(worldMatrix?: number[]) {
-        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
         for (const type of HANDLE_TYPES) {            
-            const config = this.getHandleConfig(type, scale);
+            const config = this.getHandleConfig(type, worldMatrix);
             const rect = new Rect(config);
             rect.color = BASE_BLUE;
             this.handles.set(type, rect);
@@ -157,21 +158,15 @@ export class MultiBoundingBox {
     }
 
     private updateHandles(worldMatrix?: number[]) {
-        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
-        
         for (const type of HANDLE_TYPES) {
-            const config = this.getHandleConfig(type, scale);
+            const config = this.getHandleConfig(type, worldMatrix);
             const handle = this.handles.get(type);
 
             if (handle) {
-                let [tx, ty] = [config.x, config.y];
-                if (worldMatrix) {
-                    [tx, ty] = applyMatrixToPoint(worldMatrix, config.x, config.y);
-                }
-                handle.x = tx;
-                handle.y = ty;
-                handle.width = corners.includes(type) ? config.width : config.width === this.borderSize ? config.width : config.width * scale;
-                handle.height = corners.includes(type) ? config.height : config.height === this.borderSize ? config.height : config.height * scale;
+                handle.x = config.x;
+                handle.y = config.y;
+                handle.width = config.width;
+                handle.height = config.height;
                 this.isRendering = false;
             }
         }

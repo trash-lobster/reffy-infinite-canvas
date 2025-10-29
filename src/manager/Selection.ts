@@ -78,7 +78,7 @@ export class SelectionManager {
     /**
      * Checks first if there is a hit in a multibounding and its handles. If not, check the one bounding box that is active.
      */
-    hitTest(wx: number, wy: number): (BoundingBoxCollisionType | null) {
+    hitTest(wx: number, wy: number, worldMatrix: number[]): (BoundingBoxCollisionType | null) {        
         if (this._multiBoundingBox) {
             const ans = this._multiBoundingBox.hitTest(wx, wy);
             if (ans) {
@@ -87,7 +87,7 @@ export class SelectionManager {
         }
 
         for (const box of this._boundingBox.values()) {
-            const ans = box.hitTest(wx, wy);
+            const ans = box.hitTest(wx, wy, worldMatrix);
             if (ans) {
                 return ans;
             }

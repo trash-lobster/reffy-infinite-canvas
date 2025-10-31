@@ -86,9 +86,8 @@ export abstract class Shape extends WebGLRenderable {
     }
     
     protected draw(gl: WebGLRenderingContext) {
-        gl.enableVertexAttribArray(this.attributeLocation);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-
+        
         // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
         const size = 2;          // 2 components per iteration since it's a vec2D
         const type = gl.FLOAT;   // the data is 32bit floats
@@ -97,6 +96,8 @@ export abstract class Shape extends WebGLRenderable {
         const offset = 0;        // start at the beginning of the buffer
         gl.vertexAttribPointer(
             this.attributeLocation, size, type, normalize, stride, offset);
+        
+        gl.enableVertexAttribArray(this.attributeLocation);
         
         gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
     }

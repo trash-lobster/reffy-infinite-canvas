@@ -139,8 +139,7 @@ export class Img extends Rect {
     
     protected draw(gl: WebGLRenderingContext) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-        gl.enableVertexAttribArray(this.attributeLocation);
-
+        
         const size = 2;          // 2 components per iteration since it's a vec2D
         const type = gl.FLOAT;   // the data is 32bit floats
         const normalize = false; // don't normalize the data
@@ -149,13 +148,14 @@ export class Img extends Rect {
         
         gl.vertexAttribPointer(
             this.attributeLocation, size, type, normalize, stride, offset);
+        gl.enableVertexAttribArray(this.attributeLocation);
             
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
-        gl.enableVertexAttribArray(this.texcoordLocation);
-
+        
         gl.vertexAttribPointer(
             this.texcoordLocation, size, type, normalize, stride, offset);
+        gl.enableVertexAttribArray(this.texcoordLocation);
             
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, this.texture);

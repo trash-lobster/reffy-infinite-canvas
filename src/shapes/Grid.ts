@@ -68,8 +68,8 @@ export class Grid extends WebGLRenderable {
             throw new Error("Attribute a_Position not found in grid program");
         }
 
-        gl.enableVertexAttribArray(loc);
         gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(loc);
 
         // Draw the fullscreen triangle
         gl.drawArrays(gl.TRIANGLES, 0, this.vertexCount);
@@ -95,7 +95,7 @@ export class Grid extends WebGLRenderable {
         this.zoomScaleLocation = gl.getUniformLocation(program, "u_ZoomScale");
         this.checkboardStyleLocation = gl.getUniformLocation(program, "u_CheckboardStyle");
 
-         gl.uniformMatrix3fv(this.viewProjectionInvLocation,  false, I3);
+        gl.uniformMatrix3fv(this.viewProjectionInvLocation,  false, I3);
         gl.uniform1f(this.zoomScaleLocation, this.zoom);
         gl.uniform1f(this.checkboardStyleLocation, 1.0);   
     }

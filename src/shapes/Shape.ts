@@ -57,7 +57,6 @@ export abstract class Shape extends WebGLRenderable {
     color: [number, number, number, number] = [1, 0, 0.5, 1]; // default reddish-purple
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
-        // camera's matrix is not updated  
         this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
         
         gl.useProgram(program);
@@ -73,7 +72,6 @@ export abstract class Shape extends WebGLRenderable {
         }
 
         this.updateUniforms(gl);
-        // Set color uniform if present
         const uColor = gl.getUniformLocation(program, "u_color");
         if (uColor) {
             gl.uniform4fv(uColor, this.color);

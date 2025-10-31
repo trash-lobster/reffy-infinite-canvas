@@ -46,15 +46,19 @@ export class Rect extends Shape {
     }
 
     hitTest(x: number, y: number): boolean {
-        // Handle negative width/height and include edges with a small epsilon
-        const left = Math.min(this.x, this.x + this.width);
-        const right = Math.max(this.x, this.x + this.width);
-        const top = Math.min(this.y, this.y + this.height);
-        const bottom = Math.max(this.y, this.y + this.height);
-        const eps = 1e-8;
+        const matrix = m3.multiply(this.parent.worldMatrix, this.localMatrix);
+        const scale = getScaleFromMatrix(matrix);
 
-        if (x < left - eps || x > right + eps) return false;
-        if (y < top - eps || y > bottom + eps) return false;
-        return true;
+        // Transform the input point to the rectangle's local space
+        const [hx, hy] = applyMatrixToPoint(this.parent.worldMatrix, x, y);
+        
+        const [cx, cy] = applyMatrixToPoint(matrix, this.x, this.y);
+
+        return (
+            hx >= cx &&
+            hx <= cx + this.width * scale &&
+            hy >= cy &&
+            hy <= cy + this.height * scale
+        );
     }
 }

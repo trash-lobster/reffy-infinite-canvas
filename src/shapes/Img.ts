@@ -95,19 +95,6 @@ export class Img extends Rect {
         ];
     }
 
-    hitTest(x: number, y: number): boolean {
-        // Handle negative width/height and include edges with a small epsilon
-        const left = Math.min(this.x, this.x + this.width);
-        const right = Math.max(this.x, this.x + this.width);
-        const top = Math.min(this.y, this.y + this.height);
-        const bottom = Math.max(this.y, this.y + this.height);
-        const eps = 1e-8;
-
-        if (x < left - eps || x > right + eps) return false;
-        if (y < top - eps || y > bottom + eps) return false;
-        return true;
-    }
-
     updateVertexData(gl: WebGLRenderingContext) {
         super.updateVertexData(gl);
 

@@ -6,7 +6,9 @@ export abstract class Renderable {
     angleRadians: number = 0;
     scale: number[] = [1, 1];
 
+    // manages pan, zoom and rotation
     localMatrix: number[] = m3.identity();
+    // the canvas transformation -> transform word coordinates into screen coordinates
     worldMatrix: number[] = m3.identity();
 
     children: Renderable[] = [];
@@ -36,7 +38,6 @@ export abstract class Renderable {
         const rotationMatrix = m3.rotation(this.angleRadians);
         const scaleMatrix = m3.scaling(this.scale[0], this.scale[1]);
         
-        // Multiply the matrices.
         const matrix = m3.multiply(translationMatrix, rotationMatrix);
         this.localMatrix = m3.multiply(matrix, scaleMatrix);
 

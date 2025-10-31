@@ -97,15 +97,12 @@ export class MultiBoundingBox {
             target.x += dx;
             target.y += dy;
         }
-        this.recalculateBounds();
-        // this.update(worldMatrix);
     }
 
     resize(
         dx: number, 
         dy: number, 
         direction: BoundingBoxCollisionType,
-        worldMatrix: number[],
     ) {
         let scaleX = (this.width + dx) / this.width;
         let scaleY = (this.height + dy) / this.height;
@@ -137,7 +134,6 @@ export class MultiBoundingBox {
 
         this.height += dy;
         this.width += dx;
-        this.update(worldMatrix);
     }
 
     getPositions(): number[] {

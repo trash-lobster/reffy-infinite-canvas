@@ -143,11 +143,11 @@ export class SelectionManager {
         }
 
         for (const box of this._boundingBox) {
-            // if (this._multiBoundingBox) {
-            //     box.update(this.canvas.worldMatrix);
-            // } else {
-            // }
-            box.resize(dx, dy, direction);
+            if (this._multiBoundingBox) {
+                box.update(this.canvas.worldMatrix);
+            } else {
+                box.resize(dx, dy, direction);
+            }
         }
     }
 }

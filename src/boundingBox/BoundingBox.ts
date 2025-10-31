@@ -26,9 +26,7 @@ export class BoundingBox {
     
     constructor(target: Shape, worldMatrix: number[], mode?: BoundingBoxMode) {
         this.target = target;
-        const edge = this.target.getEdge();
-        this.width = edge.maxX - edge.minX;
-        this.height = edge.maxY - edge.minY;
+        this.setDimension();
         this.mode = mode ?? BoundingBoxMode.ACTIVE;
         this.borderSize = BORDERPX;
         this.boxSize = HANDLEPX / 2;
@@ -40,8 +38,11 @@ export class BoundingBox {
         }
     }
 
-    // TODO: FIX WHY THE POSITION IS OFF WHEN RENDERING THE CORNERS AND SIDE RECTS
-    // the world position (x, y)
+    private setDimension() {
+        const edge = this.target.getEdge();
+        this.width = edge.maxX - edge.minX;
+        this.height = edge.maxY - edge.minY;
+    }
 
     private getSideConfig(type: string, worldMatrix?: number[]) {
         const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
@@ -235,8 +236,7 @@ export class BoundingBox {
     }
 
     private updateSides(worldMatrix?: number[]) {
-        const scale = worldMatrix ? getScaleFromMatrix(worldMatrix) : 1;
-
+        this.setDimension();
         for (const type of sides) {
             const config = this.getSideConfig(type, worldMatrix);
             const side = this.sides.get(type);

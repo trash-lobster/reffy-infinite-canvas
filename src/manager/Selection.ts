@@ -138,7 +138,15 @@ export class SelectionManager {
     }
 
     resize(dx: number, dy: number, direction: BoundingBoxCollisionType) {
+        if (this._multiBoundingBox) {
+            this._multiBoundingBox.resize(dx, dy, direction, this.canvas.worldMatrix);
+        }
+
         for (const box of this._boundingBox) {
+            // if (this._multiBoundingBox) {
+            //     box.update(this.canvas.worldMatrix);
+            // } else {
+            // }
             box.resize(dx, dy, direction);
         }
     }

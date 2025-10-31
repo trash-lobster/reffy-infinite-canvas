@@ -97,6 +97,47 @@ export class MultiBoundingBox {
             target.x += dx;
             target.y += dy;
         }
+        this.recalculateBounds();
+        // this.update(worldMatrix);
+    }
+
+    resize(
+        dx: number, 
+        dy: number, 
+        direction: BoundingBoxCollisionType,
+        worldMatrix: number[],
+    ) {
+        let scaleX = (this.width + dx) / this.width;
+        let scaleY = (this.height + dy) / this.height;
+
+        let anchorX = this.x;
+        let anchorY = this.y;
+
+        if (direction.includes('TOP')) {
+            anchorY = this.y + this.height;
+            const newHeight = this.height - dy;
+            scaleY = newHeight / this.height;
+        }
+
+        if (direction.includes('LEFT')) {
+            anchorX = this.x + this.width;
+            const newWidth = this.width - dx;
+            scaleX = newWidth / this.width;
+        }
+
+        for (const target of this.targets) {
+            const offsetX = target.x - anchorX;
+            const offsetY = target.y - anchorY;
+
+            target.x = direction === 'BOTTOM' || direction === 'TOP' ? target.x : anchorX + offsetX * scaleX;
+            target.y = direction === 'LEFT' || direction === 'RIGHT' ? target.y : anchorY + offsetY * scaleY;
+            target.width *= direction === 'BOTTOM' || direction === 'TOP' ? 1 : scaleX;
+            target.height *= direction === 'LEFT' || direction === 'RIGHT' ? 1 :scaleY;
+        }
+
+        this.height += dy;
+        this.width += dx;
+        this.update(worldMatrix);
     }
 
     getPositions(): number[] {
@@ -137,6 +178,7 @@ export class MultiBoundingBox {
 
         this.x = minX.x;
         this.y = minY.y;
+
         this.width = maxX.width + maxX.x - minX.x;
         this.height = maxY.height + maxY.y - minY.y;
     }

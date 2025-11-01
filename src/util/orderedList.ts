@@ -1,4 +1,5 @@
-import { Rect, Shape } from "shapes";
+import { Rect } from "shapes";
+import { applyMatrixToPoint } from "../util";
 
 export class OrderedList {
     private shapes: Rect[] = [];
@@ -52,19 +53,25 @@ export class OrderedList {
 }
 
 function getX(shape: Rect) {
-    return shape.x;
+    const [tx, ] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y);
+    return tx;
 }
 
 function getY(shape: Rect) {
-    return shape.y;
+    const [, ty] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y);
+    return ty;
 }
 
 function getWidth(shape: Rect) {
-    return shape.x + shape.width;
+    const [startX, ] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y);
+    const [endX, ] = applyMatrixToPoint(shape.localMatrix, shape.x + shape.width, shape.y);
+    return endX - startX;
 }
 
 function getHeight(shape: Rect) {
-    return shape.y + shape.height;
+    const [, startY] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y);
+    const [, endY] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y + shape.height);
+    return endY - startY;
 }
 
 

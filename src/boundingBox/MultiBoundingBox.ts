@@ -94,8 +94,7 @@ export class MultiBoundingBox {
 
     move(dx: number, dy: number) {
         for (const target of this.targets) {
-            target.x += dx;
-            target.y += dy;
+            target.setTranslation(dx, dy);
         }
     }
 
@@ -172,8 +171,8 @@ export class MultiBoundingBox {
         const maxX = this.orderByMaxX.getMax();
         const maxY = this.orderByMaxY.getMax();
 
-        this.x = minX.x;
-        this.y = minY.y;
+        this.x = applyMatrixToPoint(minX.localMatrix, minX.x, minX.y)[0];
+        this.y = applyMatrixToPoint(minY.localMatrix, minY.x, minY.y)[1];
 
         this.width = maxX.width + maxX.x - minX.x;
         this.height = maxY.height + maxY.y - minY.y;

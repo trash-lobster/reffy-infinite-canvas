@@ -1,3 +1,4 @@
+import { m3, getScaleFromMatrix, applyMatrixToPoint } from "../util";
 import { Shape } from "./Shape";
 
 export class Rect extends Shape {
@@ -21,27 +22,28 @@ export class Rect extends Shape {
     }
 
     getPositions(): number[] {
-        const left = this.x;
-        const right = this.x + this.width;
-        const top = this.y;
-        const bottom = this.y + this.height;
+        const left = 0;
+        const top = 0;
+        const right = this.width;
+        const bottom = this.height;
 
         return [
-            left, top,      // top-left
-            left, bottom,   // bottom-left  
-            right, top,     // top-right
-            right, top,     // top-right
-            left, bottom,   // bottom-left
-            right, bottom   // bottom-right
+            left,  top,      // top-left
+            left,  bottom,   // bottom-left  
+            right, top,      // top-right
+            right, top,      // top-right
+            left,  bottom,   // bottom-left
+            right, bottom    // bottom-right
         ];
     }
 
     getEdge() {
+        const [x, y] = this.translation;
         return {
-            minX: Math.min(this.x, this.x + this.width),
-            maxX: Math.max(this.x, this.x + this.width),
-            minY: Math.min(this.y, this.y + this.height),
-            maxY: Math.max(this.y, this.y + this.height),
+            minX: Math.min(x, x + this.width),
+            maxX: Math.max(x, x + this.width),
+            minY: Math.min(y, y + this.height),
+            maxY: Math.max(y, y + this.height),
         }
     }
 
@@ -52,7 +54,7 @@ export class Rect extends Shape {
         // Transform the input point to the rectangle's local space
         const [hx, hy] = applyMatrixToPoint(this.parent.worldMatrix, x, y);
         
-        const [cx, cy] = applyMatrixToPoint(matrix, this.x, this.y);
+        const [cx, cy] = applyMatrixToPoint(matrix);
 
         return (
             hx >= cx &&

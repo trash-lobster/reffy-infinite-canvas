@@ -22,7 +22,7 @@ export class SelectionManager {
 
         shapes.forEach(shape => {
             this._selected.add(shape)
-            this._boundingBox.add(new BoundingBox(shape, this.canvas.worldMatrix));
+            this._boundingBox.add(new BoundingBox(shape));
         });
     }
 
@@ -41,7 +41,7 @@ export class SelectionManager {
         shapes.forEach(shape => {
             if (!this._selected.has(shape)) {
                 this._selected.add(shape);
-                this._boundingBox.add(new BoundingBox(shape, this.canvas.worldMatrix));
+                this._boundingBox.add(new BoundingBox(shape));
             }
         })
 
@@ -73,7 +73,7 @@ export class SelectionManager {
         })
 
         if (this._boundingBox.size <= 1) {
-            this._boundingBox.forEach(box => box.setActive(this.canvas.worldMatrix));
+            this._boundingBox.forEach(box => box.setActive());
             this._multiBoundingBox = null;
         }
     }
@@ -103,7 +103,7 @@ export class SelectionManager {
      * Update the existing bounding boxes
      */
     update() {
-        this._boundingBox.forEach(box => box.update(this.canvas.worldMatrix));
+        this._boundingBox.forEach(box => box.update());
 
         if (this._multiBoundingBox) {
             this._multiBoundingBox.update(this.canvas.worldMatrix);
@@ -113,7 +113,7 @@ export class SelectionManager {
     render() {
         if (this.renderDirtyFlag) {
             this.gl.useProgram(this.rectProgram);
-            this._boundingBox.forEach(box => box.render(this.gl, this.rectProgram, this.canvas.worldMatrix));
+            this._boundingBox.forEach(box => box.render(this.gl, this.rectProgram));
         }
 
         if (this._multiBoundingBox) {
@@ -139,12 +139,12 @@ export class SelectionManager {
 
     resize(dx: number, dy: number, direction: BoundingBoxCollisionType) {
         if (this._multiBoundingBox) {
-            this._multiBoundingBox.resize(dx, dy, direction, this.canvas.worldMatrix);
+            this._multiBoundingBox.resize(dx, dy, direction);
         }
 
         for (const box of this._boundingBox) {
             if (this._multiBoundingBox) {
-                box.update(this.canvas.worldMatrix);
+                box.update();
             } else {
                 box.resize(dx, dy, direction);
             }

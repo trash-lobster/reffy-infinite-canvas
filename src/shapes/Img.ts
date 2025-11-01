@@ -79,22 +79,6 @@ export class Img extends Rect {
         return 6;
     }
 
-    getPositions(): number[] {
-        const left = this.x;
-        const right = this.x + this.width;
-        const top = this.y;
-        const bottom = this.y + this.height;
-
-        return [
-            left, top,      // top-left
-            left, bottom,   // bottom-left  
-            right, top,     // top-right
-            right, top,     // top-right
-            left, bottom,   // bottom-left
-            right, bottom   // bottom-right
-        ];
-    }
-
     updateVertexData(gl: WebGLRenderingContext) {
         super.updateVertexData(gl);
 

@@ -13,22 +13,14 @@ export abstract class Shape extends WebGLRenderable {
 
     private _layer = 0;
 
-    private _x: number;
-    private _y: number;
     private _renderOrder: number = 0;
     abstract getVertexCount(): number;
 
     constructor(x: number, y: number) {
         super();
-        this._x = x;
-        this._y = y;
+        this.translation[0] = x;
+        this.translation[1] = y;
     }
-
-    get x() { return this._x; }
-    set x(v: number) { if (this._x !== v) { this._x = v; this.renderDirtyFlag = true; } }
-
-    get y() { return this._y; }
-    set y(v: number) { if (this._y !== v) { this._y = v; this.renderDirtyFlag = true; } }
 
     get layer() { return this._layer; }
     set layer(v: number) { if (this._layer !== v) { this._layer = v; this.renderDirtyFlag = true; } }
@@ -42,16 +34,19 @@ export abstract class Shape extends WebGLRenderable {
 
     setTranslation(x: number, y: number) {
         this.translation = [this.translation[0] + x, this.translation[1] + y];
+        this.renderDirtyFlag = true;
     }
 
     setAngle(rotationDegree: number) {
         const angleInDegrees = 360 - rotationDegree;
         this.angleRadians = angleInDegrees * Math.PI / 180;
+        this.renderDirtyFlag = true;
     }
 
     setScale(x: number, y?: number) {
         this.scale[0] *= x;
         this.scale[1] = y ? this.scale[1] * y : this.scale[1] * x;
+        this.renderDirtyFlag = true;
     }
 
     color: [number, number, number, number] = [1, 0, 0.5, 1]; // default reddish-purple

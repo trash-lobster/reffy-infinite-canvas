@@ -188,56 +188,36 @@ export class BoundingBox {
         dy: number, 
         direction: BoundingBoxCollisionType
     ) {
-
         if (this.target instanceof Rect) {
+            const baseW = Math.abs(this.width);
+            const baseH = Math.abs(this.height);
 
-            // // move the x and y if the correct one is touched
-            // if (direction === 'LEFT' || direction === 'TOPLEFT' || direction === 'BOTTOMLEFT') {                
-            //     this.target.x += dx;
-            //     this.target.width -= dx;
-            //     this.width -= dx;
-            // }
-            
-            // if (direction === 'RIGHT' || direction === 'TOPRIGHT' || direction === 'BOTTOMRIGHT') {
-            //     this.target.width += dx;
-            //     this.width += dx;
-            // }
-            
-            // if (direction === 'TOP' || direction === 'TOPLEFT' || direction === 'TOPRIGHT') {
-            //     this.target.y += dy;
-            //     this.target.height -= dy;
-            //     this.height -= dy;
-            // }
+            // Use the shape's local scale (ignore camera/view)
+            const curSX = this.target.scale[0];
+            const curSY = this.target.scale[1];
 
-            // if (direction === 'BOTTOM' || direction === 'BOTTOMLEFT' || direction === 'BOTTOMRIGHT') {
-            //     this.target.height += dy;
-            //     this.height += dy;
-            // }
+            // World deltas along each axis depending on the grabbed edge
+            const dw = direction.includes('LEFT') ? -dx : (direction.includes('RIGHT') ? dx : 0);
+            const dh = direction.includes('TOP')  ? -dy : (direction.includes('BOTTOM') ? dy : 0);
 
-            const absWidth = Math.abs(this.width);
-            const absHeight = Math.abs(this.height);
+            // Current world sizes - also allow flipping by determining a non zero threshold
+            const min = 1e-6;
+            const prevWorldW = baseW * curSX < min && baseW * curSX > -min ? min : baseW * curSX;
+            const prevWorldH = baseH * curSY < min && baseH * curSY > -min ? min : baseH * curSY;
 
-            let scaleX = 1, scaleY = 1;
+            // Incremental scale multipliers relative to current size (not base)
+            let mulSX = (direction.includes('LEFT') || direction.includes('RIGHT'))
+                ? 1 + (dw / prevWorldW)
+                : 1;
+            let mulSY = (direction.includes('TOP') || direction.includes('BOTTOM'))
+                ? 1 + (dh / prevWorldH)
+                : 1;
 
-            if (direction.includes('LEFT') || direction.includes('RIGHT')) {
-                scaleX = (absWidth + (direction.includes('LEFT') ? -dx : dx)) / absWidth;
-            }
-            if (direction.includes('TOP') || direction.includes('BOTTOM')) {
-                scaleY = (absHeight + (direction.includes('TOP') ? -dy : dy)) / absHeight;
-            }
+            this.target.setScale(mulSX, mulSY);
 
-            this.target.setScale(scaleX, scaleY);
-
-            // // Adjust position if resizing from left/top
-            // if (direction.includes('LEFT')) {
-            //     this.target.x += dx;
-            // }
-            // if (direction.includes('TOP')) {
-            //     this.target.y += dy;
-            // }
-
-            // No need to flip width/height, getEdge will handle scale
-            this.setDimension();
+            // keep fixed corner corner opposite to the edge grabbed
+            if (direction.includes('LEFT')) this.target.translation[0] += dx;
+            if (direction.includes('TOP')) this.target.translation[1] += dy;
         }
     }
 

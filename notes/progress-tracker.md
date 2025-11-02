@@ -32,3 +32,12 @@
 - Fix bounding box edges and corners not showing up at the right place (visual scaling problem)
 - Fix bounding box (and multi bounding box) pointer hovering issue (the problem was because the dimensions of the bounding box boxes were not scaling properly with the world matrix)
 - Add resizing capability for single bounding boxes
+
+20251031:
+- Convert to using translation instead of x and y updates to record movements of the images
+
+20251101:
+- remove x and y altogether to store movement information about images/shapes through translation only (all movements are just translations from the (local) origin)
+
+20251102:
+- Fix multi bounding box bound calculation

@@ -18,13 +18,6 @@ async function main() {
     const canvas = new Canvas(
         $canvas
     );
-
-    const rectangle = new Rect({
-        x: 200,
-        y: 150,
-        width: 200,
-        height: 500,
-    })
     
     const WORLD_HALF_EXTENT = 5000; // world units in each direction from origin
     const randRange = (min: number, max: number) => Math.random() * (max - min) + min;
@@ -69,7 +62,7 @@ async function main() {
 
     canvas.appendChild(img);
     canvas.appendChild(img2);
-    
+
     const render = () => {
         canvas.render();
         requestAnimationFrame(render);

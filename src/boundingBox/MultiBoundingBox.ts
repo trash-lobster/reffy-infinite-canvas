@@ -4,17 +4,19 @@ import {
     HANDLEPX, 
     corners,
     sides,
-    createOrderedByStartX, 
-    createOrderedByStartY, 
-    OrderedList,
-    createOrderedByEndX,
-    createOrderedByEndY,
     BoundingBoxCollisionType,
     applyMatrixToPoint,
     getScaleFromMatrix,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { PositionData } from "./type";
+import { 
+    OrderedList, 
+    createOrderedByStartX, 
+    createOrderedByStartY, 
+    createOrderedByEndX, 
+    createOrderedByEndY
+} from "./OrderedList";
 
 const HANDLE_TYPES: BoundingBoxCollisionType[] = [...corners, ...sides] as BoundingBoxCollisionType[];
 
@@ -103,36 +105,36 @@ export class MultiBoundingBox {
         dy: number, 
         direction: BoundingBoxCollisionType,
     ) {
-        let scaleX = (this.width + dx) / this.width;
-        let scaleY = (this.height + dy) / this.height;
+        // let scaleX = (this.width + dx) / this.width;
+        // let scaleY = (this.height + dy) / this.height;
 
-        let anchorX = this.x;
-        let anchorY = this.y;
+        // let anchorX = this.x;
+        // let anchorY = this.y;
 
-        if (direction.includes('TOP')) {
-            anchorY = this.y + this.height;
-            const newHeight = this.height - dy;
-            scaleY = newHeight / this.height;
-        }
+        // if (direction.includes('TOP')) {
+        //     anchorY = this.y + this.height;
+        //     const newHeight = this.height - dy;
+        //     scaleY = newHeight / this.height;
+        // }
 
-        if (direction.includes('LEFT')) {
-            anchorX = this.x + this.width;
-            const newWidth = this.width - dx;
-            scaleX = newWidth / this.width;
-        }
+        // if (direction.includes('LEFT')) {
+        //     anchorX = this.x + this.width;
+        //     const newWidth = this.width - dx;
+        //     scaleX = newWidth / this.width;
+        // }
 
-        for (const target of this.targets) {
-            const offsetX = target.x - anchorX;
-            const offsetY = target.y - anchorY;
+        // for (const target of this.targets) {
+        //     const offsetX = target.x - anchorX;
+        //     const offsetY = target.y - anchorY;
 
-            target.x = direction === 'BOTTOM' || direction === 'TOP' ? target.x : anchorX + offsetX * scaleX;
-            target.y = direction === 'LEFT' || direction === 'RIGHT' ? target.y : anchorY + offsetY * scaleY;
-            target.width *= direction === 'BOTTOM' || direction === 'TOP' ? 1 : scaleX;
-            target.height *= direction === 'LEFT' || direction === 'RIGHT' ? 1 :scaleY;
-        }
+        //     target.x = direction === 'BOTTOM' || direction === 'TOP' ? target.x : anchorX + offsetX * scaleX;
+        //     target.y = direction === 'LEFT' || direction === 'RIGHT' ? target.y : anchorY + offsetY * scaleY;
+        //     target.width *= direction === 'BOTTOM' || direction === 'TOP' ? 1 : scaleX;
+        //     target.height *= direction === 'LEFT' || direction === 'RIGHT' ? 1 :scaleY;
+        // }
 
-        this.height += dy;
-        this.width += dx;
+        // this.height += dy;
+        // this.width += dx;
     }
 
     getPositions(): number[] {
@@ -150,7 +152,7 @@ export class MultiBoundingBox {
 
         for (const type of HANDLE_TYPES) {
             const handle = this.handles.get(type);
-            const config = this.getHandleConfig(type, worldMatrix);
+            const config = this.getHandleConfig(type, handle.worldMatrix);
             if (handle && this.expandedHit(config, x, y, HIT_MARGIN, scale)) {
                 return type;
             }
@@ -171,11 +173,11 @@ export class MultiBoundingBox {
         const maxX = this.orderByMaxX.getMax();
         const maxY = this.orderByMaxY.getMax();
 
-        this.x = applyMatrixToPoint(minX.localMatrix, minX.x, minX.y)[0];
-        this.y = applyMatrixToPoint(minY.localMatrix, minY.x, minY.y)[1];
+        this.x = applyMatrixToPoint(minX.localMatrix)[0];
+        this.y = applyMatrixToPoint(minY.localMatrix)[1];
 
-        this.width = maxX.width + maxX.x - minX.x;
-        this.height = maxY.height + maxY.y - minY.y;
+        this.width = maxX.width + maxX.translation[0] - minX.translation[0];
+        this.height = maxY.height + maxY.translation[1] - minY.translation[1];
     }
 
     private expandedHit(config: PositionData, x: number, y: number, margin: number, scale: number): boolean {
@@ -198,13 +200,13 @@ export class MultiBoundingBox {
 
     private updateHandles(worldMatrix?: number[]) {
         for (const type of HANDLE_TYPES) {
-            const config = this.getHandleConfig(type, worldMatrix);
             const handle = this.handles.get(type);
+            const config = this.getHandleConfig(type, worldMatrix);
             const [x, y] = applyMatrixToPoint(worldMatrix, config.x, config.y);
 
             if (handle) {
-                handle.x = x;
-                handle.y = y;
+                handle.translation[0] = x;
+                handle.translation[1] = y;
                 handle.width = config.width;
                 handle.height = config.height;
                 this.isRendering = false;

@@ -5,5 +5,4 @@ export * from './checks';
 export * from './files';
 export * from './handles';
 export * from './color';
-export * from './orderedList';
 export * from './debug';

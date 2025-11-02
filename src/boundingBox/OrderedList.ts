@@ -53,24 +53,24 @@ export class OrderedList {
 }
 
 function getX(shape: Rect) {
-    const [tx, ] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y);
+    const [tx, ] = applyMatrixToPoint(shape.worldMatrix);
     return tx;
 }
 
 function getY(shape: Rect) {
-    const [, ty] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y);
+    const [, ty] = applyMatrixToPoint(shape.worldMatrix);
     return ty;
 }
 
 function getWidth(shape: Rect) {
-    const [startX, ] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y);
-    const [endX, ] = applyMatrixToPoint(shape.localMatrix, shape.x + shape.width, shape.y);
+    const [startX, ] = applyMatrixToPoint(shape.worldMatrix);
+    const [endX, ] = applyMatrixToPoint(shape.worldMatrix, shape.width, 0);
     return endX - startX;
 }
 
 function getHeight(shape: Rect) {
-    const [, startY] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y);
-    const [, endY] = applyMatrixToPoint(shape.localMatrix, shape.x, shape.y + shape.height);
+    const [, startY] = applyMatrixToPoint(shape.worldMatrix);
+    const [, endY] = applyMatrixToPoint(shape.worldMatrix, 0, shape.height);
     return endY - startY;
 }
 

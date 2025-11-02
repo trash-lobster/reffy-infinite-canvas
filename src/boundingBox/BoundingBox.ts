@@ -7,7 +7,7 @@ import {
     sides,
     BoundingBoxCollisionType,
     applyMatrixToPoint,
-    getScaleFromMatrix,
+    getScalesFromMatrix,
     m3,
 } from "../util";
 import { Rect } from "../shapes/Rect";
@@ -46,19 +46,19 @@ export class BoundingBox {
     }
 
     private getSidesInScreenSpace(type: string, matrix?: number[]) {
-        const scale = matrix ? getScaleFromMatrix(matrix) : 1;
+        const [scaleX, scaleY] = matrix ? getScalesFromMatrix(matrix) : [1, 1];
         const { width, height, borderSize } = this;
         const [x, y] = applyMatrixToPoint(matrix);
         return {
-            TOP:        { x, y, width: width * scale, height: borderSize },
-            BOTTOM:     { x, y: y + height * scale, width : width * scale, height: borderSize },
-            LEFT:       { x, y, width: borderSize, height: height * scale },
-            RIGHT:      { x: x + width * scale , y, width: borderSize, height: height * scale }
+            TOP:        { x, y, width: width * scaleX, height: borderSize },
+            BOTTOM:     { x, y: y + height * scaleY, width : width * scaleX, height: borderSize },
+            LEFT:       { x, y, width: borderSize, height: height * scaleY },
+            RIGHT:      { x: x + width * scaleX , y, width: borderSize, height: height * scaleY }
         }[type];
     }
 
     private getCornersInScreenSpace(type: string, matrix: number[]) {
-        const scale = matrix ? getScaleFromMatrix(matrix) : 1;
+        const [scaleX, scaleY] = matrix ? getScalesFromMatrix(matrix) : [1, 1];
         const { width, height, boxSize } = this;
         const [x, y] = applyMatrixToPoint(matrix);
         return {
@@ -69,20 +69,20 @@ export class BoundingBox {
                 height: boxSize * 2
             },
             TOPRIGHT:   { 
-                x: x - boxSize + width * scale, 
+                x: x - boxSize + width * scaleX,
                 y: y - boxSize, 
                 width: boxSize * 2, 
                 height: boxSize * 2 
             },
             BOTTOMLEFT: { 
                 x: x - boxSize, 
-                y: y - boxSize + height * scale, 
+                y: y - boxSize + height * scaleY, 
                 width: boxSize * 2, 
                 height: boxSize * 2 
             },
             BOTTOMRIGHT:{ 
-                x: x - boxSize + width * scale, 
-                y: y - boxSize + height * scale, 
+                x: x - boxSize + width * scaleX, 
+                y: y - boxSize + height * scaleY, 
                 width: boxSize * 2, 
                 height: boxSize * 2 
             },
@@ -109,7 +109,7 @@ export class BoundingBox {
     hitTest(wx: number, wy: number, worldMatrix: number[]): (BoundingBoxCollisionType | null) {       
         if (this.mode === BoundingBoxMode.PASSIVE) return;
         const targetMatrix = m3.multiply(worldMatrix, this.target.localMatrix);
-        const scale = getScaleFromMatrix(targetMatrix);
+        const [scaleX, scaleY] = getScalesFromMatrix(targetMatrix);
 
         // converted to screen space
         const [hx, hy] = applyMatrixToPoint(worldMatrix, wx, wy);
@@ -144,9 +144,9 @@ export class BoundingBox {
         const [x, y] = applyMatrixToPoint(targetMatrix);
         if (
             hx >= x &&
-            hx <= x + this.width * scale &&
+            hx <= x + this.width * scaleX &&
             hy >= y &&
-            hy <= y + this.height * scale
+            hy <= y + this.height * scaleY
         ) return 'CENTER';
         
         return null;

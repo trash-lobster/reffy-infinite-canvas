@@ -1,4 +1,4 @@
-import { m3, getScaleFromMatrix, applyMatrixToPoint } from "../util";
+import { m3, getScalesFromMatrix, applyMatrixToPoint } from "../util";
 import { Shape } from "./Shape";
 
 export class Rect extends Shape {
@@ -49,7 +49,7 @@ export class Rect extends Shape {
 
     hitTest(x: number, y: number): boolean {
         const matrix = m3.multiply(this.parent.worldMatrix, this.localMatrix);
-        const scale = getScaleFromMatrix(matrix);
+        const [ scaleX, scaleY ] = getScalesFromMatrix(matrix);
 
         // Transform the input point to the rectangle's local space
         const [hx, hy] = applyMatrixToPoint(this.parent.worldMatrix, x, y);
@@ -58,9 +58,9 @@ export class Rect extends Shape {
 
         return (
             hx >= cx &&
-            hx <= cx + this.width * scale &&
+            hx <= cx + this.width * scaleX &&
             hy >= cy &&
-            hy <= cy + this.height * scale
+            hy <= cy + this.height * scaleY
         );
     }
 }

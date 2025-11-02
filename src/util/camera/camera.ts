@@ -66,7 +66,14 @@ export function applyMatrixToPoint(matrix: number[], x?: number, y?: number): [n
     ];
 }
 
-export function getScaleFromMatrix(matrix: number[]): number {
-    // For uniform scaling, use sqrt(a^2 + b^2) where a = matrix[0], b = matrix[1]
-    return Math.sqrt(matrix[0] * matrix[0] + matrix[1] * matrix[1]);
+export function getScaleXFromMatrix(matrix: number[]): number {
+    return Math.hypot(matrix[0], matrix[1]);
+}
+
+export function getScaleYFromMatrix(matrix: number[]): number {
+    return Math.hypot(matrix[3], matrix[4]);
+}
+
+export function getScalesFromMatrix(matrix: number[]): [number, number] {
+    return [getScaleXFromMatrix(matrix), getScaleYFromMatrix(matrix)];
 }

@@ -58,7 +58,7 @@ export class PointerEventManager {
         this.canvas.canvas.addEventListener('pointermove', (e) => {
             [this.lastPointerPos.x, this.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY, this.canvas);
 
-            let hit = this.canvas._selectionManager.hitTest(this.lastPointerPos.x, this.lastPointerPos.y);
+            let hit = this.canvas._selectionManager.hitTestAdjustedCorner(this.lastPointerPos.x, this.lastPointerPos.y);
 			this.canvas.canvas.style.cursor = cursorMap[hit] || 'default';
         });
     }

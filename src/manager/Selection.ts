@@ -1,4 +1,4 @@
-import { BoundingBoxCollisionType } from "../util";
+import { BoundingBoxCollisionType, oppositeCorner } from "../util";
 import { 
     BoundingBox, 
     MultiBoundingBox, 
@@ -84,19 +84,32 @@ export class SelectionManager {
     hitTest(wx: number, wy: number): (BoundingBoxCollisionType | null) {        
         if (this._multiBoundingBox) {
             const ans = this._multiBoundingBox.hitTest(wx, wy, this.canvas.worldMatrix);
-            if (ans) {
-                return ans;
-            }            
+            if (ans) return ans;
+        }
+
+        for (const box of this._boundingBox.values()) {
+            const ans = box.hitTest(wx, wy, this.canvas.worldMatrix);
+            if (ans) return ans;
+        }
+
+        return null;
+    }
+
+    hitTestAdjustedCorner(wx: number, wy: number) {
+        if (this._multiBoundingBox) {
+            const ans = this._multiBoundingBox.hitTest(wx, wy, this.canvas.worldMatrix);
+            if (ans) return ans;
         }
 
         for (const box of this._boundingBox.values()) {
             const ans = box.hitTest(wx, wy, this.canvas.worldMatrix);
             if (ans) {
+                if (box.target.scale[0] * box.target.scale[1] < 0) {
+                    return oppositeCorner(ans);
+                }
                 return ans;
             }
         }
-
-        return null;
     }
 
     /**

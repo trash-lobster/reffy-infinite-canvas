@@ -182,8 +182,6 @@ export class BoundingBox {
         if (hx >= minX && hx <= maxX && hy >= minY && hy <= maxY) {
             return 'CENTER';
         }
-        
-        return null;
     }
 
     update() {

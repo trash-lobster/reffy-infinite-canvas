@@ -1,4 +1,4 @@
-import { m3, getScalesFromMatrix, applyMatrixToPoint } from "../util";
+import { m3, getScalesFromMatrix, applyMatrixToPoint, isScalePositive } from "../util";
 import { Shape } from "./Shape";
 
 export class Rect extends Shape {
@@ -47,20 +47,23 @@ export class Rect extends Shape {
         }
     }
 
-    hitTest(x: number, y: number): boolean {
-        const matrix = m3.multiply(this.parent.worldMatrix, this.localMatrix);
-        const [ scaleX, scaleY ] = getScalesFromMatrix(matrix);
+    hitTest(x: number, y: number): boolean {                
+        const [ scaleX, scaleY ] = getScalesFromMatrix(this.worldMatrix);
+        const [ signX, signY ] = isScalePositive(this.worldMatrix);   
+        
 
         // Transform the input point to the rectangle's local space
-        const [hx, hy] = applyMatrixToPoint(this.parent.worldMatrix, x, y);
-        
-        const [cx, cy] = applyMatrixToPoint(matrix);
+        const [hx, hy] = applyMatrixToPoint(this.parent.worldMatrix, x, y);        
+        const [cx, cy] = applyMatrixToPoint(this.worldMatrix);
 
-        return (
-            hx >= cx &&
-            hx <= cx + this.width * scaleX &&
-            hy >= cy &&
-            hy <= cy + this.height * scaleY
-        );
+        const w = this.width  * scaleX * signX;
+        const h = this.height * scaleY * signY;
+
+        const minX = Math.min(cx, cx + w);
+        const maxX = Math.max(cx, cx + w);
+        const minY = Math.min(cy, cy + h);
+        const maxY = Math.max(cy, cy + h);
+
+        return hx >= minX && hx <= maxX && hy >= minY && hy <= maxY;
     }
 }

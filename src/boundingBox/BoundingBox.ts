@@ -137,7 +137,7 @@ export class BoundingBox {
         if (this.mode === BoundingBoxMode.PASSIVE) return;
         
         const [ scaleX, scaleY ] = getScalesFromMatrix(this.target.worldMatrix);
-        const [ signX, signY ] = isScalePositive(this.target.worldMatrix);
+        const [ signX, signY ] = isScalePositive(this.target.worldMatrix);   
 
         // converted to screen space
         const [hx, hy] = applyMatrixToPoint(worldMatrix, wx, wy);
@@ -169,14 +169,19 @@ export class BoundingBox {
             }
         }
 
-        // FIX THIS 2025 11 02
         const [x, y] = applyMatrixToPoint(this.target.worldMatrix);
-        if (
-            hx >= x * signX &&
-            hx <= x + this.width * scaleX &&
-            hy >= y * signY &&
-            hy <= y + this.height * scaleY
-        ) return 'CENTER';
+        
+        const w = this.width  * scaleX * signX;
+        const h = this.height * scaleY * signY;
+
+        const minX = Math.min(x, x + w);
+        const maxX = Math.max(x, x + w);
+        const minY = Math.min(y, y + h);
+        const maxY = Math.max(y, y + h);
+
+        if (hx >= minX && hx <= maxX && hy >= minY && hy <= maxY) {
+            return 'CENTER';
+        }
         
         return null;
     }

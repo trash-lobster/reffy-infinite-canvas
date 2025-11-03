@@ -56,28 +56,28 @@ export class BoundingBox {
 
         return {
             TOP: { 
-                x, 
+                x: signX > 0 ? x : x - width * scaleX,
                 y, 
-                width: width * scaleX * signX, 
+                width: width * scaleX , 
                 height: borderSize 
             },
             BOTTOM: { 
-                x, 
+                x: signX > 0 ? x : x - width * scaleX,
                 y: y + height * scaleY * signY, 
-                width : width * scaleX * signX, 
+                width : width * scaleX,
                 height: borderSize 
             },
             LEFT: { 
                 x, 
-                y, 
+                y: signY > 0 ? y : y - height * scaleY,
                 width: borderSize, 
-                height: height * scaleY * signY
+                height: height * scaleY
             },
             RIGHT: { 
                 x: x + width * scaleX * signX , 
-                y, 
+                y: signY > 0 ? y : y - height * scaleY,
                 width: borderSize, 
-                height: height * scaleY * signY 
+                height: height * scaleY
             }
         }[type];
     }
@@ -165,10 +165,11 @@ export class BoundingBox {
                 hy >= side.y - HIT_MARGIN &&
                 hy <= side.y + side.height + HIT_MARGIN
             ) {
+                console.log(type);
                 return type as BoundingBoxCollisionType;
             }
         }
-
+        
         const [x, y] = applyMatrixToPoint(this.target.worldMatrix);
         
         const w = this.width  * scaleX * signX;

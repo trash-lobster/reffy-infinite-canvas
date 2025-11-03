@@ -77,3 +77,11 @@ export function getScaleYFromMatrix(matrix: number[]): number {
 export function getScalesFromMatrix(matrix: number[]): [number, number] {
     return [getScaleXFromMatrix(matrix), getScaleYFromMatrix(matrix)];
 }
+
+function isPositive(num: number) {
+    return num / Math.abs(num);
+}
+
+export function isScalePositive(matrix: number[]) : number[] {
+    return [isPositive(matrix[0]), isPositive(matrix[4])];
+}

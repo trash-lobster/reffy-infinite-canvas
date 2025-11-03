@@ -2,7 +2,7 @@ import { Canvas } from "Canvas";
 import { Img, Rect, Shape } from "../shapes";
 import { 
     BoundingBoxCollisionType,
-    getWorldCoords, 
+    getWorldCoords,
     previewImage
 } from "../util";
 
@@ -57,8 +57,8 @@ export class PointerEventManager {
     private addOnPointerMove() {
         this.canvas.canvas.addEventListener('pointermove', (e) => {
             [this.lastPointerPos.x, this.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-            
-            const hit = this.canvas._selectionManager.hitTest(this.lastPointerPos.x, this.lastPointerPos.y);
+
+            let hit = this.canvas._selectionManager.hitTest(this.lastPointerPos.x, this.lastPointerPos.y);
 			this.canvas.canvas.style.cursor = cursorMap[hit] || 'default';
         });
     }

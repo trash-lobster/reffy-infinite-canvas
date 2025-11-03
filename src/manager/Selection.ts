@@ -1,4 +1,4 @@
-import { BoundingBoxCollisionType } from "util";
+import { BoundingBoxCollisionType } from "../util";
 import { 
     BoundingBox, 
     MultiBoundingBox, 
@@ -137,6 +137,17 @@ export class SelectionManager {
         }
     }
 
+    /**
+     * Based on the corner you're dragging and the sign of the scaleX and scaleY values, there are only four possible sets of changes to the target's translation.
+     * 1) absolutely no change
+     * 2) x translation change only if negative delta
+     * 3) y translation change only if negative delta
+     * 4) x and y translation change if negative delta
+     * The tricky part is to consider the signs of the scale values and determine which corner is going to inhabit which behaviour.
+     * @param dx 
+     * @param dy 
+     * @param direction 
+     */
     resize(dx: number, dy: number, direction: BoundingBoxCollisionType) {
         if (this._multiBoundingBox) {
             this._multiBoundingBox.resize(dx, dy, direction);

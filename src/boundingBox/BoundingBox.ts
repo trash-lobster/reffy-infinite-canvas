@@ -9,10 +9,13 @@ import {
     applyMatrixToPoint,
     getScalesFromMatrix,
     m3,
+    isScalePositive,
+    cornerMap,
+    oppositeCorner,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
-import { BoundingBoxMode, PositionData } from "./type";
+import { BoundingBoxMode } from "./type";
 
 // different from multi bounding box, the corners and handles are separated here because they need to be individually toggled
 export class BoundingBox {
@@ -49,11 +52,33 @@ export class BoundingBox {
         const [scaleX, scaleY] = matrix ? getScalesFromMatrix(matrix) : [1, 1];
         const { width, height, borderSize } = this;
         const [x, y] = applyMatrixToPoint(matrix);
+        const [signX, signY] = isScalePositive(matrix);
+
         return {
-            TOP:        { x, y, width: width * scaleX, height: borderSize },
-            BOTTOM:     { x, y: y + height * scaleY, width : width * scaleX, height: borderSize },
-            LEFT:       { x, y, width: borderSize, height: height * scaleY },
-            RIGHT:      { x: x + width * scaleX , y, width: borderSize, height: height * scaleY }
+            TOP: { 
+                x, 
+                y, 
+                width: width * scaleX * signX, 
+                height: borderSize 
+            },
+            BOTTOM: { 
+                x, 
+                y: y + height * scaleY * signY, 
+                width : width * scaleX * signX, 
+                height: borderSize 
+            },
+            LEFT: { 
+                x, 
+                y, 
+                width: borderSize, 
+                height: height * scaleY * signY
+            },
+            RIGHT: { 
+                x: x + width * scaleX * signX , 
+                y, 
+                width: borderSize, 
+                height: height * scaleY * signY 
+            }
         }[type];
     }
 
@@ -61,28 +86,30 @@ export class BoundingBox {
         const [scaleX, scaleY] = matrix ? getScalesFromMatrix(matrix) : [1, 1];
         const { width, height, boxSize } = this;
         const [x, y] = applyMatrixToPoint(matrix);
+        const [signX, signY] = isScalePositive(matrix);
+
         return {
-            TOPLEFT:    { 
+            TOPLEFT: {
                 x: x - boxSize,
                 y: y - boxSize,
                 width: boxSize * 2,
                 height: boxSize * 2
             },
-            TOPRIGHT:   { 
-                x: x - boxSize + width * scaleX,
+            TOPRIGHT: { 
+                x: x - boxSize + width * scaleX * signX,
                 y: y - boxSize, 
                 width: boxSize * 2, 
                 height: boxSize * 2 
             },
             BOTTOMLEFT: { 
                 x: x - boxSize, 
-                y: y - boxSize + height * scaleY, 
+                y: y - boxSize + height * scaleY * signY, 
                 width: boxSize * 2, 
                 height: boxSize * 2 
             },
-            BOTTOMRIGHT:{ 
-                x: x - boxSize + width * scaleX, 
-                y: y - boxSize + height * scaleY, 
+            BOTTOMRIGHT: { 
+                x: x - boxSize + width * scaleX * signX, 
+                y: y - boxSize + height * scaleY * signY, 
                 width: boxSize * 2, 
                 height: boxSize * 2 
             },
@@ -108,8 +135,9 @@ export class BoundingBox {
      */
     hitTest(wx: number, wy: number, worldMatrix: number[]): (BoundingBoxCollisionType | null) {       
         if (this.mode === BoundingBoxMode.PASSIVE) return;
-        const targetMatrix = m3.multiply(worldMatrix, this.target.localMatrix);
-        const [scaleX, scaleY] = getScalesFromMatrix(targetMatrix);
+        
+        const [ scaleX, scaleY ] = getScalesFromMatrix(this.target.worldMatrix);
+        const [ signX, signY ] = isScalePositive(this.target.worldMatrix);
 
         // converted to screen space
         const [hx, hy] = applyMatrixToPoint(worldMatrix, wx, wy);
@@ -118,7 +146,7 @@ export class BoundingBox {
         const HIT_MARGIN = 4;
 
         for (const type of corners) {
-            const corner = this.getCornersInScreenSpace(type, targetMatrix);
+            const corner = this.getCornersInScreenSpace(type, this.target.worldMatrix);
             if (
                 hx >= corner.x - HIT_MARGIN &&
                 hx <= corner.x + corner.width + HIT_MARGIN &&
@@ -130,7 +158,7 @@ export class BoundingBox {
         }
         
         for (const type of sides) {
-            const side = this.getSidesInScreenSpace(type, targetMatrix);
+            const side = this.getSidesInScreenSpace(type, this.target.worldMatrix);
             if (
                 hx >= side.x - HIT_MARGIN &&
                 hx <= side.x + side.width + HIT_MARGIN &&
@@ -141,11 +169,12 @@ export class BoundingBox {
             }
         }
 
-        const [x, y] = applyMatrixToPoint(targetMatrix);
+        // FIX THIS 2025 11 02
+        const [x, y] = applyMatrixToPoint(this.target.worldMatrix);
         if (
-            hx >= x &&
+            hx >= x * signX &&
             hx <= x + this.width * scaleX &&
-            hy >= y &&
+            hy >= y * signY &&
             hy <= y + this.height * scaleY
         ) return 'CENTER';
         
@@ -196,28 +225,22 @@ export class BoundingBox {
             const curSX = this.target.scale[0];
             const curSY = this.target.scale[1];
 
-            // World deltas along each axis depending on the grabbed edge
-            const dw = direction.includes('LEFT') ? -dx : (direction.includes('RIGHT') ? dx : 0);
-            const dh = direction.includes('TOP')  ? -dy : (direction.includes('BOTTOM') ? dy : 0);
-
-            // Current world sizes - also allow flipping by determining a non zero threshold
+            // // Current world sizes - also allow flipping by determining a non zero threshold
             const min = 1e-6;
-            const prevWorldW = baseW * curSX < min && baseW * curSX > -min ? min : baseW * curSX;
-            const prevWorldH = baseH * curSY < min && baseH * curSY > -min ? min : baseH * curSY;
+            const prevWorldW = baseW * curSX < min && baseW * curSX >= 0 ? min : baseW * curSX > -min && baseW * curSX < 0 ? -min : baseW * curSX;
+            const prevWorldH = baseH * curSY < min && baseH * curSY >= 0 ? min : baseH * curSY > -min && baseH * curSY < 0 ? -min : baseH * curSY;
 
-            // Incremental scale multipliers relative to current size (not base)
-            let mulSX = (direction.includes('LEFT') || direction.includes('RIGHT'))
-                ? 1 + (dw / prevWorldW)
-                : 1;
-            let mulSY = (direction.includes('TOP') || direction.includes('BOTTOM'))
-                ? 1 + (dh / prevWorldH)
-                : 1;
+            // // Incremental scale multipliers relative to current size (not base)
+            const changeInXScale = dx / prevWorldW;
+            const changeInYScale = dy / prevWorldH;
+                
+            const mulSX = direction.includes('LEFT') ? 1 - changeInXScale : direction.includes('RIGHT')  ? 1 + changeInXScale : 1;
+            const mulSY = direction.includes('TOP')  ? 1 - changeInYScale : direction.includes('BOTTOM') ? 1 + changeInYScale : 1 ;        
 
-            this.target.setScale(mulSX, mulSY);
-
-            // keep fixed corner corner opposite to the edge grabbed
             if (direction.includes('LEFT')) this.target.translation[0] += dx;
             if (direction.includes('TOP')) this.target.translation[1] += dy;
+            
+            this.target.setScale(mulSX, mulSY);
         }
     }
 
@@ -272,3 +295,15 @@ export class BoundingBox {
         }
     }
 }
+
+const flipH = (d: BoundingBoxCollisionType): BoundingBoxCollisionType => {
+    if (d.includes('LEFT'))  return d.replace('LEFT', 'RIGHT') as BoundingBoxCollisionType;
+    if (d.includes('RIGHT')) return d.replace('RIGHT', 'LEFT') as BoundingBoxCollisionType;
+    return d;
+};
+
+const flipV = (d: BoundingBoxCollisionType): BoundingBoxCollisionType => {
+    if (d.includes('TOP'))    return d.replace('TOP', 'BOTTOM') as BoundingBoxCollisionType;
+    if (d.includes('BOTTOM')) return d.replace('BOTTOM', 'TOP') as BoundingBoxCollisionType;
+    return d;
+};

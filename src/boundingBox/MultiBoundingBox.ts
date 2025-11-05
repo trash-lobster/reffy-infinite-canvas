@@ -155,22 +155,26 @@ export class MultiBoundingBox {
     }
 
     hitTest(x: number, y: number, worldMatrix: number[]): (BoundingBoxCollisionType | null) {
-        const [scaleX, scaleY] = worldMatrix ? getScalesFromMatrix(worldMatrix) : [1, 1];
+        const [hx, hy] = applyMatrixToPoint(worldMatrix, x, y);
         const HIT_MARGIN = 4;
 
         for (const type of HANDLE_TYPES) {
-            const handle = this.handles.get(type);
             const config = this.getHandleConfig(type);
-            if (handle && this.expandedHit(config, x, y, HIT_MARGIN, scaleX, scaleY)) {
-                return type;
+            if (
+                hx >= config.x - HIT_MARGIN &&
+                hx <= config.x + config.width + HIT_MARGIN &&
+                hy >= config.y - HIT_MARGIN &&
+                hy <= config.y + config.height + HIT_MARGIN
+            ) {
+                return type as BoundingBoxCollisionType;
             }
         }
 
         if (
-            x >= this.x &&
-            x <= this.x + this.width &&
-            y >= this.y &&
-            y <= this.y + this.height
+            hx >= this.x &&
+            hx <= this.x + this.width &&
+            hy >= this.y &&
+            hy <= this.y + this.height
         ) return 'CENTER';
         return null;
     }

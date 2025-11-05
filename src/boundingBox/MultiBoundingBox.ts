@@ -6,10 +6,8 @@ import {
     sides,
     BoundingBoxCollisionType,
     applyMatrixToPoint,
-    getScalesFromMatrix,
 } from "../util";
 import { Rect } from "../shapes/Rect";
-import { PositionData } from "./type";
 import { 
     OrderedList, 
     createOrderedByStartX, 
@@ -18,8 +16,6 @@ import {
     createOrderedByEndY,
     getX,
     getY,
-    getWidth,
-    getHeight,
     getEndX,
     getEndY
 } from "./OrderedList";
@@ -190,15 +186,6 @@ export class MultiBoundingBox {
 
         this.width = getEndX(maxX) - getX(minX);
         this.height = getEndY(maxY) - getY(minY);
-    }
-
-    private expandedHit(config: PositionData, x: number, y: number, margin: number, scaleX: number, scaleY: number): boolean {
-        return (
-            x >= config.x - margin / scaleX &&
-            x <= config.x + config.width / scaleX + margin / scaleX &&
-            y >= config.y - margin / scaleY &&
-            y <= config.y + config.height / scaleY + margin / scaleY
-        );
     }
 
     private addHandles() {

@@ -7,7 +7,6 @@ export class OrderedList {
 
     constructor(
         getter: (shape: Rect) => number,
-        // setter: (shape: Rect, val: number) => void,
     ) {
         this.getter = getter;
     }
@@ -52,26 +51,40 @@ export class OrderedList {
     }
 }
 
-function getX(shape: Rect) {
-    const [tx, ] = applyMatrixToPoint(shape.worldMatrix);
-    return tx;
+export function getX(shape: Rect) {
+    const [ startX, ] = applyMatrixToPoint(shape.worldMatrix);
+    const [ endX, ] = applyMatrixToPoint(shape.worldMatrix, shape.width, 0);
+    return shape.scale[0] < 0 ? endX : startX;
 }
 
-function getY(shape: Rect) {
-    const [, ty] = applyMatrixToPoint(shape.worldMatrix);
-    return ty;
+export function getY(shape: Rect) {
+    const [ , startY] = applyMatrixToPoint(shape.worldMatrix);
+    const [ , endY ] = applyMatrixToPoint(shape.worldMatrix, 0, shape.height);
+    return shape.scale[1] < 0 ? endY : startY;
 }
 
-function getWidth(shape: Rect) {
+export function getEndX(shape: Rect) {
+    const [ startX, ] = applyMatrixToPoint(shape.worldMatrix);
+    const [ endX, ] = applyMatrixToPoint(shape.worldMatrix, shape.width, 0);
+    return shape.scale[0] < 0 ? startX : endX;
+}
+
+export function getEndY(shape: Rect) {
+    const [ , startY ] = applyMatrixToPoint(shape.worldMatrix);
+    const [ , endY ] = applyMatrixToPoint(shape.worldMatrix, 0, shape.height);
+    return shape.scale[0] < 0 ? startY : endY;
+}
+
+export function getWidth(shape: Rect) {
     const [startX, ] = applyMatrixToPoint(shape.worldMatrix);
     const [endX, ] = applyMatrixToPoint(shape.worldMatrix, shape.width, 0);
-    return endX - startX;
+    return Math.abs(endX - startX);
 }
 
-function getHeight(shape: Rect) {
+export function getHeight(shape: Rect) {
     const [, startY] = applyMatrixToPoint(shape.worldMatrix);
     const [, endY] = applyMatrixToPoint(shape.worldMatrix, 0, shape.height);
-    return endY - startY;
+    return Math.abs(endY - startY);
 }
 
 
@@ -84,9 +97,9 @@ export function createOrderedByStartY() {
 }
 
 export function createOrderedByEndX() {
-    return new OrderedList(getWidth);
+    return new OrderedList(getEndX);
 }
 
 export function createOrderedByEndY() {
-    return new OrderedList(getHeight);
+    return new OrderedList(getEndY);
 }

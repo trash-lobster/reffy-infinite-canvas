@@ -8,10 +8,7 @@ import {
     BoundingBoxCollisionType,
     applyMatrixToPoint,
     getScalesFromMatrix,
-    m3,
     isScalePositive,
-    cornerMap,
-    oppositeCorner,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
@@ -165,7 +162,6 @@ export class BoundingBox {
                 hy >= side.y - HIT_MARGIN &&
                 hy <= side.y + side.height + HIT_MARGIN
             ) {
-                console.log(type);
                 return type as BoundingBoxCollisionType;
             }
         }

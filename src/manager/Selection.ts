@@ -9,7 +9,7 @@ import { Canvas } from "Canvas";
 export class SelectionManager {
     private canvas: Canvas;
     private _selected: Set<Rect> = new Set();
-    private _boundingBox: Set<BoundingBox> = new Set();
+    private _boundingBoxes: Set<BoundingBox> = new Set();
     private _multiBoundingBox : MultiBoundingBox;
     renderDirtyFlag = true;
 
@@ -22,7 +22,7 @@ export class SelectionManager {
 
         shapes.forEach(shape => {
             this._selected.add(shape)
-            this._boundingBox.add(new BoundingBox(shape));
+            this._boundingBoxes.add(new BoundingBox(shape));
         });
     }
 
@@ -41,15 +41,15 @@ export class SelectionManager {
         shapes.forEach(shape => {
             if (!this._selected.has(shape)) {
                 this._selected.add(shape);
-                this._boundingBox.add(new BoundingBox(shape));
+                this._boundingBoxes.add(new BoundingBox(shape));
             }
         })
 
-        if (this._boundingBox.size > 1) {
-            this._boundingBox.forEach(box => box.setPassive());
+        if (this._boundingBoxes.size > 1) {
+            this._boundingBoxes.forEach(box => box.setPassive());
             
             if (!this._multiBoundingBox) {
-                this._multiBoundingBox = new MultiBoundingBox([], this.canvas.worldMatrix);
+                this._multiBoundingBox = new MultiBoundingBox([]);
             }
 
             this.selected.forEach(shape => this._multiBoundingBox.add(shape));
@@ -57,12 +57,13 @@ export class SelectionManager {
     }
 
     remove(shapes: Rect[]) {
+        console.log('remove images');
         shapes.forEach(shape => {
             if (!this._selected.has(shape)) return;
             this._selected.delete(shape);
-            const matchingBoundingBox = this._boundingBox.values().find(box => box.target === shape);
+            const matchingBoundingBox = this._boundingBoxes.values().find(box => box.target === shape);
             if (matchingBoundingBox) {
-                this._boundingBox.delete(matchingBoundingBox);
+                this._boundingBoxes.delete(matchingBoundingBox);
             } else {
                 console.error('No matching bounding box found');
             }
@@ -72,8 +73,8 @@ export class SelectionManager {
             }
         })
 
-        if (this._boundingBox.size <= 1) {
-            this._boundingBox.forEach(box => box.setActive());
+        if (this._boundingBoxes.size <= 1) {
+            this._boundingBoxes.forEach(box => box.setActive());
             this._multiBoundingBox = null;
         }
     }
@@ -87,7 +88,7 @@ export class SelectionManager {
             if (ans) return ans;
         }
 
-        for (const box of this._boundingBox.values()) {
+        for (const box of this._boundingBoxes.values()) {
             const ans = box.hitTest(wx, wy, this.canvas.worldMatrix);
             if (ans) return ans;
         }
@@ -101,7 +102,7 @@ export class SelectionManager {
             if (ans) return ans;
         }
 
-        for (const box of this._boundingBox.values()) {
+        for (const box of this._boundingBoxes.values()) {
             const ans = box.hitTest(wx, wy, this.canvas.worldMatrix);
             if (ans) {
                 if (box.target.scale[0] * box.target.scale[1] < 0) {
@@ -116,27 +117,27 @@ export class SelectionManager {
      * Update the existing bounding boxes
      */
     update() {
-        this._boundingBox.forEach(box => box.update());
+        this._boundingBoxes.forEach(box => box.update());
 
         if (this._multiBoundingBox) {
-            this._multiBoundingBox.update(this.canvas.worldMatrix);
+            this._multiBoundingBox.update();
         }
     }
 
     render() {
         if (this.renderDirtyFlag) {
             this.gl.useProgram(this.rectProgram);
-            this._boundingBox.forEach(box => box.render(this.gl, this.rectProgram));
+            this._boundingBoxes.forEach(box => box.render(this.gl, this.rectProgram));
         }
 
         if (this._multiBoundingBox) {
-            this._multiBoundingBox.render(this.gl, this.rectProgram, this.canvas.worldMatrix);
+            this._multiBoundingBox.render(this.gl, this.rectProgram);
         }
     }
 
     clear() {
         this._selected.clear();
-        this._boundingBox.clear();
+        this._boundingBoxes.clear();
         this._multiBoundingBox = null;
     }
 
@@ -144,7 +145,7 @@ export class SelectionManager {
         if (this._multiBoundingBox) {
             this._multiBoundingBox.move(dx, dy);
         } else {
-            for (const box of this._boundingBox) {
+            for (const box of this._boundingBoxes) {
                 box.move(dx, dy);
             }
         }
@@ -166,7 +167,7 @@ export class SelectionManager {
             this._multiBoundingBox.resize(dx, dy, direction);
         }
 
-        for (const box of this._boundingBox) {
+        for (const box of this._boundingBoxes) {
             if (this._multiBoundingBox) {
                 box.update();
             } else {

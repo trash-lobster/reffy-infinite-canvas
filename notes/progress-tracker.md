@@ -41,3 +41,10 @@
 
 20251102:
 - Fix multi bounding box bound calculation
+
+20251103:
+- Fix bounding box scaling properly. Figure out how the translation works without changing the 'direction'
+- Fix bounding box corner detection and interpret the correct cursor style and also side detection
+
+20251104:
+- Work on fixing the multi bounding box range. Not quite there yet, but retrieving the values. Just need to put them into the right places

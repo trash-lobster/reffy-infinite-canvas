@@ -48,3 +48,17 @@
 
 20251104:
 - Work on fixing the multi bounding box range. Not quite there yet, but retrieving the values. Just need to put them into the right places
+
+20251105:
+- Bounding box range fixed after double checking that all the edges are calculated properly
+- Multi bounding box resize basic works but flipping is not working yet
+
+20251106:
+- not a lot of luck fixing the bug
+
+20251107:
+- Fixed the bug with the multibounding box
+- add this.scale to keep track of the direction of movement
+- Unnecessary adjustment to mulSX and mulSY - should have understood that the flip ratio is only one instance when you cross the threshold and the flip will be recorded
+- Fix recalculate bound method to flip for the correct image direction/width using the this.scale
+- And corner adjustment for cursor changes

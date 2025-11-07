@@ -233,10 +233,11 @@ export class BoundingBox {
             // // Incremental scale multipliers relative to current size (not base)
             const changeInXScale = dx / prevWorldW;
             const changeInYScale = dy / prevWorldH;
+
+            console.log(dx);
                 
             const mulSX = direction.includes('LEFT') ? 1 - changeInXScale : direction.includes('RIGHT')  ? 1 + changeInXScale : 1;
             const mulSY = direction.includes('TOP')  ? 1 - changeInYScale : direction.includes('BOTTOM') ? 1 + changeInYScale : 1 ;        
-
             if (direction.includes('LEFT')) this.target.translation[0] += dx;
             if (direction.includes('TOP')) this.target.translation[1] += dy;
             
@@ -295,15 +296,3 @@ export class BoundingBox {
         }
     }
 }
-
-const flipH = (d: BoundingBoxCollisionType): BoundingBoxCollisionType => {
-    if (d.includes('LEFT'))  return d.replace('LEFT', 'RIGHT') as BoundingBoxCollisionType;
-    if (d.includes('RIGHT')) return d.replace('RIGHT', 'LEFT') as BoundingBoxCollisionType;
-    return d;
-};
-
-const flipV = (d: BoundingBoxCollisionType): BoundingBoxCollisionType => {
-    if (d.includes('TOP'))    return d.replace('TOP', 'BOTTOM') as BoundingBoxCollisionType;
-    if (d.includes('BOTTOM')) return d.replace('BOTTOM', 'TOP') as BoundingBoxCollisionType;
-    return d;
-};

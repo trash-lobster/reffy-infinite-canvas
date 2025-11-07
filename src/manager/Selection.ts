@@ -99,7 +99,12 @@ export class SelectionManager {
     hitTestAdjustedCorner(wx: number, wy: number) {
         if (this._multiBoundingBox) {
             const ans = this._multiBoundingBox.hitTest(wx, wy, this.canvas.worldMatrix);
-            if (ans) return ans;
+            if (ans) {
+                if (this._multiBoundingBox.scale[0] * this._multiBoundingBox.scale[1] < 0) {
+                    return oppositeCorner(ans);
+                }
+                return ans;
+            }
         }
 
         for (const box of this._boundingBoxes.values()) {
@@ -164,7 +169,7 @@ export class SelectionManager {
      */
     resize(dx: number, dy: number, direction: BoundingBoxCollisionType) {
         if (this._multiBoundingBox) {
-            this._multiBoundingBox.resize(dx, dy, direction);
+            this._multiBoundingBox.resize(dx, dy, direction, this.canvas.worldMatrix);
         }
 
         for (const box of this._boundingBoxes) {

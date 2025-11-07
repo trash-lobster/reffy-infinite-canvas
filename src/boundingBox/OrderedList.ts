@@ -72,7 +72,7 @@ export function getEndX(shape: Rect) {
 export function getEndY(shape: Rect) {
     const [ , startY ] = applyMatrixToPoint(shape.worldMatrix);
     const [ , endY ] = applyMatrixToPoint(shape.worldMatrix, 0, shape.height);
-    return shape.scale[0] < 0 ? startY : endY;
+    return shape.scale[1] < 0 ? startY : endY;
 }
 
 export function getWidth(shape: Rect) {

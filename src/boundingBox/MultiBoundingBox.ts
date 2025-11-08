@@ -106,8 +106,6 @@ export class MultiBoundingBox {
         this.orderByMinY.add(shape);
         this.orderByMaxX.add(shape);
         this.orderByMaxY.add(shape);
-
-        console.log('Add image');
     }
 
     remove(shape: Rect) {

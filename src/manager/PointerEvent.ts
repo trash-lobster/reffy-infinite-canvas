@@ -76,7 +76,11 @@ export class PointerEventManager {
     }
     
     private addOnWheel() {
-        this.canvas.canvas.addEventListener('wheel', this.canvas._camera.onWheel, { passive: false });
+        this.canvas.canvas.addEventListener('wheel', (e) => {
+            if (!this.canvas._selectionManager.marqueeBox) {
+                this.canvas._camera.onWheel(e);
+            }
+        }, { passive: false });
     }
 
     private addOnPaste() {

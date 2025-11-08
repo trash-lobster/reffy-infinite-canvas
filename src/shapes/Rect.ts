@@ -1,4 +1,4 @@
-import { m3, getScalesFromMatrix, applyMatrixToPoint, isScalePositive } from "../util";
+import { getScalesFromMatrix, applyMatrixToPoint, isScalePositive } from "../util";
 import { Shape } from "./Shape";
 
 export class Rect extends Shape {

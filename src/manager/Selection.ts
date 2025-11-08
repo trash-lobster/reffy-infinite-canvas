@@ -158,7 +158,7 @@ export class SelectionManager {
     }
 
     clearMarquee() {
-        this._marqueeSelectionBox.hitTest();
+        this._marqueeSelectionBox.hitTest(this.canvas);
         this._marqueeSelectionBox = null;
     }
 

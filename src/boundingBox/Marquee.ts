@@ -1,4 +1,5 @@
-import { Rect } from "../shapes";
+import { Canvas } from "Canvas";
+import { Rect, Renderable } from "../shapes";
 import { applyMatrixToPoint, BASE_BLUE, BORDERPX, BoundingBoxCollisionType, getScalesFromMatrix, MARQUEE_BLUE, sides } from "../util";
 
 const RECT_TYPES = ["CENTER", ...sides] as BoundingBoxCollisionType[];
@@ -81,18 +82,33 @@ export class MarqueeSelectionBox {
         this.height += dy * scaleY;
     }
 
-    hitTest() {
-        // check what shapes it is covering
-        // see the canvas's selected
-    }
+    hitTest(canvas: Canvas) {
+        const covered = [];
+        
+        const mx1 = Math.min(this.x, this.x + this.width);
+        const mx2 = Math.max(this.x, this.x + this.width);
+        const my1 = Math.min(this.y, this.y + this.height);
+        const my2 = Math.max(this.y, this.y + this.height);
+        
+        for (const child of canvas.children as Rect[]) {            
+            const [wx1, wy1] = applyMatrixToPoint(canvas.worldMatrix, child.translation[0], child.translation[1]);
+            const [wx2, wy2] = applyMatrixToPoint(
+                canvas.worldMatrix,
+                child.translation[0] + child.width,
+                child.translation[1] + child.height
+            );
 
-    getPositions(): number[] {
-        return [
-            this.x, this.y, // Top-left
-            this.x + this.width, this.y, // Top-right
-            this.x + this.width, this.y + this.height, // Bottom-right
-            this.x, this.y + this.height // Bottom-left
-        ];
+            const cx1 = Math.min(wx1, wx2);
+            const cx2 = Math.max(wx1, wx2);
+            const cy1 = Math.min(wy1, wy2);
+            const cy2 = Math.max(wy1, wy2);
+
+            if (cx1 >= mx1 && cx2 <= mx2 && cy1 >= my1 && cy2 <= my2) {
+                covered.push(child);
+            }
+        }
+        
+        canvas._selectionManager.add(covered);
     }
 
     private addRects() {

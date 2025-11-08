@@ -45,7 +45,12 @@ export class Canvas extends Renderable {
 		super();
 		this.canvas = canvas;
 		this.grid = new Grid();
-		this.gl = canvas.getContext('webgl');
+		this.gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
+		this.gl.enable(this.gl.BLEND);
+		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+
+		// If you also use depth:
+		// gl.disable(gl.DEPTH_TEST); // For 2D UI layers with alpha
 		this.gl.getExtension("OES_standard_derivatives"); // required to enable fwidth
 		
 		this.basicShapeProgram = createProgram(this.gl, shapeVert, shapeFrag);

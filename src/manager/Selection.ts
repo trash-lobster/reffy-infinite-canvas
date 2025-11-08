@@ -1,16 +1,19 @@
 import { BoundingBoxCollisionType, oppositeCorner } from "../util";
+import { Rect } from "../shapes";
+import { Canvas } from "Canvas";
+import { Point } from "boundingBox/type";
 import { 
     BoundingBox, 
-    MultiBoundingBox, 
-    Rect,
-} from "../shapes";
-import { Canvas } from "Canvas";
+    MarqueeSelectionBox, 
+    MultiBoundingBox,
+} from "../boundingBox";
 
 export class SelectionManager {
     private canvas: Canvas;
     private _selected: Set<Rect> = new Set();
     private _boundingBoxes: Set<BoundingBox> = new Set();
     private _multiBoundingBox : MultiBoundingBox;
+    private _marqueeSelectionBox : MarqueeSelectionBox;
     renderDirtyFlag = true;
 
     private gl: WebGLRenderingContext;
@@ -24,6 +27,11 @@ export class SelectionManager {
             this._selected.add(shape)
             this._boundingBoxes.add(new BoundingBox(shape));
         });
+    }
+
+    get marqueeBox(): MarqueeSelectionBox { return this._marqueeSelectionBox };
+    set marqueeBox(startingPoint: Point) {
+        this._marqueeSelectionBox = new MarqueeSelectionBox(startingPoint.x, startingPoint.y, this.canvas.worldMatrix);
     }
 
     /**
@@ -57,7 +65,6 @@ export class SelectionManager {
     }
 
     remove(shapes: Rect[]) {
-        console.log('remove images');
         shapes.forEach(shape => {
             if (!this._selected.has(shape)) return;
             this._selected.delete(shape);
@@ -138,12 +145,21 @@ export class SelectionManager {
         if (this._multiBoundingBox) {
             this._multiBoundingBox.render(this.gl, this.rectProgram);
         }
+
+        if (this._marqueeSelectionBox) {
+            this._marqueeSelectionBox.render(this.gl, this.rectProgram);
+        }
     }
 
     clear() {
         this._selected.clear();
         this._boundingBoxes.clear();
         this._multiBoundingBox = null;
+    }
+
+    clearMarquee() {
+        this._marqueeSelectionBox.hitTest();
+        this._marqueeSelectionBox = null;
     }
 
     move(dx: number, dy: number) {

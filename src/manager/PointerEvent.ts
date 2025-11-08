@@ -131,6 +131,7 @@ export class PointerEventManager {
             this.canvas._selectionManager.clear();
             this.canvas.isGlobalClick = true;
         } else if (this.#mode === PointerMode.SELECT) {
+            this.canvas.isGlobalClick = false;
             if (e.button === 2) {
                 const child = this.checkCollidingChild(wx, wy);
                 if (child) {
@@ -145,7 +146,6 @@ export class PointerEventManager {
                     if (boundingBoxType !== 'CENTER') {
                         this.resizingDirection = boundingBoxType;
                     }
-                    this.canvas.isGlobalClick = false;
                 } else {
                     const child = this.checkCollidingChild(wx, wy);
                     if (child) {
@@ -153,9 +153,13 @@ export class PointerEventManager {
                             this.canvas._selectionManager.clear();
                         }
                         this.canvas._selectionManager.add([child as Rect]);
-                        this.canvas.isGlobalClick = false;
                     } else {
                         this.canvas._selectionManager.clear();
+                        if (this.canvas._selectionManager.marqueeBox) {
+                            this.canvas._selectionManager.clearMarquee();
+                        } else {
+                            this.canvas._selectionManager.marqueeBox = {x: wx, y: wy};
+                        }
                     }
                 }
             }
@@ -174,6 +178,8 @@ export class PointerEventManager {
             this.canvas._camera.updateCameraPos(this.#startWorldX - wx, this.#startWorldY - wy);
         } else if (this.resizingDirection) {
             this.canvas._selectionManager.resize(dx, dy, this.resizingDirection);
+        } else if (this.canvas._selectionManager.marqueeBox) {
+            this.canvas._selectionManager.marqueeBox.resize(dx, dy, this.canvas.worldMatrix);
         } else {
             this.canvas._selectionManager.move(dx, dy);
         }
@@ -188,6 +194,10 @@ export class PointerEventManager {
         document.removeEventListener('pointerup', this.onPointerUp);
         this.canvas.isGlobalClick = true;
         this.canvas.canvas.style.cursor = 'default';
+        if (this.canvas._selectionManager.marqueeBox) {
+            // this.canvas._selectionManager
+            this.canvas._selectionManager.clearMarquee();
+        }
     }
 
     private checkCollidingChild(wx: number, wy: number) {

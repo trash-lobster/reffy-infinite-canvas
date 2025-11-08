@@ -3,6 +3,7 @@ import { Img, Rect } from "../src/shapes";
 
 async function main() {
     const $canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    const $button = document.getElementById('mode-button') as HTMLButtonElement;
 
     const resize = (width: number, height: number) => {
         $canvas.width = width * window.devicePixelRatio;
@@ -18,35 +19,6 @@ async function main() {
     const canvas = new Canvas(
         $canvas
     );
-    
-    const WORLD_HALF_EXTENT = 5000; // world units in each direction from origin
-    const randRange = (min: number, max: number) => Math.random() * (max - min) + min;
-    const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
-    const urls = [
-        'https://i.redd.it/74l6fsbegzuf1.jpeg',
-        'https://i.redd.it/e7zyleu06xuf1.jpeg',
-        'https://i.redd.it/gewlibsk5muf1.jpeg',
-        'https://i.redd.it/3gvrt3trgdwf1.png',
-        'https://i.redd.it/cufzl7rwwscf1.png',
-        'https://i.redd.it/s0ilwpfvfcwf1.jpeg',
-        'https://i.redd.it/9ojhflxg5w3f1.png',
-        'https://i.redd.it/qtd71062aevf1.jpg',
-        'https://i.redd.it/ynkcvio6uemf1.jpeg',
-        'https://i.redd.it/jc5myqt13qvf1.png',
-        'https://I.redd.it/tcpeniq7ocwf1.jpeg',
-        'https://i.redd.it/o3vjkj52bcwf1.jpeg',
-        'https://i.redd.it/jyjg3z49xbwf1.jpeg',
-        'https://i.redd.it/i30riep55qqf1.png',
-    ];
-
-    // for (let i = 0; i < 100; i++) {
-    //     const img = new Img({
-    //         x: randRange(-WORLD_HALF_EXTENT, WORLD_HALF_EXTENT),
-    //         y: randRange(-WORLD_HALF_EXTENT, WORLD_HALF_EXTENT),
-    //         src: pick(urls),
-    //     })
-    //     canvas.appendChild(img);
-    // }
 
     const img = new Img({
         x: 100,
@@ -72,6 +44,10 @@ async function main() {
 
     window.addEventListener('beforeunload', () => {
         canvas.destroy();
+    })
+
+    $button.addEventListener('click', () => {
+        canvas._pointerEventManager.changeMode();
     })
 }
 

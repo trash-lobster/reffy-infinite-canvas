@@ -11,6 +11,11 @@ export interface Point {
     y: number,
 }
 
+export enum PointerMode {
+    SELECT,
+    PAN,
+}
+
 const cursorMap: Record<string, string> = {
     TOP: 'ns-resize',
     BOTTOM: 'ns-resize',
@@ -34,6 +39,8 @@ export class PointerEventManager {
 
     resizingDirection: BoundingBoxCollisionType | null = null;
 
+    #mode: PointerMode = PointerMode.SELECT;
+
     constructor(canvas: Canvas) {
         this.canvas = canvas;
         
@@ -46,6 +53,11 @@ export class PointerEventManager {
         this.addOnWheel();
         this.addOnPointerDown();
         this.canvas.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    changeMode() {
+        this.#mode = this.#mode === PointerMode.PAN ? PointerMode.SELECT : PointerMode.PAN;
+        this.canvas._selectionManager.clear();
     }
     
     // #region Add events
@@ -115,31 +127,36 @@ export class PointerEventManager {
         this.#lastWorldX = wx;
         this.resizingDirection = null;
 
-        if (e.button === 2) {
-            const child = this.checkCollidingChild(wx, wy);
-            if (child) {
-                this.canvas._selectionManager.remove([child as Rect]);
-            } else if (this.canvas.hitTest(wx, wy)) {
-                this.canvas._selectionManager.clear();
-            }
-        } else {
-            const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
-            if (boundingBoxType) {
-                // hit test to first check if the handle is selected
-                if (boundingBoxType !== 'CENTER') {
-                    this.resizingDirection = boundingBoxType;
-                }
-                this.canvas.isGlobalClick = false;
-            } else {
+        if (this.#mode === PointerMode.PAN) {
+            this.canvas._selectionManager.clear();
+            this.canvas.isGlobalClick = true;
+        } else if (this.#mode === PointerMode.SELECT) {
+            if (e.button === 2) {
                 const child = this.checkCollidingChild(wx, wy);
                 if (child) {
-                    if (!e.shiftKey) {                            
-                        this.canvas._selectionManager.clear();
+                    this.canvas._selectionManager.remove([child as Rect]);
+                } else if (this.canvas.hitTest(wx, wy)) {
+                    this.canvas._selectionManager.clear();
+                }
+            } else {
+                const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
+                if (boundingBoxType) {
+                    // hit test to first check if the handle is selected
+                    if (boundingBoxType !== 'CENTER') {
+                        this.resizingDirection = boundingBoxType;
                     }
-                    this.canvas._selectionManager.add([child as Rect]);
                     this.canvas.isGlobalClick = false;
                 } else {
-                    this.canvas._selectionManager.clear();
+                    const child = this.checkCollidingChild(wx, wy);
+                    if (child) {
+                        if (!e.shiftKey) {                            
+                            this.canvas._selectionManager.clear();
+                        }
+                        this.canvas._selectionManager.add([child as Rect]);
+                        this.canvas.isGlobalClick = false;
+                    } else {
+                        this.canvas._selectionManager.clear();
+                    }
                 }
             }
         }

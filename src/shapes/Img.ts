@@ -56,10 +56,9 @@ export class Img extends Rect {
                 super.setUpUniforms(gl, program);
                 this.samplerLocation = gl.getUniformLocation(program, "u_image"); // match your shader name
                 if (this.samplerLocation) gl.uniform1i(this.samplerLocation, 0); // texture unit 0
-
+                
                 // Only create texture if image is loaded
                 if (this._image.complete && this._image.naturalWidth > 0) {
-                    // this.createTexture(gl);
                     this.initialized = true;
                 } else {
                     // Image not ready yet, skip initialization
@@ -103,6 +102,8 @@ export class Img extends Rect {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         
         // Upload the image into the texture.
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._image);

@@ -1,8 +1,8 @@
 import { Canvas } from "Canvas";
 import { getWorldCoords, m3 } from "../util";
 
-const ZOOM_MIN = 0.1;
-const ZOOM_MAX = 8;
+export const ZOOM_MIN = 0.1;
+export const ZOOM_MAX = 8;
 
 export class Camera {
     canvas : Canvas;
@@ -91,27 +91,25 @@ export class Camera {
     onWheel = (e: WheelEvent) => {
         e.preventDefault();
 
-        // Point under cursor in world space before zoom
-        const [wx0, wy0] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-
-        // Smooth zoom factor (wheel up => zoom in)
         const ZOOM_SPEED = 0.003;
         const scale = Math.exp(-e.deltaY * ZOOM_SPEED);
-        const target = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, this.zoom * scale));
-
-        this.zoom = target;
-
-        // Same point after zoom
-        const [wx1, wy1] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-
-        // Shift camera so the world point stays under the cursor
-        this.x += (wx0 - wx1);
-        this.y += (wy0 - wy1);
+        this.updateZoom(e.clientX, e.clientY, scale);
     }
 
     updateCameraPos(dx: number, dy: number) {
         this.x += dx;
         this.y += dy;
         this.updateViewMatrix();
+    }
+
+    updateZoom(x: number, y: number, scale: number) {
+        const [wx0, wy0] = getWorldCoords(x, y, this.canvas);
+        const target = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, this.zoom * scale));
+        this.zoom = target;
+
+        const [wx1, wy1] = getWorldCoords(x, y, this.canvas);
+
+        this.x += (wx0 - wx1);
+        this.y += (wy0 - wy1);
     }
 }

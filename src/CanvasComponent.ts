@@ -37,19 +37,19 @@ export class InfiniteCanvasElement extends LitElement {
 
         this.#canvas = new Canvas(canvas);
 
+        // fix resize as a camera 
         const resizeCanvas = () => {
-            if (!this.isConnected) return;
             const dpr = window.devicePixelRatio || 1;
             const w = Math.max(1, window.innerWidth);
             const h = Math.max(1, window.innerHeight);
-            canvas.width = Math.round(w * dpr);
-            canvas.height = Math.round(h * dpr);
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
         };
 
         resizeCanvas();
 
         this.#resizeObserver = new ResizeObserver(() => resizeCanvas());
-        this.#resizeObserver.observe(this);
+        this.#resizeObserver.observe(canvas);
 
         const animate = () => {
             this.#canvas.render();
@@ -70,6 +70,25 @@ export class InfiniteCanvasElement extends LitElement {
     toggleMode() {
         if (!this.#canvas) return;
         this.#canvas._pointerEventManager.changeMode();
+    }
+
+    zoomIn() {
+        if (!this.#canvas) return;
+
+        this.#canvas._camera.updateZoom(
+            this.#canvas.canvas.width / 2, 
+            this.#canvas.canvas.height / 2,
+            Math.exp(-0.5 * 0.3),
+        )
+    }
+
+    zoomOut() {
+    if (!this.#canvas) return;
+        this.#canvas._camera.updateZoom(
+            this.#canvas.canvas.width / 2, 
+            this.#canvas.canvas.height / 2,
+            Math.exp(0.5 * 0.3),
+        )
     }
 }
 

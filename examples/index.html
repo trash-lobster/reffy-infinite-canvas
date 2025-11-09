@@ -8,14 +8,35 @@
       overflow: hidden;
     }
 
-    #mode-button {
-      position: absolute;
-      top: 2rem;
-      left: 2rem;
+    #canvas {
+      touch-action: none;
+      width: 1000px;
+      height: 500px;
     }
+
+    #add-image {
+      position:absolute;
+    }
+
+    #control-container {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      left: 2rem;
+      top: 2rem;
+    }
+
   </style>
   <body>
+    <!-- <canvas id="canvas"></canvas> -->
     <infinite-canvas></infinite-canvas>
-    <button id="mode-button">Toggle mode</button>
+    <div id="control-container">
+      <button id="mode-button">Toggle Mode</button>
+      <button id="zoom-in-button">+</button>
+      <button id="zoom-out-button">-</button>
+      <button id="add-image-button">Add Image</button>
+    </div>
   </body>
+  <!-- <script type="module" src="../src/CanvasComponent.ts"></script> -->
 </html>

@@ -12,7 +12,6 @@ import {
 	Img, 
 	Renderable, 
 	Grid,
-	Rect,
 } from './shapes';
 import { SelectionManager, PointerEventManager } from './manager';
 import { Camera } from './camera';
@@ -49,8 +48,6 @@ export class Canvas extends Renderable {
 		this.gl.enable(this.gl.BLEND);
 		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
-		// If you also use depth:
-		// gl.disable(gl.DEPTH_TEST); // For 2D UI layers with alpha
 		this.gl.getExtension("OES_standard_derivatives"); // required to enable fwidth
 		
 		this.basicShapeProgram = createProgram(this.gl, shapeVert, shapeFrag);
@@ -82,6 +79,7 @@ export class Canvas extends Renderable {
 		this.gl.clearColor(0, 0, 0, 0);
     	this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 		this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+		console.log(this.gl.canvas.width);
 
 		let currentProgram: WebGLProgram | null = null;
 
@@ -122,6 +120,10 @@ export class Canvas extends Renderable {
         
         this.children = [];
     }
+
+	getDOM() {
+		return this.canvas;
+	}
 
 	hitTest(x: number, y: number) {
 		this.isGlobalClick = true;

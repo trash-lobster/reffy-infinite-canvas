@@ -4,4 +4,7 @@ import path from 'path';
 export default defineConfig({
   root: path.resolve('./examples'),
   server: { port: 8080, open: '/' },
+  resolve: {
+    extensions: ['.mjs', '.js', '.ts', '.json'],
+  }
 });

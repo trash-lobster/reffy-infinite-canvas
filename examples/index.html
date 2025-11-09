@@ -1,21 +1,11 @@
 <html>
-  <script type="module" src="./api.ts"></script>
+  <script type="module" src="./index.ts"></script>
   <style>
     html,
     body {
       margin: 0;
       padding: 0;
       overflow: hidden;
-    }
-
-    #canvas {
-      touch-action: none;
-      width: 1000px;
-      height: 500px;
-    }
-
-    #add-image {
-      position:absolute;
     }
 
     #mode-button {
@@ -25,7 +15,7 @@
     }
   </style>
   <body>
-    <canvas id="canvas"></canvas>
+    <infinite-canvas></infinite-canvas>
     <button id="mode-button">Toggle mode</button>
   </body>
 </html>

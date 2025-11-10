@@ -15,6 +15,7 @@ import {
 } from './shapes';
 import { SelectionManager, PointerEventManager } from './manager';
 import { Camera } from './camera';
+import { CameraState } from './state';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
@@ -53,10 +54,19 @@ export class Canvas extends Renderable {
 		this.basicShapeProgram = createProgram(this.gl, shapeVert, shapeFrag);
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
-
-		this._camera = new Camera(this);
+		
+		this.engine = this.engine.bind(this);
+		
 		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram, this);
 		this._pointerEventManager = new PointerEventManager(this);
+		const cameraState = new CameraState({
+			getCanvas: this.engine
+		})
+		this._camera = new Camera(this, cameraState);
+	}
+
+	engine() {
+		return this;
 	}
 
 	appendChild<T extends Renderable>(child: T): T {

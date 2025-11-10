@@ -47,6 +47,7 @@
         "eventemitter3": "^5.0.1",
         "gl-matrix": "^3.4.4",
         "lit": "^3.3.1",
+        "mobx": "^6.15.0",
         "rbush": "^3.0.1"
     },
     "publishConfig": {

@@ -15,7 +15,7 @@ import {
 } from './shapes';
 import { SelectionManager, PointerEventManager } from './manager';
 import { Camera } from './camera';
-import { CameraState } from './state';
+import { CameraState, PointerEventState } from './state';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
@@ -56,9 +56,18 @@ export class Canvas extends Renderable {
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 		
 		this.engine = this.engine.bind(this);
+		this.assignEventListener = this.assignEventListener.bind(this);
 		
 		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram, this);
-		this._pointerEventManager = new PointerEventManager(this);
+		const pointerEventState = new PointerEventState({
+			getCanvas: this.engine,
+			clearSelection: this._selectionManager.clear,
+		})
+		this._pointerEventManager = new PointerEventManager(
+			this, 
+			pointerEventState,
+			this.assignEventListener,
+		);
 		const cameraState = new CameraState({
 			getCanvas: this.engine
 		})
@@ -133,6 +142,14 @@ export class Canvas extends Renderable {
 
 	getDOM() {
 		return this.canvas;
+	}
+	
+	assignEventListener(
+		type: string, 
+		fn: (() => void) | ((e: any) => void), 
+		options?: boolean | AddEventListenerOptions
+	) {
+		this.canvas.addEventListener(type, fn, options);
 	}
 
 	hitTest(x: number, y: number) {

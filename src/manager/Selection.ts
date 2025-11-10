@@ -42,6 +42,7 @@ export class SelectionManager {
         this.gl = gl;
         this.rectProgram = program;
         this.canvas = canvas;
+        this.clear = this.clear.bind(this);
     }
 
     // add, remove selected
@@ -68,7 +69,7 @@ export class SelectionManager {
         shapes.forEach(shape => {
             if (!this._selected.has(shape)) return;
             this._selected.delete(shape);
-            const matchingBoundingBox = this._boundingBoxes.values().find(box => box.target === shape);
+            const matchingBoundingBox = Array.from(this._boundingBoxes.values()).find(box => box.target === shape);
             if (matchingBoundingBox) {
                 this._boundingBoxes.delete(matchingBoundingBox);
             } else {

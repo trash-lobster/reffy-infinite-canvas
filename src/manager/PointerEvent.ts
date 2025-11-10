@@ -1,10 +1,10 @@
 import { Canvas } from "Canvas";
 import { Img, Rect, Shape } from "../shapes";
-import { 
-    BoundingBoxCollisionType,
+import {
     getWorldCoords,
     previewImage
 } from "../util";
+import { PointerEventState } from "../state";
 
 export interface Point {
     x: number,
@@ -29,21 +29,19 @@ const cursorMap: Record<string, string> = {
 };
 
 export class PointerEventManager {
+    state: PointerEventState;
     canvas: Canvas;
-    lastPointerPos: Point = { x: 0, y: 0 };
+    assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
-    #startWorldX: number = 0;
-    #startWorldY: number = 0;
-    #lastWorldX: number = 0;
-    #lastWorldY: number = 0;
-
-    resizingDirection: BoundingBoxCollisionType | null = null;
-
-    #mode: PointerMode = PointerMode.SELECT;
-
-    constructor(canvas: Canvas) {
+    constructor(
+        canvas: Canvas, 
+        state: PointerEventState,
+        assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
+    ) {
         this.canvas = canvas;
-        
+        this.state = state;
+        this.assignEventListener = assignEventListener;
+
         this.onPointerDown = this.onPointerDown.bind(this);
         this.onPointerMoveWhileDown = this.onPointerMoveWhileDown.bind(this);
         this.onPointerUp = this.onPointerUp.bind(this);
@@ -52,31 +50,30 @@ export class PointerEventManager {
         this.addOnPointerMove();
         this.addOnWheel();
         this.addOnPointerDown();
-        this.canvas.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        this.assignEventListener('contextmenu', (e) => e.preventDefault());
     }
 
     changeMode() {
-        this.#mode = this.#mode === PointerMode.PAN ? PointerMode.SELECT : PointerMode.PAN;
-        this.canvas._selectionManager.clear();
+        this.state.toggleMode();
     }
     
     // #region Add events
     private addOnPointerDown() {
-        this.canvas.canvas.addEventListener('pointerdown', this.onPointerDown);
+        this.assignEventListener('pointerdown', this.onPointerDown);
     }
     
     // always on
     private addOnPointerMove() {
-        this.canvas.canvas.addEventListener('pointermove', (e) => {
-            [this.lastPointerPos.x, this.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY, this.canvas);
+        this.assignEventListener('pointermove', (e) => {
+            [this.state.lastPointerPos.x, this.state.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY, this.canvas);
 
-            let hit = this.canvas._selectionManager.hitTestAdjustedCorner(this.lastPointerPos.x, this.lastPointerPos.y);
+            let hit = this.canvas._selectionManager.hitTestAdjustedCorner(this.state.lastPointerPos.x, this.state.lastPointerPos.y);
 			this.canvas.canvas.style.cursor = cursorMap[hit] || 'default';
         });
     }
     
     private addOnWheel() {
-        this.canvas.canvas.addEventListener('wheel', (e) => {
+        this.assignEventListener('wheel', (e) => {
             if (!this.canvas._selectionManager.marqueeBox) {
                 this.canvas._camera.onWheel(e);
             }
@@ -96,8 +93,8 @@ export class PointerEventManager {
                             const src = await previewImage(file);
                             if (typeof src === 'string') {
                                 this.canvas.appendChild(new Img({
-                                    x: this.lastPointerPos.x,
-                                    y: this.lastPointerPos.y,
+                                    x: this.state.lastPointerPos.x,
+                                    y: this.state.lastPointerPos.y,
                                     src: src,
                                 }))
                             } else console.log('Image not added');
@@ -113,8 +110,8 @@ export class PointerEventManager {
                 for (let i = 0; i < images.length; i++) {
                     const image = images[i];
                     this.canvas.appendChild(new Img({
-                        x: this.lastPointerPos.x,
-                        y: this.lastPointerPos.y,
+                        x: this.state.lastPointerPos.x,
+                        y: this.state.lastPointerPos.y,
                         src: image.src,
                     }))
                 }
@@ -125,41 +122,38 @@ export class PointerEventManager {
 
     private onPointerDown(e: PointerEvent) {
         const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-        this.#startWorldX = wx;
-        this.#startWorldY = wy;
-        this.#lastWorldY = wy;
-        this.#lastWorldX = wx;
-        this.resizingDirection = null;
+        this.state.initialize(wx, wy);
 
-        if (this.#mode === PointerMode.PAN) {
-            this.canvas._selectionManager.clear();
+        if (this.state.mode === PointerMode.PAN) {
+            this.state.clearSelection();
             this.canvas.isGlobalClick = true;
-        } else if (this.#mode === PointerMode.SELECT) {
+        } else if (this.state.mode === PointerMode.SELECT) {
             this.canvas.isGlobalClick = false;
             if (e.button === 2) {
                 const child = this.checkCollidingChild(wx, wy);
                 if (child) {
                     this.canvas._selectionManager.remove([child as Rect]);
                 } else if (this.canvas.hitTest(wx, wy)) {
-                    this.canvas._selectionManager.clear();
+                    this.state.clearSelection();
                 }
             } else {
                 const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
                 if (boundingBoxType) {
                     // hit test to first check if the handle is selected
                     if (boundingBoxType !== 'CENTER') {
-                        this.resizingDirection = boundingBoxType;
+                        this.state.resizingDirection = boundingBoxType;
                     }
                 } else {
                     const child = this.checkCollidingChild(wx, wy);
                     if (child) {
                         if (!e.shiftKey) {                            
-                            this.canvas._selectionManager.clear();
+                            this.state.clearSelection();
                         }
                         this.canvas._selectionManager.add([child as Rect]);
                     } else {
-                        this.canvas._selectionManager.clear();
+                        this.state.clearSelection();
                         if (this.canvas._selectionManager.marqueeBox) {
+                            // TO REFACTOR:
                             this.canvas._selectionManager.clearMarquee();
                         } else {
                             this.canvas._selectionManager.marqueeBox = {x: wx, y: wy};
@@ -175,21 +169,20 @@ export class PointerEventManager {
 
     private onPointerMoveWhileDown(e: PointerEvent) {
         const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-        const dx = wx - this.#lastWorldX;
-        const dy = wy - this.#lastWorldY;
+        const dx = wx - this.state.lastWorldX;
+        const dy = wy - this.state.lastWorldY;
 
         if (this.canvas.isGlobalClick) {
-            this.canvas._camera.updateCameraPos(this.#startWorldX - wx, this.#startWorldY - wy);
-        } else if (this.resizingDirection) {
-            this.canvas._selectionManager.resize(dx, dy, this.resizingDirection);
+            this.canvas._camera.updateCameraPos(this.state.startWorldX - wx, this.state.startWorldY - wy);
+        } else if (this.state.resizingDirection) {
+            this.canvas._selectionManager.resize(dx, dy, this.state.resizingDirection);
         } else if (this.canvas._selectionManager.marqueeBox) {
             this.canvas._selectionManager.marqueeBox.resize(dx, dy, this.canvas.worldMatrix);
         } else {
             this.canvas._selectionManager.move(dx, dy);
         }
 
-        this.#lastWorldX = wx;
-        this.#lastWorldY = wy;
+        this.state.updateLastWorldCoord(wx, wy);
         this.canvas.canvas.style.cursor = 'grabbing'; 
     }
 
@@ -199,7 +192,6 @@ export class PointerEventManager {
         this.canvas.isGlobalClick = true;
         this.canvas.canvas.style.cursor = 'default';
         if (this.canvas._selectionManager.marqueeBox) {
-            // this.canvas._selectionManager
             this.canvas._selectionManager.clearMarquee();
         }
     }

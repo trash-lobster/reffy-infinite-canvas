@@ -1,3 +1,4 @@
 export * from './Canvas';
-export { Rectangle } from '@pixi/math';
 export * from './camera';
+export * from './Component';
+export * from './API'

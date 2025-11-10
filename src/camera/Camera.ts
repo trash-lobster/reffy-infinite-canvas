@@ -41,18 +41,16 @@ export class Camera {
     }
 
     updateCameraPos(dx: number, dy: number) {
-        this.state.x += dx;
-        this.state.y += dy;
+        this.state.incrementPosition(dx, dy);
     }
 
     updateZoom(x: number, y: number, scale: number) {
         const [wx0, wy0] = getWorldCoords(x, y, this.canvas);
-        this.state.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, this.state.zoom * scale));
+        this.state.setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, this.state.zoom * scale)));
 
         const [wx1, wy1] = getWorldCoords(x, y, this.canvas);
 
-        this.state.x += (wx0 - wx1);
-        this.state.y += (wy0 - wy1);
+        this.state.incrementPosition(wx0 - wx1, wy0 - wy1);
     }
 
     dispose() {

@@ -47,7 +47,12 @@ export class CameraState {
             height: observable,
             rotation: observable,
             zoom: observable,
+            setX: action,
+            setY: action,
             setPosition: action,
+            incrementPosition: action,
+            setWidth: action,
+            setHeight: action,
             setSize: action,
             setZoom: action,
             setRotation: action,
@@ -67,6 +72,11 @@ export class CameraState {
     setPosition(x: number, y: number) {
         this.x = x;
         this.y = y;
+    }
+
+    incrementPosition(dx: number, dy: number) {
+        this.x += dx;
+        this.y += dy;
     }
 
     setWidth(width: number) {

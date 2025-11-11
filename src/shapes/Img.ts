@@ -15,6 +15,7 @@ export class Img extends Rect {
         1, 1   // bottom-right
     ])
     
+    // since these won't change over the lifetime of this object, there is no need for a reactive state store
     private _src: string;
     private _image: HTMLImageElement;
 

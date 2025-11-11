@@ -60,14 +60,12 @@ export class RenderableState {
         this.translation[0] = x;
         this.translation[1] = y;
         this.markDirty();
-        this.updateLocalMatrix();
     }
 
     updateTranslation(x: number, y: number) {
         this.translation[0] += x;
         this.translation[1] += y;
         this.markDirty();
-        this.updateLocalMatrix();
     }
 
     setScale(sx: number, sy: number) {
@@ -75,14 +73,12 @@ export class RenderableState {
         this.scale[0] = sx;
         this.scale[1] = sy;
         this.markDirty();
-        this.updateLocalMatrix();
     }
 
     updateScale(x: number, y: number) {
         this.scale[0] *= x;
         this.scale[1] *= y;
         this.markDirty();
-        this.updateLocalMatrix();
     }
 
     setAngle(rotationDegree: number) {
@@ -92,7 +88,6 @@ export class RenderableState {
         if (radians === this.angleRadians) return;
         this.angleRadians = radians;
         this.markDirty();
-        this.updateLocalMatrix();
     }
 
     appendChild(child: Renderable) {

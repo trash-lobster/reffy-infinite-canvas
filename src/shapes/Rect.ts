@@ -2,6 +2,7 @@ import { getScalesFromMatrix, applyMatrixToPoint, isScalePositive } from "../uti
 import { Shape } from "./Shape";
 
 export class Rect extends Shape {
+    // these are not going to change throughout the lifetime as scale is going to be the one changing their visual
     private _width: number;
     private _height: number;
 

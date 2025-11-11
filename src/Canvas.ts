@@ -1,4 +1,4 @@
-import { createProgram, m3 } from './util';
+import { createProgram } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -13,24 +13,24 @@ import {
 	Renderable, 
 	Grid,
 } from './shapes';
-import { SelectionManager, PointerEventManager } from './manager';
+import { SelectionManager, PointerEventManager, KeyEventManager } from './manager';
 import { Camera } from './camera';
 import { CameraState, PointerEventState } from './state';
+import { CanvasHistory, Command } from './history';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
-	gl: WebGLRenderingContext;
-	
+	gl: WebGLRenderingContext;	
 	basicShapeProgram: WebGLProgram;
 	imageProgram: WebGLProgram;
 	gridProgram: WebGLProgram;
-	
 	grid: Grid;
 
 	isGlobalClick = true;
 
 	_selectionManager: SelectionManager;
 	_pointerEventManager: PointerEventManager;
+	_keyPressManager: KeyEventManager;
 	_camera: Camera;
 
 	private orderDirty = true;
@@ -39,7 +39,7 @@ export class Canvas extends Renderable {
     // Call this whenever children/layers/z-order change
     markOrderDirty() { this.orderDirty = true; }
 	
-	constructor(canvas: HTMLCanvasElement) {
+	constructor(canvas: HTMLCanvasElement, history: CanvasHistory) {
 		super();
 		this.canvas = canvas;
 		this.grid = new Grid();
@@ -56,7 +56,14 @@ export class Canvas extends Renderable {
 		this.engine = this.engine.bind(this);
 		this.assignEventListener = this.assignEventListener.bind(this);
 		
-		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram, this);
+		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram, this, history);
+
+		this._keyPressManager = new KeyEventManager(
+			this, 
+			history, 
+			this.assignEventListener
+		)
+
 		const pointerEventState = new PointerEventState({
 			getCanvas: this.engine,
 			clearSelection: this._selectionManager.clear,
@@ -64,8 +71,10 @@ export class Canvas extends Renderable {
 		this._pointerEventManager = new PointerEventManager(
 			this, 
 			pointerEventState,
+			history,
 			this.assignEventListener,
 		);
+
 		const cameraState = new CameraState({
 			getCanvas: this.engine
 		})
@@ -170,6 +179,14 @@ export class Canvas extends Renderable {
         this.renderList = list;
         this.orderDirty = false;
     }
+
+	// toJSON() {
+    //     return serializeCanvas(this);
+    // }
+
+    // exportAsString(space = 2) {
+    //     return JSON.stringify(this.toJSON(), null, space);
+    // }
 	
 	private static webglStats = {
         buffersCreated: 0,

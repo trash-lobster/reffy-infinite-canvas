@@ -5,6 +5,8 @@ import {
     previewImage
 } from "../util";
 import { PointerEventState } from "../state";
+import { CanvasHistory } from "../history";
+import { makeMultiResizeCommand, TransformSnapshot } from "./Command";
 
 export interface Point {
     x: number,
@@ -31,15 +33,21 @@ const cursorMap: Record<string, string> = {
 export class PointerEventManager {
     state: PointerEventState;
     canvas: Canvas;
+    history: CanvasHistory;
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
+
+    private currentResize?:
+      { targets: Array<{ ref: Rect; start: TransformSnapshot }> };
 
     constructor(
         canvas: Canvas, 
         state: PointerEventState,
+        history: CanvasHistory,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
         this.canvas = canvas;
         this.state = state;
+        this.history = history;
         this.assignEventListener = assignEventListener;
 
         this.onPointerDown = this.onPointerDown.bind(this);
@@ -124,6 +132,8 @@ export class PointerEventManager {
         const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
         this.state.initialize(wx, wy);
 
+        this.currentResize = undefined;
+
         if (this.state.mode === PointerMode.PAN) {
             this.state.clearSelection();
             this.canvas.isGlobalClick = true;
@@ -142,6 +152,17 @@ export class PointerEventManager {
                     // hit test to first check if the handle is selected
                     if (boundingBoxType !== 'CENTER') {
                         this.state.resizingDirection = boundingBoxType;
+                        
+                        const selected = this.canvas._selectionManager.selected; // getter added above
+                        
+                        if (selected.length) {
+                            this.currentResize = {
+                                targets: selected.map(ref => ({
+                                    ref,
+                                    start: { x: ref.x, y: ref.y, sx: ref.sx, sy: ref.sy },
+                                })),
+                            };
+                        }
                     }
                 } else {
                     const child = this.checkCollidingChild(wx, wy);
@@ -191,6 +212,32 @@ export class PointerEventManager {
         document.removeEventListener('pointerup', this.onPointerUp);
         this.canvas.isGlobalClick = true;
         this.canvas.canvas.style.cursor = 'default';
+
+        // single resize
+        if (this.currentResize && this.state.resizingDirection) {
+            const entries = this.currentResize.targets
+              .map(t => ({
+                  ref: t.ref,
+                  start: t.start,
+                  end: { x: t.ref.x, y: t.ref.y, sx: t.ref.sx, sy: t.ref.sy },
+              }))
+              .filter(e =>
+                  e.start.x !== e.end.x ||
+                  e.start.y !== e.end.y ||
+                  e.start.sx !== e.end.sx ||
+                  e.start.sy !== e.end.sy
+              );
+            if (entries.length) {
+                this.history.push(makeMultiResizeCommand(entries, 'Resize'));
+            }
+        }
+        this.currentResize = undefined;
+        this.state.resizingDirection = null;
+
+        if (this.history) {
+            console.log(this.history.undoStack);
+        }
+
         if (this.canvas._selectionManager.marqueeBox) {
             this.canvas._selectionManager.clearMarquee();
         }

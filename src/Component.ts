@@ -1,3 +1,4 @@
+import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement} from 'lit/decorators.js';
@@ -21,6 +22,7 @@ export class InfiniteCanvasElement extends LitElement {
 
     #canvas: Canvas;
     #resizeObserver?: ResizeObserver;
+    #history: CanvasHistory;
 
     connectedCallback() {
         super.connectedCallback();
@@ -33,11 +35,11 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     private initCanvas() {
+        this.#history = new CanvasHistory();
+
         const canvas = document.createElement('canvas');
+        this.#canvas = new Canvas(canvas, this.#history);
 
-        this.#canvas = new Canvas(canvas);
-
-        // fix resize as a camera 
         const resizeCanvas = () => {
             const dpr = window.devicePixelRatio || 1;
             const w = Math.max(1, window.innerWidth);

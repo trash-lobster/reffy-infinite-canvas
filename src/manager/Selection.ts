@@ -7,6 +7,7 @@ import {
     MarqueeSelectionBox, 
     MultiBoundingBox,
 } from "../boundingBox";
+import { CanvasHistory, Command } from "../history";
 
 export class SelectionManager {
     private canvas: Canvas;
@@ -18,6 +19,7 @@ export class SelectionManager {
 
     private gl: WebGLRenderingContext;
     private rectProgram: WebGLProgram;
+    private history: CanvasHistory;
 
     get selected(): Rect[] { return Array.from(this._selected); }
     set selected(shapes: Rect[]) {
@@ -38,11 +40,12 @@ export class SelectionManager {
      * @param gl 
      * @param program Add reference to program to allow easy linking
      */
-    constructor(gl: WebGLRenderingContext, program: WebGLProgram, canvas: Canvas) {
+    constructor(gl: WebGLRenderingContext, program: WebGLProgram, canvas: Canvas, history: CanvasHistory) {
         this.gl = gl;
         this.rectProgram = program;
         this.canvas = canvas;
         this.clear = this.clear.bind(this);
+        this.history = history;
     }
 
     // add, remove selected

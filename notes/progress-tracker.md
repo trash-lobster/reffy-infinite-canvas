@@ -62,3 +62,10 @@
 - Unnecessary adjustment to mulSX and mulSY - should have understood that the flip ratio is only one instance when you cross the threshold and the flip will be recorded
 - Fix recalculate bound method to flip for the correct image direction/width using the this.scale
 - And corner adjustment for cursor changes
+
+20251109:
+- Create web component
+
+20251110:
+- Adapt mobx as state management library
+- Migrated camera and pointer manager states to mobx

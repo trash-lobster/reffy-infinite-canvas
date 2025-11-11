@@ -209,7 +209,7 @@ export class BoundingBox {
     }
 
     move(dx: number, dy: number) {
-        this.target.setTranslation(dx, dy);
+        this.target.updateTranslation(dx, dy);
     }
 
     resize(
@@ -234,12 +234,10 @@ export class BoundingBox {
             const changeInXScale = dx / prevWorldW;
             const changeInYScale = dy / prevWorldH;
 
-            console.log(dx);
-                
             const mulSX = direction.includes('LEFT') ? 1 - changeInXScale : direction.includes('RIGHT')  ? 1 + changeInXScale : 1;
             const mulSY = direction.includes('TOP')  ? 1 - changeInYScale : direction.includes('BOTTOM') ? 1 + changeInYScale : 1 ;        
-            if (direction.includes('LEFT')) this.target.translation[0] += dx;
-            if (direction.includes('TOP')) this.target.translation[1] += dy;
+            if (direction.includes('LEFT')) this.target.updateTranslation(dx, 0);
+            if (direction.includes('TOP')) this.target.updateTranslation(0, dy);
             
             this.target.setScale(mulSX, mulSY);
         }
@@ -263,8 +261,7 @@ export class BoundingBox {
             const corner = this.corners.get(type);
 
             if (corner) {
-                corner.translation[0] = config.x;
-                corner.translation[1] = config.y;
+                corner.setTranslation(config.x, config.y);
                 corner.width = config.width;
                 corner.height = config.height;
                 corner.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;
@@ -287,8 +284,7 @@ export class BoundingBox {
 
             // only scale the side that should change, e.g. if it grows horizontally, scale only the width with scale and not height
             if (side) {
-                side.translation[0] = config.x;
-                side.translation[1] = config.y;
+                side.setTranslation(config.x, config.y);
                 side.width = config.width;
                 side.height = config.height;
                 side.color = this.mode === BoundingBoxMode.ACTIVE ? BASE_BLUE : LIGHT_BLUE;

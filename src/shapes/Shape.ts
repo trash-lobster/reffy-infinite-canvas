@@ -18,8 +18,7 @@ export abstract class Shape extends WebGLRenderable {
 
     constructor(x: number, y: number) {
         super();
-        this.translation[0] = x;
-        this.translation[1] = y;
+        this.setTranslation(x, y);
     }
 
     get layer() { return this._layer; }
@@ -31,11 +30,6 @@ export abstract class Shape extends WebGLRenderable {
     get seq() { return this._seq; }
 
     abstract getEdge() : BoundingVal;
-
-    setTranslation(x: number, y: number) {
-        this.translation = [this.translation[0] + x, this.translation[1] + y];
-        this.renderDirtyFlag = true;
-    }
 
     setAngle(rotationDegree: number) {
         const angleInDegrees = 360 - rotationDegree;

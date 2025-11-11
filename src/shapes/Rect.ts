@@ -38,7 +38,7 @@ export class Rect extends Shape {
     }
 
     getEdge() {
-        const [x, y] = this.translation;
+        const x = this.x, y = this.y;
         return {
             minX: Math.min(x, x + this.width),
             maxX: Math.max(x, x + this.width),

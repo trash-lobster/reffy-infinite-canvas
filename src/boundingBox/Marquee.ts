@@ -91,11 +91,11 @@ export class MarqueeSelectionBox {
         const my2 = Math.max(this.y, this.y + this.height);
         
         for (const child of canvas.children as Rect[]) {            
-            const [wx1, wy1] = applyMatrixToPoint(canvas.worldMatrix, child.translation[0], child.translation[1]);
+            const [wx1, wy1] = applyMatrixToPoint(canvas.worldMatrix, child.x, child.y);
             const [wx2, wy2] = applyMatrixToPoint(
                 canvas.worldMatrix,
-                child.translation[0] + child.width,
-                child.translation[1] + child.height
+                child.x + child.width,
+                child.y + child.height
             );
 
             const cx1 = Math.min(wx1, wx2);
@@ -126,8 +126,9 @@ export class MarqueeSelectionBox {
             const config = this.getRectConfig(type);
             
             if (rect) {
-                rect.translation[0] = config.x;
-                rect.translation[1] = config.y;
+                // rect.translation[0] = config.x;
+                // rect.translation[1] = config.y;
+                rect.setTranslation(config.x, config.y);
                 rect.width = config.width;
                 rect.height = config.height;
                 if (type === 'CENTER') {

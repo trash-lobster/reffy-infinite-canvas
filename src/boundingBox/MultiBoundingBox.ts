@@ -172,8 +172,8 @@ export class MultiBoundingBox {
         mulSY = Math.abs(mulSY) < min ? (mulSY < 0 ? -min : min) : mulSY;
 
         for (const target of this.targets) {
-            const tx = target.translation[0];
-            const ty = target.translation[1];
+            const tx = target.x;
+            const ty = target.y;
 
             const [wtx, wty] = applyMatrixToPoint(parentMatrix, tx, ty);
 
@@ -259,8 +259,9 @@ export class MultiBoundingBox {
             const config = this.getHandleConfig(type);
 
             if (handle) {
-                handle.translation[0] = config.x;
-                handle.translation[1] = config.y;
+                // handle.translation[0] = config.x;
+                // handle.translation[1] = config.y;
+                handle.setTranslation(config.x, config.y);
                 handle.width = config.width;
                 handle.height = config.height;
             }

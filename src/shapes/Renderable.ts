@@ -1,10 +1,17 @@
 import EventEmitter from "eventemitter3";
 import { m3 } from "../util";
+import { RenderableState } from "../state";
 
 export abstract class Renderable {
-    translation: number[] = [0, 0];
+    state: RenderableState;
     angleRadians: number = 0;
     scale: number[] = [1, 1];
+
+    get x() { return this.state.x }
+    get y() { return this.state.y }
+
+    updateTranslation(x: number, y: number) { this.state.updateTranslation(x, y); }
+    setTranslation(x: number, y: number) { this.state.setTranslation(x, y); }
 
     // manages pan, zoom and rotation
     localMatrix: number[] = m3.identity();
@@ -13,10 +20,13 @@ export abstract class Renderable {
 
     children: Renderable[] = [];
     parent: Renderable | null = null;
+    renderDirtyFlag: boolean = true;
 
     _emitter: EventEmitter;
-        
-    renderDirtyFlag: boolean = true;
+    
+    constructor() {
+        this.state = new RenderableState();
+    }
 
     appendChild<T extends Renderable>(child: T): T {
         child.setParent(this);
@@ -34,7 +44,7 @@ export abstract class Renderable {
     }
 
     updateWorldMatrix(parentWorldMatrix?: number[]) {
-        const translationMatrix = m3.translation(this.translation[0], this.translation[1]);
+        const translationMatrix = m3.translation(this.x, this.y);
         const rotationMatrix = m3.rotation(this.angleRadians);
         const scaleMatrix = m3.scaling(this.scale[0], this.scale[1]);
         

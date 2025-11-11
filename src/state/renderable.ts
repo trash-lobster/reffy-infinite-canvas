@@ -141,24 +141,20 @@ export class RenderableState {
         const s = m3.scaling(this.scale[0], this.scale[1]);
         // Order: T * R * S (adjust if needed)
         this.localMatrix = m3.multiply(m3.multiply(t, r), s);
-        this.updateWorldMatrix();
     }
 
-    updateWorldMatrix() {
-        if (this.parent && this.parent.state) {
-            const parentMatrix = this.parent.state.worldMatrix;
-            this.worldMatrix = m3.multiply(parentMatrix, this.localMatrix);
-        } else {
-            this.worldMatrix = this.localMatrix.slice();
-        }
+    updateWorldMatrix(parentWorldMatrix?: number[]) {
+        this.worldMatrix = parentWorldMatrix
+            ? m3.multiply(parentWorldMatrix, this.localMatrix)
+            : this.localMatrix.slice();
 
-        for (const c of this.children) {
-            c.state.updateWorldMatrix();
-        }
+        const worldMatrix = this.worldMatrix;
+        this.children.forEach(child => {
+            child.updateWorldMatrix(worldMatrix);
+        })
     }
 
     setWorldMatrix(worldMatrix: number[]) {
         this.worldMatrix = worldMatrix;
-        this.updateWorldMatrix();
     }
 }

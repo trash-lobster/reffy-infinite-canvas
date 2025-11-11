@@ -140,7 +140,7 @@ export class MultiBoundingBox {
 
     move(dx: number, dy: number) {
         for (const target of this.targets) {
-            target.setTranslation(dx, dy);
+            target.updateTranslation(dx, dy);
         }
     }
 

@@ -53,7 +53,6 @@ export abstract class Shape extends WebGLRenderable {
             this.updateVertexData(gl);
             this.clearDirty();
         }
-
         this.updateUniforms(gl);
         const uColor = gl.getUniformLocation(program, "u_color");
         if (uColor) {

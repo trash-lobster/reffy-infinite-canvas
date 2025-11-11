@@ -56,7 +56,6 @@ export class PointerEventState {
             clearResizingDirection: action,
             initialize: action,
             updateLastWorldCoord: action,
-            // end: action,
         });
     }
 
@@ -105,40 +104,4 @@ export class PointerEventState {
         this.lastWorldX = x;
         this.lastWorldY = y;
     }
-
-    // Update current pointer world coords and apply intent to canvas
-    // moveTo(worldX: number, worldY: number) {
-    //     const canvas = this.getCanvas();
-
-    //     const dx = worldX - this.lastWorldX;
-    //     const dy = worldY - this.lastWorldY;
-
-    //     if (this.mode === PointerMode.PAN) {
-    //         canvas._selectionManager?.clear?.();
-    //         canvas.isGlobalClick = true;
-    //         canvas._camera?.updateCameraPos?.(this.startWorldX - worldX, this.startWorldY - worldY);
-    //     } else {
-    //         canvas.isGlobalClick = false;
-    //         if (this.resizingDirection) {
-    //             canvas._selectionManager?.resize?.(dx, dy, this.resizingDirection);
-    //         } else if (canvas._selectionManager?.marqueeBox) {
-    //             canvas._selectionManager.marqueeBox.resize(dx, dy, canvas.worldMatrix);
-    //         } else {
-    //             canvas._selectionManager?.move?.(dx, dy);
-    //         }
-    //     }
-
-    //     this.lastWorldX = worldX;
-    //     this.lastWorldY = worldY;
-    // }
-
-    // Finish the interaction and cleanup temporary state
-    // end() {
-    //     const canvas = this.getCanvas();
-    //     canvas.isGlobalClick = true;
-    //     if (canvas._selectionManager?.marqueeBox) {
-    //         canvas._selectionManager.clearMarquee();
-    //     }
-    //     this.resizingDirection = null;
-    // }
 }

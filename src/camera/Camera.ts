@@ -28,7 +28,7 @@ export class Camera {
      * Called once to update the `worldMatrix` of the attached canvas, which is the view matrix.
      */
     private updateViewMatrix() {
-        this.canvas.worldMatrix = this.state.canvasMatrix;
+        this.canvas.setWorldMatrix(this.state.canvasMatrix);
         this.canvas.updateWorldMatrix();
     }
 

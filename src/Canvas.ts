@@ -26,8 +26,6 @@ export class Canvas extends Renderable {
 	gridProgram: WebGLProgram;
 	
 	grid: Grid;
-	
-	worldMatrix: number[] = m3.identity();
 
 	isGlobalClick = true;
 
@@ -98,7 +96,6 @@ export class Canvas extends Renderable {
 		this.gl.clearColor(0, 0, 0, 0);
     	this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 		this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
-		console.log(this.gl.canvas.width);
 
 		let currentProgram: WebGLProgram | null = null;
 
@@ -137,7 +134,7 @@ export class Canvas extends Renderable {
             }
         });
         
-        this.children = [];
+		this.clearChildren();
     }
 
 	getDOM() {

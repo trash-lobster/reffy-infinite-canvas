@@ -1,5 +1,4 @@
 import EventEmitter from "eventemitter3";
-import { m3 } from "../util";
 import { RenderableState } from "../state";
 
 export abstract class Renderable {
@@ -11,6 +10,11 @@ export abstract class Renderable {
     get sx() { return this.state.scaleX }
     get sy() { return this.state.scaleY }
     get dirty() { return this.state.dirty }
+    get localMatrix() { return this.state.localMatrix }
+    get worldMatrix() { return this.state.worldMatrix }
+    get children() { return this.state.children }
+    get parent() { return this.state.parent }
+    get angleRadians() { return this.}
 
     updateTranslation(x: number, y: number) { this.state.updateTranslation(x, y); }
     setTranslation(x: number, y: number) { this.state.setTranslation(x, y); }
@@ -18,14 +22,11 @@ export abstract class Renderable {
     setScale(x: number, y: number) { this.state.setScale(x, y); }
     markDirty() { this.state.markDirty(); }
     clearDirty() { this.state.clearDirty(); }
-
-    // manages pan, zoom and rotation
-    localMatrix: number[] = m3.identity();
-    // the canvas transformation -> transform word coordinates into screen coordinates
-    worldMatrix: number[] = m3.identity();
-
-    children: Renderable[] = [];
-    parent: Renderable | null = null;
+    updateLocalMatrix() { this.state.updateLocalMatrix() }
+    setWorldMatrix(matrix: number[]) { this.state.setWorldMatrix(matrix); }
+    addChild(child: Renderable) { this.state.appendChild(child); }
+    addParent(parent: Renderable | null) { return this.state.setParent(parent); }
+    clearChildren() { return this.state.clearChildren(); }
 
     _emitter: EventEmitter;
     
@@ -44,26 +45,13 @@ export abstract class Renderable {
             const i = this.parent.children.indexOf(this);
             if (i >= 0) this.parent.children.splice(i, 1);
         }
-        if (parent) parent.children.push(this);
-        this.parent = parent;
+        if (parent) parent.addChild(this);
+        this.addParent(parent);
     }
 
     updateWorldMatrix(parentWorldMatrix?: number[]) {
-        const translationMatrix = m3.translation(this.x, this.y);
-        const rotationMatrix = m3.rotation(this.angleRadians);
-        const scaleMatrix = m3.scaling(this.sx, this.sy);
-        
-        const matrix = m3.multiply(translationMatrix, rotationMatrix);
-        this.localMatrix = m3.multiply(matrix, scaleMatrix);
-
-        this.worldMatrix = parentWorldMatrix
-            ? m3.multiply(parentWorldMatrix, this.localMatrix)
-            : this.localMatrix.slice();
-
-        const worldMatrix = this.worldMatrix;
-        this.children.forEach(child => {
-            child.updateWorldMatrix(worldMatrix);
-        })
+        this.updateLocalMatrix();
+        this.state.updateWorldMatrix(parentWorldMatrix);
     }
 
     abstract render(gl: WebGLRenderingContext, program: WebGLProgram): void;

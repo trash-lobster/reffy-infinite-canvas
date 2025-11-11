@@ -3,7 +3,6 @@ import { RenderableState } from "../state";
 
 export abstract class Renderable {
     state: RenderableState;
-    angleRadians: number = 0;
 
     get x() { return this.state.x }
     get y() { return this.state.y }
@@ -14,16 +13,20 @@ export abstract class Renderable {
     get worldMatrix() { return this.state.worldMatrix }
     get children() { return this.state.children }
     get parent() { return this.state.parent }
-    get angleRadians() { return this.}
+    get angleRadians() { return this.angleRadians }
 
     updateTranslation(x: number, y: number) { this.state.updateTranslation(x, y); }
     setTranslation(x: number, y: number) { this.state.setTranslation(x, y); }
     updateScale(x: number, y: number) { this.state.updateScale(x, y); }
     setScale(x: number, y: number) { this.state.setScale(x, y); }
+    setAngle(rotationDegree: number) { return this.state.setAngle(rotationDegree); }
+
     markDirty() { this.state.markDirty(); }
     clearDirty() { this.state.clearDirty(); }
+    
     updateLocalMatrix() { this.state.updateLocalMatrix() }
     setWorldMatrix(matrix: number[]) { this.state.setWorldMatrix(matrix); }
+    
     addChild(child: Renderable) { this.state.appendChild(child); }
     addParent(parent: Renderable | null) { return this.state.setParent(parent); }
     clearChildren() { return this.state.clearChildren(); }

@@ -31,13 +31,7 @@ export abstract class Shape extends WebGLRenderable {
 
     abstract getEdge() : BoundingVal;
 
-    setAngle(rotationDegree: number) {
-        const angleInDegrees = 360 - rotationDegree;
-        this.angleRadians = angleInDegrees * Math.PI / 180;
-        this.markDirty();
-    }
-
-    color: [number, number, number, number] = [1, 0, 0.5, 1]; // default reddish-purple
+    color: [number, number, number, number] = [1, 0, 0.5, 1];
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
         this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);

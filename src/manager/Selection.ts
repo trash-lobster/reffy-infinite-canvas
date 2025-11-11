@@ -118,7 +118,7 @@ export class SelectionManager {
         for (const box of this._boundingBoxes.values()) {
             const ans = box.hitTest(wx, wy, this.canvas.worldMatrix);
             if (ans) {
-                if (box.target.scale[0] * box.target.scale[1] < 0) {
+                if (box.target.sx * box.target.sy < 0) {
                     return oppositeCorner(ans);
                 }
                 return ans;

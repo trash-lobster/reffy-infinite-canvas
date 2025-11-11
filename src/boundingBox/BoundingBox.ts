@@ -222,8 +222,8 @@ export class BoundingBox {
             const baseH = Math.abs(this.height);
 
             // Use the shape's local scale (ignore camera/view)
-            const curSX = this.target.scale[0];
-            const curSY = this.target.scale[1];
+            const curSX = this.target.sx;
+            const curSY = this.target.sy;
 
             // // Current world sizes - also allow flipping by determining a non zero threshold
             const min = 1e-6;

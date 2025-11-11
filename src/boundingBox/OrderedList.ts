@@ -54,25 +54,25 @@ export class OrderedList {
 export function getX(shape: Rect) {
     const [ startX, ] = applyMatrixToPoint(shape.worldMatrix);
     const [ endX, ] = applyMatrixToPoint(shape.worldMatrix, shape.width, 0);
-    return shape.scale[0] < 0 ? endX : startX;
+    return shape.sx < 0 ? endX : startX;
 }
 
 export function getY(shape: Rect) {
     const [ , startY] = applyMatrixToPoint(shape.worldMatrix);
     const [ , endY ] = applyMatrixToPoint(shape.worldMatrix, 0, shape.height);
-    return shape.scale[1] < 0 ? endY : startY;
+    return shape.sy < 0 ? endY : startY;
 }
 
 export function getEndX(shape: Rect) {
     const [ startX, ] = applyMatrixToPoint(shape.worldMatrix);
     const [ endX, ] = applyMatrixToPoint(shape.worldMatrix, shape.width, 0);
-    return shape.scale[0] < 0 ? startX : endX;
+    return shape.sx < 0 ? startX : endX;
 }
 
 export function getEndY(shape: Rect) {
     const [ , startY ] = applyMatrixToPoint(shape.worldMatrix);
     const [ , endY ] = applyMatrixToPoint(shape.worldMatrix, 0, shape.height);
-    return shape.scale[1] < 0 ? startY : endY;
+    return shape.sy < 0 ? startY : endY;
 }
 
 export function getWidth(shape: Rect) {

@@ -38,8 +38,7 @@ export abstract class Shape extends WebGLRenderable {
     }
 
     setScale(x: number, y: number) {
-        this.scale[0] *= x;
-        this.scale[1] *= y;
+        this.updateScale(x, y);
         this.renderDirtyFlag = true;
     }
 

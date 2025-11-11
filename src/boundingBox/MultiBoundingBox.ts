@@ -189,7 +189,7 @@ export class MultiBoundingBox {
             const dLy = dWy / sY;
 
             target.setScale(mulSX, mulSY);
-            target.setTranslation(dLx, dLy);
+            target.updateTranslation(dLx, dLy);
         }
 
         this.scale[0] = this.scale[0] * mulSX < 0 ? -1 : 1;
@@ -259,8 +259,6 @@ export class MultiBoundingBox {
             const config = this.getHandleConfig(type);
 
             if (handle) {
-                // handle.translation[0] = config.x;
-                // handle.translation[1] = config.y;
                 handle.setTranslation(config.x, config.y);
                 handle.width = config.width;
                 handle.height = config.height;

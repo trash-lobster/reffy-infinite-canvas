@@ -26,7 +26,7 @@ export class Img extends Rect {
         this._image.crossOrigin = 'anonymous'; // Enable CORS
         this._image.src = config.src;
         this._image.onload = () => {
-            this.renderDirtyFlag = true;
+            this.markDirty();
             this.width = config.width ?? this._image.naturalWidth;
             this.height = config.height ?? this._image.naturalHeight;
         };
@@ -39,14 +39,14 @@ export class Img extends Rect {
     set src(val: string) {
         if (this._src !== val) {
             this._src = val;
-            this.renderDirtyFlag = true;
+            this.markDirty();
         }
     }
     
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
         this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
 
-        if (this.renderDirtyFlag) {
+        if (this.dirty) {
 
             if (!this.initialized) {
                 this.setUpVertexData(gl, program);
@@ -67,8 +67,7 @@ export class Img extends Rect {
             }
             
             this.updateVertexData(gl);
-            
-            this.renderDirtyFlag = false;
+            this.clearDirty();
         }
         super.updateUniforms(gl);
         this.draw(gl);

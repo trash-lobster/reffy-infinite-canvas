@@ -10,11 +10,14 @@ export abstract class Renderable {
     get y() { return this.state.y }
     get sx() { return this.state.scaleX }
     get sy() { return this.state.scaleY }
+    get dirty() { return this.state.dirty }
 
     updateTranslation(x: number, y: number) { this.state.updateTranslation(x, y); }
     setTranslation(x: number, y: number) { this.state.setTranslation(x, y); }
     updateScale(x: number, y: number) { this.state.updateScale(x, y); }
     setScale(x: number, y: number) { this.state.setScale(x, y); }
+    markDirty() { this.state.markDirty(); }
+    clearDirty() { this.state.clearDirty(); }
 
     // manages pan, zoom and rotation
     localMatrix: number[] = m3.identity();
@@ -23,7 +26,6 @@ export abstract class Renderable {
 
     children: Renderable[] = [];
     parent: Renderable | null = null;
-    renderDirtyFlag: boolean = true;
 
     _emitter: EventEmitter;
     

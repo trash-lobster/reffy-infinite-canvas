@@ -39,10 +39,10 @@ export class RenderableState {
             clearChildren: action,
             setParent: action,
             markDirty: action,
+            clearDirty: action,
             updateLocalMatrix: action,
             updateWorldMatrix: action,
             setWorldMatrix: action,
-            clearDirty: action,
         });
         this.updateLocalMatrix();
         this.updateWorldMatrix();

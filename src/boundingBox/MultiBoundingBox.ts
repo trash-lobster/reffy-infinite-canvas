@@ -188,7 +188,7 @@ export class MultiBoundingBox {
             const dLx = dWx / sX;
             const dLy = dWy / sY;
 
-            target.setScale(mulSX, mulSY);
+            target.updateScale(mulSX, mulSY);
             target.updateTranslation(dLx, dLy);
         }
 

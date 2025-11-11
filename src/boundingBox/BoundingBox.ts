@@ -239,7 +239,7 @@ export class BoundingBox {
             if (direction.includes('LEFT')) this.target.updateTranslation(dx, 0);
             if (direction.includes('TOP')) this.target.updateTranslation(0, dy);
             
-            this.target.setScale(mulSX, mulSY);
+            this.target.updateScale(mulSX, mulSY);
         }
     }
 

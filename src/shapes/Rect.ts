@@ -12,10 +12,10 @@ export class Rect extends Shape {
     }
 
     get width() { return this._width; }
-    set width(value: number) { if (this._width !== value) { this._width = value; this.renderDirtyFlag = true; } }
+    set width(value: number) { if (this._width !== value) { this._width = value; this.markDirty(); } }
 
     get height() { return this._height; }
-    set height(value: number) { if (this._height !== value) { this._height = value; this.renderDirtyFlag = true; } }
+    set height(value: number) { if (this._height !== value) { this._height = value; this.markDirty(); } }
 
     getVertexCount(): number {
         return 6;

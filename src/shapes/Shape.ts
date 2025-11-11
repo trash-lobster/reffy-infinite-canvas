@@ -22,10 +22,10 @@ export abstract class Shape extends WebGLRenderable {
     }
 
     get layer() { return this._layer; }
-    set layer(v: number) { if (this._layer !== v) { this._layer = v; this.renderDirtyFlag = true; } }
+    set layer(v: number) { if (this._layer !== v) { this._layer = v; this.markDirty(); } }
 
     get renderOrder() { return this._renderOrder; }
-    set renderOrder(v: number) { if (this._renderOrder !== v) { this._renderOrder = v; this.renderDirtyFlag = true; } }
+    set renderOrder(v: number) { if (this._renderOrder !== v) { this._renderOrder = v; this.markDirty(); } }
 
     get seq() { return this._seq; }
 
@@ -34,12 +34,7 @@ export abstract class Shape extends WebGLRenderable {
     setAngle(rotationDegree: number) {
         const angleInDegrees = 360 - rotationDegree;
         this.angleRadians = angleInDegrees * Math.PI / 180;
-        this.renderDirtyFlag = true;
-    }
-
-    setScale(x: number, y: number) {
-        this.updateScale(x, y);
-        this.renderDirtyFlag = true;
+        this.markDirty();
     }
 
     color: [number, number, number, number] = [1, 0, 0.5, 1]; // default reddish-purple
@@ -49,14 +44,14 @@ export abstract class Shape extends WebGLRenderable {
         
         gl.useProgram(program);
 
-        if (this.renderDirtyFlag) {
+        if (this.dirty) {
             if (!this.initialized) {
                 this.setUpVertexData(gl, program);
                 this.setUpUniforms(gl, program);
                 this.initialized = true;
             }
             this.updateVertexData(gl);
-            this.renderDirtyFlag = false;
+            this.clearDirty();
         }
 
         this.updateUniforms(gl);

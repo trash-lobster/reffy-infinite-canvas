@@ -2,6 +2,8 @@ import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement} from 'lit/decorators.js';
+import { addImages as innerAddImages } from './util';
+import { makeMultiAddChildCommand } from './manager/SceneCommand';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -93,9 +95,18 @@ export class InfiniteCanvasElement extends LitElement {
         )
     }
 
-    addImages(fileList: FileList) {
+    async addImages(fileList: FileList) {
         if (!this.#canvas) return;
-        
+        const newImages = await innerAddImages(
+            fileList, 
+            (src: string) => 
+                this.#canvas.addToCanvas(
+                    src,
+                    this.#canvas.canvas.width / 2, 
+                    this.#canvas.canvas.height / 2,
+                )
+        );
+        this.#history.push(makeMultiAddChildCommand(this.#canvas, newImages));
     }
     
 }

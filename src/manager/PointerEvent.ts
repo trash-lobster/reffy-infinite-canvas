@@ -1,6 +1,7 @@
 import { Canvas } from "Canvas";
 import { Img, Rect, Shape } from "../shapes";
 import {
+    addImages,
     getWorldCoords,
     previewImage
 } from "../util";
@@ -35,6 +36,7 @@ export class PointerEventManager {
     state: PointerEventState;
     canvas: Canvas;
     history: CanvasHistory;
+    addToCanvas: (src: string, x: number, y: number) => Img;
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
     private currentTransform?:
@@ -44,16 +46,19 @@ export class PointerEventManager {
         canvas: Canvas, 
         state: PointerEventState,
         history: CanvasHistory,
+        addToCanvas: (src: string, x: number, y: number) => Img,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
         this.canvas = canvas;
         this.state = state;
         this.history = history;
+        this.addToCanvas = addToCanvas;
         this.assignEventListener = assignEventListener;
 
         this.onPointerDown = this.onPointerDown.bind(this);
         this.onPointerMoveWhileDown = this.onPointerMoveWhileDown.bind(this);
         this.onPointerUp = this.onPointerUp.bind(this);
+        this.addToCanvas = this.addToCanvas.bind(this);
 
         this.addOnPaste();
         this.addOnPointerMove();
@@ -91,33 +96,12 @@ export class PointerEventManager {
 
     private addOnPaste() {
         window.addEventListener('paste', async (e) => {
-            const newImages: Img[] = [];
+            let newImages: Img[] = [];
 
             const files = e.clipboardData.files;
             const html = e.clipboardData.getData('text/html');
 
-            if (files.length > 0) {
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    if(file.type.startsWith('image/')) {
-                        try {
-                            const src = await previewImage(file);
-                            if (typeof src === 'string') {
-                                const newImg = new Img({
-                                    x: this.state.lastPointerPos.x,
-                                    y: this.state.lastPointerPos.y,
-                                    src: src,
-                                });
-
-                                this.canvas.appendChild(newImg);
-                                newImages.push(newImg);
-                            } else console.log('Image not added');
-                        } catch {
-                            console.error('Failed to copy image.');
-                        }
-                    }
-                }
-            } else if (html) {
+            if (html) {
                 const el = document.createElement('html');
                 el.innerHTML = html;
                 const images = el.getElementsByTagName('img');
@@ -131,6 +115,11 @@ export class PointerEventManager {
                     this.canvas.appendChild(newImg);
                     newImages.push(newImg);
                 }
+            } else {
+                newImages = await addImages(
+                    files, 
+                    (src: string) => this.addToCanvas(src, this.state.lastPointerPos.x, this.state.lastPointerPos.y)
+                );
             }
 
             this.history.push(makeMultiAddChildCommand(this.canvas, newImages));

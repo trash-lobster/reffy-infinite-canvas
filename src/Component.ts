@@ -85,13 +85,19 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     zoomOut() {
-    if (!this.#canvas) return;
+        if (!this.#canvas) return;
         this.#canvas._camera.updateZoom(
             this.#canvas.canvas.width / 2, 
             this.#canvas.canvas.height / 2,
             Math.exp(0.5 * 0.3),
         )
     }
+
+    addImages(fileList: FileList) {
+        if (!this.#canvas) return;
+        
+    }
+    
 }
 
 declare global {

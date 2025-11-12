@@ -54,6 +54,7 @@ export class Canvas extends Renderable {
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 		
 		this.engine = this.engine.bind(this);
+		this.addToCanvas = this.addToCanvas.bind(this);
 		this.assignEventListener = this.assignEventListener.bind(this);
 		
 		this._selectionManager = new SelectionManager(
@@ -78,6 +79,7 @@ export class Canvas extends Renderable {
 			this, 
 			pointerEventState,
 			history,
+			this.addToCanvas,
 			this.assignEventListener,
 		);
 
@@ -177,6 +179,17 @@ export class Canvas extends Renderable {
 		this.isGlobalClick = true;
 		return this.isGlobalClick;
 	}
+
+	addToCanvas(src: string, x: number, y: number) {
+        const newImg = new Img({
+            x,
+            y,
+            src: src,
+        });
+
+        this.appendChild(newImg);
+        return newImg;
+    }
 
 	private collectShapes(node: Renderable, out: Shape[]) {
         if (node instanceof Shape) out.push(node);

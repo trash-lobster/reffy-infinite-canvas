@@ -30,4 +30,8 @@ export class InfiniteCanvasAPI {
       const el = await canvasReady;
       el.toggleMode();
     }
+
+    async addImageFromLocal(fileList: FileList) {
+        
+    }
 }

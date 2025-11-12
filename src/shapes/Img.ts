@@ -1,10 +1,11 @@
 import { Rect } from "./Rect";
+import { Renderable } from "./Renderable";
 
 export class Img extends Rect {
     private texcoordBuffer?: WebGLBuffer;
     private texcoordLocation?: number;
     private samplerLocation?: WebGLUniformLocation;
-    private texture: WebGLTexture;
+    private texture?: WebGLTexture;
 
     private texCoordArray: Float32Array = new Float32Array([
         0, 0,  // top-left
@@ -135,19 +136,15 @@ export class Img extends Rect {
         gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
     }
 
-    destroy(gl: WebGLRenderingContext) {
-        if (this.positionBuffer) {
-            gl.deleteBuffer(this.positionBuffer);
-        }
-
+    destroy() {
+        super.destroy();
         if (this.texcoordBuffer) {
-            gl.deleteBuffer(this.texcoordBuffer);
+            this.texcoordBuffer = undefined;
         }
-
         if (this.texture) {
-            gl.deleteTexture(this.texture);
+            this.texture = undefined;
         }
-
-        this.initialized = false;
+        this.texcoordLocation = undefined;
+        this.samplerLocation = undefined;
     }
 }

@@ -114,34 +114,3 @@ export function setXY(
         undo() { setter ? setter(fromX, fromY) : ((target.x = fromX), (target.y = fromY)); },
     };
 }
-
-// Helpers for add/remove children
-export function addChild<T extends { children: any[] }>(
-    parent: T, child: any, label = "Add Child"
-): Command {
-    return {
-        label,
-        do() { parent.children.push(child); },
-        undo() {
-        const i = parent.children.indexOf(child);
-        if (i >= 0) parent.children.splice(i, 1);
-        },
-    };
-}
-
-export function removeChild<T extends { children: any[] }>(
-    parent: T, child: any, label = "Remove Child"
-): Command {
-    let idx = -1;
-    return {
-        label,
-        do() {
-            idx = parent.children.indexOf(child);
-            if (idx >= 0) parent.children.splice(idx, 1);
-        },
-        undo() {
-            if (idx < 0) { parent.children.push(child); return; }
-            parent.children.splice(idx, 0, child);
-        },
-    };
-}

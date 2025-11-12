@@ -26,12 +26,21 @@ export class KeyEventManager {
     private onKeyPressed(e: KeyboardEvent) {
         if (this.isCtrlZ(e)) {
             e.preventDefault();
+            console.log('attempting undo');
             this.history.undo();
+        } else if (this.isCtrlY(e)) {
+            e.preventDefault();
+            this.history.redo();
         }
     }
 
     private isCtrlZ(e: KeyboardEvent): boolean {
         const key = e.key.toLowerCase();
         return (key === 'z') && (e.ctrlKey || e.metaKey) && !e.shiftKey;
+    }
+
+    private isCtrlY(e: KeyboardEvent): boolean {
+        const key = e.key.toLowerCase();
+        return (key === 'y') && (e.ctrlKey || e.metaKey) && !e.shiftKey;
     }
 }

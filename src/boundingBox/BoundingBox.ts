@@ -198,13 +198,13 @@ export class BoundingBox {
         }
     }
 
-    destroy(gl: WebGLRenderingContext) {
+    destroy() {
         for (const [_, handle] of this.sides.entries()) {
-            handle.destroy(gl);
+            handle.destroy();
         }
         
         for (const [key, corner] of this.corners.entries()) {
-            corner.destroy(gl);
+            corner.destroy();
         }
     }
 

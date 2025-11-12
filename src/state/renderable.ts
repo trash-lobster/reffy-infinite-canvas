@@ -34,7 +34,9 @@ export class RenderableState {
             setTranslation: action,
             setScale: action,
             setAngle: action,
+            getChild: action,
             appendChild: action,
+            appendChildren: action,
             removeChild: action,
             clearChildren: action,
             setParent: action,
@@ -54,7 +56,7 @@ export class RenderableState {
     get scaleX() { return this.scale[0]; }
     get scaleY() { return this.scale[1]; }
     get dirty() { return this.renderDirtyFlag; }
-
+    
     // Actions
     setTranslation(x: number, y: number) {
         this.translation[0] = x;
@@ -90,9 +92,19 @@ export class RenderableState {
         this.markDirty();
     }
 
+    getChild(i: number) { return this.children[i] }
+
     appendChild(child: Renderable) {
         if (this.children.includes(child)) return;
         this.children.push(child);
+        this.markDirty();
+    }
+
+    appendChildren(children: Renderable[]) {
+        for (const child of children) {
+            if (this.children.includes(child)) return;
+            this.children.push(child);
+        }
         this.markDirty();
     }
 

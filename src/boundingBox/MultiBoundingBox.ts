@@ -132,9 +132,9 @@ export class MultiBoundingBox {
         this.updateHandles();
     }
 
-    destroy(gl: WebGLRenderingContext) {
+    destroy() {
         for (const [_, handle] of this.handles.entries()) {
-            handle.destroy(gl);
+            handle.destroy();
         }
     }
 

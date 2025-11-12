@@ -1,3 +1,4 @@
+import { Renderable } from "shapes";
 import { Command } from "../history";
 
 export interface TransformSnapshot {
@@ -7,11 +8,9 @@ export interface TransformSnapshot {
     sy: number;
 }
 
-function applyTransform(target: any, t: TransformSnapshot) {
-    if (typeof target.setTranslation === 'function') target.setTranslation(t.x, t.y);
-    else { target.x = t.x; target.y = t.y; }
-    if (typeof target.setScale === 'function') target.setScale(t.sx, t.sy);
-    else { target.sx = t.sx; target.sy = t.sy; }
+function applyTransform(target: Renderable, t: TransformSnapshot) {
+    target.setTranslation(t.x, t.y);
+    target.setScale(t.sx, t.sy);
 }
 
 export function makeTransformCommand(

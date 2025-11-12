@@ -30,7 +30,7 @@ function createShader(gl:WebGLRenderingContext, type : GLenum, source: string) {
     if (success) {
         return shader;
     }
-    console.log(gl.getShaderInfoLog(shader));
+    
     gl.deleteShader(shader);
     throw new Error('Shader was not created.');
 }

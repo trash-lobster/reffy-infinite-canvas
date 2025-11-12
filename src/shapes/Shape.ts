@@ -76,9 +76,8 @@ export abstract class Shape extends WebGLRenderable {
         gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
     }
 
-    destroy(gl: WebGLRenderingContext) {
+    destroy() {
         if (this.positionBuffer) {
-            gl.deleteBuffer(this.positionBuffer);
             this.positionBuffer = undefined;
         }
         this.initialized = false;

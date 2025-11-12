@@ -7,6 +7,7 @@ import {
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
 import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
+import { makeMultiAddChildCommand, SceneSnapshot } from "./SceneCommand";
 
 export interface Point {
     x: number,
@@ -90,6 +91,8 @@ export class PointerEventManager {
 
     private addOnPaste() {
         window.addEventListener('paste', async (e) => {
+            const newImages: Img[] = [];
+
             const files = e.clipboardData.files;
             const html = e.clipboardData.getData('text/html');
 
@@ -100,11 +103,14 @@ export class PointerEventManager {
                         try {
                             const src = await previewImage(file);
                             if (typeof src === 'string') {
-                                this.canvas.appendChild(new Img({
+                                const newImg = new Img({
                                     x: this.state.lastPointerPos.x,
                                     y: this.state.lastPointerPos.y,
                                     src: src,
-                                }))
+                                });
+
+                                this.canvas.appendChild(newImg);
+                                newImages.push(newImg);
                             } else console.log('Image not added');
                         } catch {
                             console.error('Failed to copy image.');
@@ -117,13 +123,17 @@ export class PointerEventManager {
                 const images = el.getElementsByTagName('img');
                 for (let i = 0; i < images.length; i++) {
                     const image = images[i];
-                    this.canvas.appendChild(new Img({
+                    const newImg = new Img({
                         x: this.state.lastPointerPos.x,
                         y: this.state.lastPointerPos.y,
                         src: image.src,
-                    }))
+                    });
+                    this.canvas.appendChild(newImg);
+                    newImages.push(newImg);
                 }
             }
+
+            this.history.push(makeMultiAddChildCommand(this.canvas, newImages));
         });
     }
     // #endregion
@@ -228,10 +238,6 @@ export class PointerEventManager {
         }
         this.currentTransform = undefined;
         this.state.resizingDirection = null;
-
-        if (this.history) {
-            console.log(this.history.undoStack);
-        }
 
         if (this.canvas._selectionManager.marqueeBox) {
             this.canvas._selectionManager.clearMarquee();

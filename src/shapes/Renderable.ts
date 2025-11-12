@@ -58,7 +58,7 @@ export abstract class Renderable {
     }
 
     abstract render(gl: WebGLRenderingContext, program: WebGLProgram): void;
-    abstract destroy(gl: WebGLRenderingContext): void;
+    abstract destroy(): void;
     abstract hitTest(x: number, y: number): boolean;
 
     addEventListener(

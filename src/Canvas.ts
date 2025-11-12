@@ -96,6 +96,15 @@ export class Canvas extends Renderable {
 		return child;
 	}
 
+	removeChild(child: Renderable): void {
+		this.state.removeChild(child);
+		if (this._selectionManager) {
+			this._selectionManager.remove([child as any]);
+		}
+		child.destroy();
+		this.markOrderDirty();
+	}
+
 	updateWorldMatrix() {
 		this.grid.updateWorldMatrix(this.worldMatrix);
 		this.children.forEach(child => {
@@ -144,7 +153,7 @@ export class Canvas extends Renderable {
         // Clean up all renderables
         this.children.forEach(child => {
             if ('destroy' in child) {
-                child.destroy(this.gl);
+                child.destroy();
             }
         });
         

@@ -8,6 +8,7 @@ import {
     MultiBoundingBox,
 } from "../boundingBox";
 import { CanvasHistory, Command } from "../history";
+import { makeMultiRemoveChildCommand } from "./SceneCommand";
 
 export class SelectionManager {
     private canvas: Canvas;
@@ -45,6 +46,7 @@ export class SelectionManager {
         this.rectProgram = program;
         this.canvas = canvas;
         this.clear = this.clear.bind(this);
+        this.deleteSelected = this.deleteSelected.bind(this);
         this.history = history;
     }
 
@@ -88,6 +90,16 @@ export class SelectionManager {
             this._boundingBoxes.forEach(box => box.setActive());
             this._multiBoundingBox = null;
         }
+    }
+
+    deleteSelected() {
+        const toBeDeleted = [...this._selected];
+        this.remove(toBeDeleted);
+        for (const selected of toBeDeleted) {
+            selected.destroy();
+        }
+
+        this.history.push(makeMultiRemoveChildCommand(this.canvas, toBeDeleted));
     }
 
     /**

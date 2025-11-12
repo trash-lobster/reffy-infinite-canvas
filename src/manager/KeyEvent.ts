@@ -5,14 +5,17 @@ export class KeyEventManager {
     canvas: Canvas;
     history: CanvasHistory;
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
+    deleteSelected: () => void;
 
     constructor(
         canvas: Canvas, 
         history: CanvasHistory,
+        deleteSelected: () => void,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
         this.canvas = canvas;
         this.history = history;
+        this.deleteSelected = deleteSelected;
         this.assignEventListener = assignEventListener;
 
         this.onKeyPressed = this.onKeyPressed.bind(this);
@@ -26,11 +29,19 @@ export class KeyEventManager {
     private onKeyPressed(e: KeyboardEvent) {
         if (this.isCtrlZ(e)) {
             e.preventDefault();
-            console.log('attempting undo');
             this.history.undo();
-        } else if (this.isCtrlY(e)) {
+            return;
+        } 
+        
+        if (this.isCtrlY(e)) {
             e.preventDefault();
             this.history.redo();
+            return;
+        }
+
+        if (this.isDelete(e)) {
+            this.deleteSelected();
+            return;
         }
     }
 
@@ -42,5 +53,9 @@ export class KeyEventManager {
     private isCtrlY(e: KeyboardEvent): boolean {
         const key = e.key.toLowerCase();
         return (key === 'y') && (e.ctrlKey || e.metaKey) && !e.shiftKey;
+    }
+
+    private isDelete(e: KeyboardEvent): boolean {
+        return e.key === 'Delete';
     }
 }

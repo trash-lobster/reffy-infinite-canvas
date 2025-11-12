@@ -65,7 +65,8 @@ export class Canvas extends Renderable {
 
 		this._keyPressManager = new KeyEventManager(
 			this, 
-			history, 
+			history,
+			this._selectionManager.deleteSelected,
 			this.assignEventListener
 		)
 

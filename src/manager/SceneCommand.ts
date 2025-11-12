@@ -61,3 +61,44 @@ export function makeRemoveChildCommand(
         },
     };
 }
+
+export function makeMultiRemoveChildCommand(
+    parent: Canvas,
+    children: Renderable[],
+    label = "Remove Children"
+): Command {
+    // Store original indices so we can restore ordering on undo
+    let positions: { child: Renderable; idx: number }[] = [];
+    return {
+        label,
+        do() {
+            // Build a unique set to avoid duplicate work
+            const target = new Set(children);
+            positions = [];
+            parent.children.forEach((c, i) => {
+                if (target.has(c)) positions.push({ child: c, idx: i });
+            });
+            // Remove in descending index order so earlier indices remain valid
+            positions
+                .slice()
+                .sort((a, b) => b.idx - a.idx)
+                .forEach(({ child }) => {
+                    parent.removeChild(child); // handles selection + GPU cleanup
+                });
+        },
+        undo() {
+            // Reinsert in ascending order at original indices
+            positions
+                .slice()
+                .sort((a, b) => a.idx - b.idx)
+                .forEach(({ child, idx }) => {
+                    if (parent.children.includes(child)) return; // already restored
+                    // Insert at the recorded index preserving draw order
+                    parent.children.splice(Math.min(idx, parent.children.length), 0, child);
+                    // Re-establish parent link (manual since we bypass appendChild)
+                    child.addParent(parent);
+                });
+            parent.markOrderDirty();
+        },
+    };
+}

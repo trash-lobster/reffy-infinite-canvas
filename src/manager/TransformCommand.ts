@@ -14,11 +14,11 @@ function applyTransform(target: any, t: TransformSnapshot) {
     else { target.sx = t.sx; target.sy = t.sy; }
 }
 
-export function makeResizeCommand(
+export function makeTransformCommand(
     target: any,
     start: TransformSnapshot,
     end: TransformSnapshot,
-    label = 'Resize'
+    label = 'Transform'
 ): Command {
     return {
         label,
@@ -27,9 +27,9 @@ export function makeResizeCommand(
     };
 }
 
-export function makeMultiResizeCommand(
+export function makeMultiTransformCommand(
     entries: Array<{ ref: any; start: TransformSnapshot; end: TransformSnapshot }>,
-    label = 'Resize'
+    label = 'Transform'
 ): Command {
     return {
         label,

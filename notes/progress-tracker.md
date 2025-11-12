@@ -69,3 +69,12 @@
 20251110:
 - Adapt mobx as state management library
 - Migrated camera and pointer manager states to mobx
+
+20251111:
+- Create renderable state
+- Update the affected code
+- create history tracking
+- basic command pattern
+- create resize command to test
+- add basic key event detection to undo resize event
+- use gpt to template a serializer for data export

@@ -56,7 +56,12 @@ export class Canvas extends Renderable {
 		this.engine = this.engine.bind(this);
 		this.assignEventListener = this.assignEventListener.bind(this);
 		
-		this._selectionManager = new SelectionManager(this.gl, this.basicShapeProgram, this, history);
+		this._selectionManager = new SelectionManager(
+			this.gl, 
+			this.basicShapeProgram, 
+			this, 
+			history,
+		);
 
 		this._keyPressManager = new KeyEventManager(
 			this, 

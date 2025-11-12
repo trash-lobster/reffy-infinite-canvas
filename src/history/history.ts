@@ -22,11 +22,8 @@ export class CanvasHistory {
         if (this._openGroup) {
             this._openGroup.push(cmd);
         } else {
-            // push as a single-command group
             this._undoStack.push([cmd]);
-            // execute immediately to keep model in sync
             cmd.do();
-            // new action invalidates redo
             this._redoStack.length = 0;
         }
     }
@@ -35,7 +32,6 @@ export class CanvasHistory {
         if (!this._openGroup) return;
         const group = this._openGroup;
         this._openGroup = null;
-        // execute all commands in order once
         for (const c of group) c.do();
         this._undoStack.push(group);
         this._redoStack.length = 0;
@@ -52,10 +48,9 @@ export class CanvasHistory {
     canRedo() { return this._redoStack.length > 0; }
 
     undo() {
-        console.log('undoing');
         const group = this._undoStack.pop();
         if (!group) return;
-        // undo in reverse order
+
         for (let i = group.length - 1; i >= 0; i--) group[i].undo();
         this._redoStack.push(group);
     }
@@ -76,7 +71,6 @@ export class CanvasHistory {
 }
 
 // Helpers ------------------------------------------------------------
-
 export function setNumberProp<T extends object>(
     target: T,
     key: keyof T,
@@ -104,7 +98,7 @@ export function setBooleanProp<T extends object>(
     };
 }
 
-// Example: move (x,y) as one atomic command
+// Move (x,y) as one atomic command
 export function setXY(
     target: { x: number; y: number; setTranslation?: (x: number, y: number) => void },
     toX: number,
@@ -121,7 +115,7 @@ export function setXY(
     };
 }
 
-// Add/remove helpers (scene graph)
+// Helpers for add/remove children
 export function addChild<T extends { children: any[] }>(
     parent: T, child: any, label = "Add Child"
 ): Command {

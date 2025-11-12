@@ -6,7 +6,7 @@ import {
 } from "../util";
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
-import { makeMultiResizeCommand, TransformSnapshot } from "./Command";
+import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
 
 export interface Point {
     x: number,
@@ -36,7 +36,7 @@ export class PointerEventManager {
     history: CanvasHistory;
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
-    private currentResize?:
+    private currentTransform?:
       { targets: Array<{ ref: Rect; start: TransformSnapshot }> };
 
     constructor(
@@ -132,7 +132,7 @@ export class PointerEventManager {
         const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
         this.state.initialize(wx, wy);
 
-        this.currentResize = undefined;
+        this.currentTransform = undefined;
 
         if (this.state.mode === PointerMode.PAN) {
             this.state.clearSelection();
@@ -149,21 +149,7 @@ export class PointerEventManager {
             } else {
                 const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
                 if (boundingBoxType) {
-                    // hit test to first check if the handle is selected
-                    if (boundingBoxType !== 'CENTER') {
-                        this.state.resizingDirection = boundingBoxType;
-                        
-                        const selected = this.canvas._selectionManager.selected; // getter added above
-                        
-                        if (selected.length) {
-                            this.currentResize = {
-                                targets: selected.map(ref => ({
-                                    ref,
-                                    start: { x: ref.x, y: ref.y, sx: ref.sx, sy: ref.sy },
-                                })),
-                            };
-                        }
-                    }
+                    this.state.resizingDirection = boundingBoxType;
                 } else {
                     const child = this.checkCollidingChild(wx, wy);
                     if (child) {
@@ -181,6 +167,16 @@ export class PointerEventManager {
                         }
                     }
                 }
+
+                const selected = this.canvas._selectionManager.selected;
+                if (selected.length) {
+                    this.currentTransform = {
+                        targets: selected.map(ref => ({
+                            ref,
+                            start: { x: ref.x, y: ref.y, sx: ref.sx, sy: ref.sy },
+                        })),
+                    };
+                }
             }
         }
 
@@ -195,7 +191,7 @@ export class PointerEventManager {
 
         if (this.canvas.isGlobalClick) {
             this.canvas._camera.updateCameraPos(this.state.startWorldX - wx, this.state.startWorldY - wy);
-        } else if (this.state.resizingDirection) {
+        } else if (this.state.resizingDirection && this.state.resizingDirection !== 'CENTER') {
             this.canvas._selectionManager.resize(dx, dy, this.state.resizingDirection);
         } else if (this.canvas._selectionManager.marqueeBox) {
             this.canvas._selectionManager.marqueeBox.resize(dx, dy, this.canvas.worldMatrix);
@@ -213,9 +209,8 @@ export class PointerEventManager {
         this.canvas.isGlobalClick = true;
         this.canvas.canvas.style.cursor = 'default';
 
-        // single resize
-        if (this.currentResize && this.state.resizingDirection) {
-            const entries = this.currentResize.targets
+        if (this.currentTransform) {
+            const entries = this.currentTransform.targets
               .map(t => ({
                   ref: t.ref,
                   start: t.start,
@@ -228,10 +223,10 @@ export class PointerEventManager {
                   e.start.sy !== e.end.sy
               );
             if (entries.length) {
-                this.history.push(makeMultiResizeCommand(entries, 'Resize'));
+                this.history.push(makeMultiTransformCommand(entries));
             }
         }
-        this.currentResize = undefined;
+        this.currentTransform = undefined;
         this.state.resizingDirection = null;
 
         if (this.history) {

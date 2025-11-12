@@ -78,3 +78,9 @@
 - create resize command to test
 - add basic key event detection to undo resize event
 - use gpt to template a serializer for data export
+
+20251112:
+- Update resize command to transform command since it works for translation too
+- Add scene command for canvas children control (add child, remove child - individual and bulk)
+- Add delete button listener to remove children
+- Delegate selection deletion to selection manager (which seems appropriate to me)

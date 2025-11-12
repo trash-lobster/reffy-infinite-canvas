@@ -4,6 +4,8 @@ export interface Command {
     undo(): void;
 }
 
+const MAX_HISTORY = 25;
+
 export class CanvasHistory {
     private _undoStack: Command[][] = [];
     private _redoStack: Command[][] = [];
@@ -22,6 +24,10 @@ export class CanvasHistory {
         if (this._openGroup) {
             this._openGroup.push(cmd);
         } else {
+            if (this.undoStack.length >= MAX_HISTORY) {
+                this._undoStack.shift();   
+            }
+
             this._undoStack.push([cmd]);
             cmd.do();
             this._redoStack.length = 0;
@@ -33,6 +39,10 @@ export class CanvasHistory {
         const group = this._openGroup;
         this._openGroup = null;
         for (const c of group) c.do();
+        
+        if (this.undoStack.length >= MAX_HISTORY) {
+            this._undoStack.shift();   
+        }
         this._undoStack.push(group);
         this._redoStack.length = 0;
         this._openLabel = undefined;

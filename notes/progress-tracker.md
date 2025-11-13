@@ -90,3 +90,4 @@
 - Update file upload position to add to center of the canvas no matter where we are
 - Create basic version of serializer
 - Add export and import canvas as json file
+- Add clear canvas API

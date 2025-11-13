@@ -99,13 +99,16 @@ export class InfiniteCanvasElement extends LitElement {
 
     async addImages(fileList: FileList) {
         if (!this.#canvas) return;
+
+		const rect = this.#canvas.canvas.getBoundingClientRect();
+		const clientX = rect.left + rect.width / 2;
+		const clientY = rect.top + rect.height / 2;
+
+		const [wx, wy] = getWorldCoords(clientX, clientY, this.#canvas);
+
         const newImages = await innerAddImages(
             fileList, 
-            (src: string) => {
-                const cx = this.#canvas.canvas.clientWidth / 2;
-                const cy = this.#canvas.canvas.clientHeight / 2;
-                return this.#canvas.addToCanvas(src, cx, cy, true);
-            }
+            (src: string) => this.#canvas.addToCanvas(src, wx, wy, true),
         );
         this.#history.push(makeMultiAddChildCommand(this.#canvas, newImages));
     }
@@ -122,9 +125,13 @@ export class InfiniteCanvasElement extends LitElement {
         const file = fileList[0];
         if (!file.type || (!file.type.includes('json') && !file.name.toLowerCase().endsWith('.json'))) return;
         const data = await readJSONFile<SerializedCanvas>(file);
-        console.log(data);
         deserializeCanvas(data, this.#canvas);
-        this.#canvas.markOrderDirty();
+        // this.#canvas.markOrderDirty();
+    }
+
+    clearCanvas() {
+        if (!this.#canvas) return;
+        this.#canvas.clearChildren();
     }
 }
 

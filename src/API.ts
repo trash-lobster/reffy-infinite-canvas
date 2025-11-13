@@ -55,4 +55,9 @@ export class InfiniteCanvasAPI {
 		const el = await canvasReady;
 		await el.importCanvas(fileList);
 	}
+
+	async clearCanvas() {
+		const el = await canvasReady;
+		el.clearCanvas();
+	}
 }

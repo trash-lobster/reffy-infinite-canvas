@@ -118,7 +118,11 @@ export class RenderableState {
 
     clearChildren() {
         if (this.children) {
+            for (const child of this.children) {
+                child.destroy();
+            }
             this.children = [];
+            this.markDirty();
         }
     }
 

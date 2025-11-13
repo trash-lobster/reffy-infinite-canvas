@@ -34,6 +34,8 @@ export class Canvas extends Renderable {
 	_keyPressManager: KeyEventManager;
 	_camera: Camera;
 
+	_history: CanvasHistory;
+
 	private orderDirty = true;
     private renderList: Shape[] = [];
 
@@ -54,11 +56,15 @@ export class Canvas extends Renderable {
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 		
+		this._history = history;
+		
 		this.engine = this.engine.bind(this);
+		this.appendChild = this.appendChild.bind(this);
 		this.addToCanvas = this.addToCanvas.bind(this);
 		this.assignEventListener = this.assignEventListener.bind(this);
 		this.exportState = this.exportState.bind(this);
 		this.importState = this.importState.bind(this);
+		this.clearChildren = this.clearChildren.bind(this);
 		
 		this._selectionManager = new SelectionManager(
 			this.gl, 
@@ -184,13 +190,7 @@ export class Canvas extends Renderable {
 	}
 
 	addToCanvas(src: string, x: number, y: number, center: boolean = false) {
-		const rect = this.canvas.getBoundingClientRect();
-		const clientX = center ? (rect.left + rect.width / 2) : (rect.left + x);
-		const clientY = center ? (rect.top + rect.height / 2) : (rect.top + y);
-
-		const [wx, wy] = getWorldCoords(clientX, clientY, this);
-		const newImg = new Img({ x: wx, y: wy, src });
-
+		const newImg = new Img({ x: x, y: y, src });
 		this.appendChild(newImg);
 
 		if (center) {
@@ -214,6 +214,11 @@ export class Canvas extends Renderable {
 		return deserializeCanvas(data, this);
 	}
 
+	clearChildren() {
+		this.state.clearChildren(); // should clear history?
+		this._history.clear();
+	}
+
 	private collectShapes(node: Renderable, out: Shape[]) {
         if (node instanceof Shape) out.push(node);
         for (const c of node.children) this.collectShapes(c, out);
@@ -230,14 +235,6 @@ export class Canvas extends Renderable {
         this.renderList = list;
         this.orderDirty = false;
     }
-
-	// toJSON() {
-    //     return serializeCanvas(this);
-    // }
-
-    // exportAsString(space = 2) {
-    //     return JSON.stringify(this.toJSON(), null, space);
-    // }
 	
 	private static webglStats = {
         buffersCreated: 0,

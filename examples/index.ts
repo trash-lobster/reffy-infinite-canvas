@@ -8,6 +8,7 @@ canvasReady.then(el => {
         'zoom-in-button': API.zoomIn,
         'zoom-out-button': API.zoomOut,
         'export-canvas-button': API.exportCanvas,
+        'clear-canvas-button': API.clearCanvas,
     };
 
     for (const [key, fn] of Object.entries(buttons)) {

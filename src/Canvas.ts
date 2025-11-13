@@ -16,7 +16,7 @@ import {
 import { SelectionManager, PointerEventManager, KeyEventManager } from './manager';
 import { Camera } from './camera';
 import { CameraState, PointerEventState } from './state';
-import { CanvasHistory, Command } from './history';
+import { CanvasHistory } from './history';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;

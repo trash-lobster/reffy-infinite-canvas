@@ -1,4 +1,4 @@
-import { createProgram } from './util';
+import { createProgram, getWorldCoords } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -180,16 +180,28 @@ export class Canvas extends Renderable {
 		return this.isGlobalClick;
 	}
 
-	addToCanvas(src: string, x: number, y: number) {
-        const newImg = new Img({
-            x,
-            y,
-            src: src,
-        });
+	addToCanvas(src: string, x: number, y: number, center: boolean = false) {
+		const rect = this.canvas.getBoundingClientRect();
+		const clientX = center ? (rect.left + rect.width / 2) : (rect.left + x);
+		const clientY = center ? (rect.top + rect.height / 2) : (rect.top + y);
 
-        this.appendChild(newImg);
-        return newImg;
-    }
+		const [wx, wy] = getWorldCoords(clientX, clientY, this);
+		const newImg = new Img({ x: wx, y: wy, src });
+
+		this.appendChild(newImg);
+
+		if (center) {
+			const preview = new Image();
+			preview.src = src;
+			preview.onload = () => {
+				const w = preview.naturalWidth || preview.width || 0;
+				const h = preview.naturalHeight || preview.height || 0;
+				if (w || h) newImg.updateTranslation(-w / 2, -h / 2);
+			};
+		}
+
+		return newImg;
+	}
 
 	private collectShapes(node: Renderable, out: Shape[]) {
         if (node instanceof Shape) out.push(node);

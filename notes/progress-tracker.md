@@ -84,3 +84,7 @@
 - Add scene command for canvas children control (add child, remove child - individual and bulk)
 - Add delete button listener to remove children
 - Delegate selection deletion to selection manager (which seems appropriate to me)
+- Add file upload to add images to canvas
+
+20251113:
+- Update file upload position to add to center of the canvas no matter where we are

@@ -3,6 +3,8 @@ import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement} from 'lit/decorators.js';
 import { getWorldCoords, addImages as innerAddImages, screenToWorld } from './util';
+import { downloadJSON, readJSONFile } from './util/files';
+import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager/SceneCommand';
 
 @customElement('infinite-canvas')
@@ -108,6 +110,22 @@ export class InfiniteCanvasElement extends LitElement {
         this.#history.push(makeMultiAddChildCommand(this.#canvas, newImages));
     }
     
+    exportCanvas(filename = 'infinite-canvas.json') {
+        if (!this.#canvas) return;
+        const data = serializeCanvas(this.#canvas);
+        downloadJSON(filename, data);
+    }
+
+    async importCanvas(fileList: FileList) {
+        if (!this.#canvas) return;
+        if (!fileList || fileList.length !== 1) return;
+        const file = fileList[0];
+        if (!file.type || (!file.type.includes('json') && !file.name.toLowerCase().endsWith('.json'))) return;
+        const data = await readJSONFile<SerializedCanvas>(file);
+        console.log(data);
+        deserializeCanvas(data, this.#canvas);
+        this.#canvas.markOrderDirty();
+    }
 }
 
 declare global {

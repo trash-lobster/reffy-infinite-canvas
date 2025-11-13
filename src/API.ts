@@ -44,4 +44,15 @@ export class InfiniteCanvasAPI {
 		const el = await canvasReady;
 		await el.addImages(fileList);
     }
+
+	async exportCanvas(filename?: string) {
+		const el = await canvasReady;
+		el.exportCanvas(filename);
+	}
+
+	async importCanvas(fileList: FileList) {
+		if (!fileList || fileList.length !== 1) return;
+		const el = await canvasReady;
+		await el.importCanvas(fileList);
+	}
 }

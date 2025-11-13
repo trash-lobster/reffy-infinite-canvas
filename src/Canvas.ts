@@ -17,6 +17,7 @@ import { SelectionManager, PointerEventManager, KeyEventManager } from './manage
 import { Camera } from './camera';
 import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
+import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
@@ -56,6 +57,8 @@ export class Canvas extends Renderable {
 		this.engine = this.engine.bind(this);
 		this.addToCanvas = this.addToCanvas.bind(this);
 		this.assignEventListener = this.assignEventListener.bind(this);
+		this.exportState = this.exportState.bind(this);
+		this.importState = this.importState.bind(this);
 		
 		this._selectionManager = new SelectionManager(
 			this.gl, 
@@ -201,6 +204,14 @@ export class Canvas extends Renderable {
 		}
 
 		return newImg;
+	}
+
+	exportState() {
+		return serializeCanvas(this);
+	}
+
+	importState(data: SerializedCanvas) {
+		return deserializeCanvas(data, this);
 	}
 
 	private collectShapes(node: Renderable, out: Shape[]) {

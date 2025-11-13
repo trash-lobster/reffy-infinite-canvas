@@ -7,6 +7,7 @@ canvasReady.then(el => {
         'mode-button': API.toggleMode,
         'zoom-in-button': API.zoomIn,
         'zoom-out-button': API.zoomOut,
+        'export-canvas-button': API.exportCanvas,
     };
 
     for (const [key, fn] of Object.entries(buttons)) {
@@ -22,6 +23,22 @@ canvasReady.then(el => {
     hiddenInput.onchange = async () => {
         if (!hiddenInput.files || hiddenInput.files.length === 0) return;
         await API.addImageFromLocal(hiddenInput.files);
+        hiddenInput.value = '';
+    };
+
+    const hiddenImportCanvasInput = document.getElementById('import-canvas-input') as HTMLInputElement;
+    const triggerImportCanvasBtn = document.getElementById('import-canvas-button') as HTMLButtonElement;
+
+    triggerImportCanvasBtn.onclick = () => hiddenImportCanvasInput.click();
+
+    hiddenImportCanvasInput.onchange = async () => {
+        if (
+            !hiddenImportCanvasInput.files || 
+            hiddenImportCanvasInput.files.length === 0 ||
+            hiddenImportCanvasInput.files.length > 1
+        ) return;
+
+        await API.importCanvas(hiddenImportCanvasInput.files);
         hiddenInput.value = '';
     };
 });

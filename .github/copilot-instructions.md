@@ -1,30 +1,46 @@
-## Background
-This is a typescript project to create an infinite canvas web component and its associated APIs. The aim is for any front end project to simply import and use this infinite canvas and use its API. The final product will be a package.
+## Purpose & scope
+TypeScript library that exposes an infinite canvas as a Web Component, with a small imperative API for host apps. The initial focus is placing and manipulating images; other shapes exist for UI (grid, bounding boxes).
 
-The infinite canvas is mainly aimed for storing images only. There may be plans to add generation of other shapes in the future, but not for the basic implementation.
+## Architecture (big picture)
+- Web Component: `src/Component.ts` defines `<infinite-canvas>` (Lit). It creates a `<canvas>`, resizes it with `ResizeObserver`, and drives a `requestAnimationFrame` render loop.
+- Engine: `src/Canvas.ts` owns the WebGL context, shader programs, render list, and user interaction managers. Children are `Renderable`s; render order is cached (`renderList`) and rebuilt when `markOrderDirty()` is set.
+- Shapes: `src/shapes/` hierarchy
+    - `Renderable` → `WebGLRenderable` → `Shape` → `Rect`, `Img`, `Grid`
+    - Each shape implements `render(gl, program)` and `destroy(gl)`. `Img` uploads textures; `Grid` draws background.
+- State: `src/state/` (MobX)
+    - `RenderableState` tracks translation/scale/rotation, matrices, tree (children/parent), and a `dirty` flag.
+    - `CameraState`, `PointerEventState` capture camera transforms and pointer interactions.
+- Managers: `src/manager/`
+    - `SelectionManager`, `PointerEventManager`, `KeyEventManager` map input to commands and selections.
+    - Scene commands in `manager/SceneCommand.ts` (add/remove/multi-add/multi-remove).
+- History: `src/history/` command stack (undo/redo). Pointer interactions should push a single composite command per interaction.
 
-The images painted on screen is through WebGL.
+## Coordinates & camera
+- Use `util/camera/camera.ts:getWorldCoords(clientX, clientY, canvas)` to convert CSS pixel positions into world-space. Always pass CSS pixels (from `getBoundingClientRect`), not device pixels.
+- `Canvas.addToCanvas(src, x, y, center)` accepts CSS pixels; it converts to world and, if `center`, offsets by half the image size after load for true centering.
 
-State management is done through MobX.
+## WebGL specifics
+- Context created in `Canvas` with blending enabled (`SRC_ALPHA`, `ONE_MINUS_SRC_ALPHA`). Two programs are used: basic shapes and images; program switches are minimized in the render loop.
+- Always free GPU resources: call `Canvas.removeChild(child)` (it updates selection, calls `child.destroy(gl)`, and marks order dirty). `Img.destroy` deletes texture and buffers and calls `super.destroy(gl)` to free the position buffer.
 
-## Project Structure
-- `examples` is where we can test and run the infinite canvas
-- `src` is where the source code is stored and where the component will be build from
-    - `boundingBox` is the bounding box that will be generated when images are selected
-    - `camera` is the camera control
-    - `manager` manages the different user interaction with the canvas, including keyboard events, pointer events and selections. Individual commands are written to history as well.
-    - `serializer` will manage the export/import of the state of the infinite canvas into a JSON format and also.
-    - `shaders` are the shaders for the generation of shapes using WebGL.
-    - `shapes` is where the different shape entities are laid out. It essentially has a adoption chain where your basic unit is a `Renderable` and `Shape`, `Grid` etc. inherit it.
-    - `state` is where we use MobX to manage the different entities' states - producing actions and calculation.
-    - `util` is where the utility functions are stored.
-    - `API.ts` is where the API methods are export. It is crucial that the API object is connected to the infinite canvas instance created. If a user creates more than one infinite canvas, the API needs to be independent.
-    - `Canvas.ts` houses the key canvas class that connects up with the managers.
-    - `Component.ts` puts the infinite canvas out as a web component.
+## API surface & usage
+- `src/API.ts` exposes `canvasReady` and `InfiniteCanvasAPI` (zoomIn/zoomOut, toggleMode, addImageFromLocal). `addImageFromLocal` rejects non-image files up front.
+- Example wiring in `examples/index.ts`: hidden input + button trigger; or use the File System Access API when available.
 
-## Architecture
-The produced code should ideally be as decoupled as possible. If it is sensible, generate all the required functions on initialisation and inject them into the objects that need them, rather than direct reference.
+## Developer workflow
+- Run: `npm run dev` (Vite) then open `examples/index.html` served by Vite.
+- Build library: `npm run build:esm` and/or `npm run build:cjs` (TypeScript emits to `esm/` and `lib/`). `vite build` deploys the demo.
+- Formatting: `npm run prettier` (project prefers 4 tabs and semicolons; Prettier is configured via script).
+- TODO: add testing
 
-## Code style - to use Prettier in future to enforce instead
-- 4 tabs for indentation
-- Must end block with ';'
+## Conventions & patterns (project-specific)
+- Mutations that affect render order must call `markOrderDirty()` (already done in `appendChild`/`removeChild`).
+- Use commands for undoable actions; prefer batching a drag/resize into a single composite command.
+- Treat input coordinates as CSS pixels; convert once at the edge using `getWorldCoords`.
+- Avoid direct child array edits; use `Canvas.appendChild`/`removeChild` to keep selection/render caches consistent.
+
+## Key files to study first
+- `src/Component.ts`, `src/Canvas.ts`, `src/shapes/Img.ts`, `src/manager/SceneCommand.ts`, `src/state/renderable.ts`, `src/util/camera/camera.ts`.
+
+## Code style
+- 4 tabs indentation; end blocks with semicolons. Keep modules decoupled; prefer injecting functions at init over tight coupling when practical.

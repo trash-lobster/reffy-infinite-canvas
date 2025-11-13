@@ -17,22 +17,31 @@ export const canvasReady: Promise<InfiniteCanvasElement> = (async () => {
 
 export class InfiniteCanvasAPI {
     async zoomIn() {
-      const el = await canvasReady;
-      el.zoomIn();
+		const el = await canvasReady;
+		el.zoomIn();
     }
 
     async zoomOut() {
-      const el = await canvasReady;
-      el.zoomOut();
+		const el = await canvasReady;
+		el.zoomOut();
     }
     
     async toggleMode() {
-      const el = await canvasReady;
-      el.toggleMode();
+		const el = await canvasReady;
+		el.toggleMode();
     }
 
     async addImageFromLocal(fileList: FileList) {
-        const el = await canvasReady;
-        await el.addImages(fileList);
+		// Validate all files are images before proceeding
+		if (!fileList || fileList.length === 0) return;
+		for (let i = 0; i < fileList.length; i++) {
+			const file = fileList[i];
+			if (!file || !file.type || !file.type.startsWith('image/')) {
+				throw new Error('Only image files are supported. Please select image files only.');
+			}
+		}
+
+		const el = await canvasReady;
+		await el.addImages(fileList);
     }
 }

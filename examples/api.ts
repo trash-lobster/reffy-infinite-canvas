@@ -1,4 +1,5 @@
 import { Camera, Canvas } from "../src";
+import { CanvasHistory } from "../src/history";
 import { Img, Rect } from "../src/shapes";
 
 async function main() {
@@ -17,7 +18,8 @@ async function main() {
     resize(window.innerWidth, window.innerHeight);
 
     const canvas = new Canvas(
-        $canvas
+        $canvas,
+        new CanvasHistory(),
     );
 
     const img = new Img({

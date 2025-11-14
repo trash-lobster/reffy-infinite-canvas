@@ -93,22 +93,23 @@ export async function mergeMultiImg(imgs: Img[]): Promise<string> {
     canvas.width = endX - startX;
     canvas.height = endY - startY;
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // unable to clear the png export to have clear background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // consider transformation as well
     const promises = imgs.map(async img => {
         return new Promise<void>(async (resolve, reject) => {
             try {                
-                const adjustedSrc = await calculateMultImg(img);
                 const innerImg = new Image();
                 innerImg.onload = () => {
                     ctx.drawImage(
                         innerImg,
+                        0, 0, img.width, img.height,
                         img.x - startX, img.y - startY, img.width * img.sx, img.height * img.sy
                     )
                     resolve();
                 }
                 innerImg.onerror = reject;
-                innerImg.src = adjustedSrc;
+                innerImg.src = img.src;
             } catch(err) {
                 console.error(err);
                 reject(err);
@@ -146,28 +147,4 @@ function getEndY(imgs: Img[]): number {
         return (b.y + b.height * b.sy) - (a.y + a.height * a.sy);
     })[0];
     return endImg.y + endImg.height * endImg.sy;
-}
-
-function calculateMultImg(ogImg: Img): Promise<string> {
-    // image needs to be regenerated to a smaller version before exporting
-    // recalculate anchor with that in mind
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = ogImg.width * ogImg.sx;
-            canvas.height = ogImg.height * ogImg.sy;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(
-                img,
-                0, 0, img.width, img.height,
-                0, 0, canvas.width, canvas.height
-            );
-            const pngDataUrl = canvas.toDataURL('image/png', 1.0);
-            resolve(pngDataUrl);
-        };
-        img.onerror = reject;
-        img.src = ogImg.src;
-    })
 }

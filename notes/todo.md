@@ -14,6 +14,4 @@ Tests
 
 Add options to initalise canvas with
 
-Image types not working:
-- SVG
-- AVIF
+Save canvas every 5 minutes to designated option

@@ -97,3 +97,5 @@
 
 20251114:
 - Add image import in jpg and webp format
+- fix marquee bug
+- merge images together with canvas to allow copying multiple images

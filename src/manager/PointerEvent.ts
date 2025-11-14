@@ -4,6 +4,7 @@ import {
     addImages,
     convertToPNG,
     getWorldCoords,
+    mergeMultiImg,
 } from "../util";
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
@@ -135,27 +136,29 @@ export class PointerEventManager {
             let selectedImages: Img[] = this.getSelected() as Img[];
             
             if (selectedImages.length <= 0) return;
-            
-            const clipboardItems = selectedImages.map(async (image) => {
-                // check if the image is a png or not
-                const src = 
+            let src: string;
+
+            // multiple images
+            if (selectedImages.length > 1) {
+                src = await mergeMultiImg(selectedImages);
+            } else {
+                const image = selectedImages[0];
+                src = 
                     !image.src.startsWith('data:image/png')
                     ? 
                     await convertToPNG(image.src) :
                     image.src;
-                console.log(src);
-                const data = await fetch(src);
-                const blob = await data.blob();
-                return new ClipboardItem({
-                    [blob.type]: blob
-                })
+            }
+            
+            const data = await fetch(src);
+            const blob = await data.blob();
+            const storedItem = new ClipboardItem({
+                [blob.type]: blob
             })
-
-            const result = await Promise.all(clipboardItems);
 
             try {
                 // can only support one item at a time
-                await navigator.clipboard.write(result);
+                await navigator.clipboard.write([storedItem]);
             } catch (err) {
                 if (err instanceof DOMException) {
                     console.log(err);

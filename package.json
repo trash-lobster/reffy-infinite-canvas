@@ -47,7 +47,6 @@
         "eventemitter3": "^5.0.1",
         "gl-matrix": "^3.4.4",
         "lit": "^3.3.1",
-        "merge-images": "^2.0.0",
         "mobx": "^6.15.0",
         "rbush": "^3.0.1"
     },

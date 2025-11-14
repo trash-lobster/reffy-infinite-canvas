@@ -205,7 +205,6 @@ export class Canvas extends Renderable {
 				const h = preview.naturalHeight || preview.height || 0;
 				if (w || h) newImg.updateTranslation(-w / 2, -h / 2);
 				newImg.src = preview.src;
-				console.log(preview.src);
 				this.appendChild(newImg);
 			};
 		}

@@ -1,34 +1,53 @@
 import { InfiniteCanvasElement } from './Component';
 
-function getElement(): InfiniteCanvasElement {
-    const el = document.querySelector('infinite-canvas') as InfiniteCanvasElement | null;
-    if (!el) throw new Error('infinite-canvas element not found');
-    return el;
-}
+// function getElement(): InfiniteCanvasElement {
+//     const el = document.querySelector('infinite-canvas') as InfiniteCanvasElement | null;
+//     if (!el) throw new Error('infinite-canvas element not found');
+//     return el;
+// }
 
-export const canvasReady: Promise<InfiniteCanvasElement> = (async () => {
-    await customElements.whenDefined('infinite-canvas');
-    const el = getElement();
-    if ((el as any).engine) return el;
-    return new Promise<InfiniteCanvasElement>(res =>
-        el.addEventListener('load', () => res(el), { once: true })
-    );
-})();
+// export const canvasReady: Promise<InfiniteCanvasElement> = (async () => {
+//     await customElements.whenDefined('infinite-canvas');
+//     const el = getElement();
+//     if ((el as any).engine) return el;
+//     return new Promise<InfiniteCanvasElement>(res =>
+//         el.addEventListener('load', () => res(el), { once: true })
+//     );
+// })();
 
 export class InfiniteCanvasAPI {
+	private el: InfiniteCanvasElement;
+	
+    constructor(el: InfiniteCanvasElement) {
+        if (!el) throw new Error('InfiniteCanvasElement is required');
+        this.el = el;
+    }
+
+	static async forElement(selectorOrElement: string | InfiniteCanvasElement): Promise<InfiniteCanvasAPI> {
+        let el: InfiniteCanvasElement | null;
+        if (typeof selectorOrElement === 'string') {
+            await customElements.whenDefined('infinite-canvas');
+            el = document.querySelector(selectorOrElement) as InfiniteCanvasElement | null;
+        } else {
+			el = selectorOrElement;
+        }
+        if (!el) throw new Error('infinite-canvas element not found');
+        if (!(el as any).engine) {
+            await new Promise<void>(res => el.addEventListener('load', () => res(), { once: true }));
+        }
+        return new InfiniteCanvasAPI(el);
+    }
+
     async zoomIn() {
-		const el = await canvasReady;
-		el.zoomIn();
+		this.el.zoomIn();
     }
 
     async zoomOut() {
-		const el = await canvasReady;
-		el.zoomOut();
+		this.el.zoomOut();
     }
     
     async toggleMode() {
-		const el = await canvasReady;
-		el.toggleMode();
+		this.el.toggleMode();
     }
 
     async addImageFromLocal(fileList: FileList) {
@@ -41,23 +60,19 @@ export class InfiniteCanvasAPI {
 			}
 		}
 
-		const el = await canvasReady;
-		await el.addImages(fileList);
+		await this.el.addImages(fileList);
     }
 
 	async exportCanvas(filename?: string) {
-		const el = await canvasReady;
-		el.exportCanvas(filename);
+		this.el.exportCanvas(filename);
 	}
 
 	async importCanvas(fileList: FileList) {
 		if (!fileList || fileList.length !== 1) return;
-		const el = await canvasReady;
-		await el.importCanvas(fileList);
+		await this.el.importCanvas(fileList);
 	}
 
 	async clearCanvas() {
-		const el = await canvasReady;
-		el.clearCanvas();
+		this.el.clearCanvas();
 	}
 }

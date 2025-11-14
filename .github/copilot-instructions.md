@@ -44,3 +44,6 @@ TypeScript library that exposes an infinite canvas as a Web Component, with a sm
 
 ## Code style
 - 4 tabs indentation; end blocks with semicolons. Keep modules decoupled; prefer injecting functions at init over tight coupling when practical.
+
+## Response style
+I want each reply you make to have an incrementing numeric ID attached to it, starting from 0. If I mention a certain answer by its ID, refer to it for context.

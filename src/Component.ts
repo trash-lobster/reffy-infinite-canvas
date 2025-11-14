@@ -44,6 +44,8 @@ export class InfiniteCanvasElement extends LitElement {
         const canvas = document.createElement('canvas');
         this.#canvas = new Canvas(canvas, this.#history);
 
+        this.dispatchEvent(new Event('load'));
+
         const resizeCanvas = () => {
             const dpr = window.devicePixelRatio || 1;
             const w = Math.max(1, window.innerWidth);

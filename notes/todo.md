@@ -13,3 +13,7 @@ context menu
 Tests
 
 Add options to initalise canvas with
+
+Image types not working:
+- SVG
+- AVIF

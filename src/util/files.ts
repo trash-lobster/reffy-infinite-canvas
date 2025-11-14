@@ -17,10 +17,13 @@ const PERMISSIBLE_IMAGE_TYPES = [
     'image/png',
     'image/jpeg',
     'image/jpg',
+    'image/svg+xml',
+    'image/avif',
+    'image/gif',    // will be rendered as a still image
+    'image/apng',   // will be rendered as a still image
 ];
 
 function isPermissibleImageType(fileType: string): boolean {
-    // Some browsers may not use 'image/jpg', but include for completeness
     return PERMISSIBLE_IMAGE_TYPES.includes(fileType);
 }
 
@@ -63,7 +66,6 @@ export async function readJSONFile<T = unknown>(file: File): Promise<T> {
 }
 
 export function convertToPNG(src: string, quality = 1.0): Promise<string> {
-    console.log(src);
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {

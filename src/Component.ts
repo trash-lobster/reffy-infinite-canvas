@@ -1,14 +1,30 @@
 import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
-import {customElement} from 'lit/decorators.js';
-import { getWorldCoords, addImages as innerAddImages, screenToWorld } from './util';
+import {customElement, property} from 'lit/decorators.js';
+import { getWorldCoords, addImages as innerAddImages } from './util';
 import { downloadJSON, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
-import { makeMultiAddChildCommand } from './manager/SceneCommand';
+import { makeMultiAddChildCommand } from './manager';
+import { ContextMenu, ContextMenuOption } from './contextMenu';
+
+type AcceptedOptions = ContextMenuOption;
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
+    @property({type: Object})
+    options: Record<string, AcceptedOptions> = {
+        'contextMenu': {
+            childrenOption: [
+                {
+                    text: "Test",
+                    onClick: () => console.log('hey')
+                }
+            ]
+        }
+    }
+
+
     static styles = css`
         :host {
             position: relative;
@@ -42,7 +58,17 @@ export class InfiniteCanvasElement extends LitElement {
         this.#history = new CanvasHistory();
 
         const canvas = document.createElement('canvas');
-        this.#canvas = new Canvas(canvas, this.#history);
+        this.clearContextMenu = this.clearContextMenu.bind(this);
+        this.showContextMenu = this.showContextMenu.bind(this);
+
+        this.#canvas = new Canvas(
+            canvas, 
+            this.#history,
+            {
+                showMenu: this.showContextMenu,
+                clearMenu: this.clearContextMenu,
+            }
+        );
 
         this.dispatchEvent(new Event('load'));
 
@@ -134,6 +160,28 @@ export class InfiniteCanvasElement extends LitElement {
     clearCanvas() {
         if (!this.#canvas) return;
         this.#canvas.clearChildren();
+    }
+
+    showContextMenu(x: number, y: number) {
+        // Remove any existing menu
+        this.clearContextMenu();
+
+        // Create new menu
+        const options = this.options['contextMenu'];
+        // options.parent = document;
+        const menu = new ContextMenu(options);
+        menu.attachToParent(document.body);
+        
+        // Position the menu
+        menu._el.classList.add('context-menu');
+        menu._el.style.left = `${x}px`;
+        menu._el.style.top = `${y}px`;
+    }
+
+    clearContextMenu() {
+        // Remove any existing menu
+        const oldMenu = document.querySelector('.context-menu');
+        if (oldMenu) oldMenu.remove();
     }
 }
 

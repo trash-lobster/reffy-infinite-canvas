@@ -39,6 +39,8 @@ export class PointerEventManager {
     history: CanvasHistory;
     addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
     getSelected: () => Renderable[];
+    showContextMenu: (x: number, y: number) => void;
+    clearContextMenu: () => void;
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
     private currentTransform?:
@@ -50,6 +52,8 @@ export class PointerEventManager {
         history: CanvasHistory,
         addToCanvas: (src: string, x: number, y: number) => Promise<Img>,
         getSelected: () => Renderable[],
+        showContextMenu: (x: number, y: number) => void,
+        clearContextMenu: () => void,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
         this.canvas = canvas;
@@ -57,19 +61,35 @@ export class PointerEventManager {
         this.history = history;
         this.addToCanvas = addToCanvas;
         this.getSelected = getSelected;
+        this.showContextMenu = showContextMenu;
+        this.clearContextMenu = clearContextMenu;
         this.assignEventListener = assignEventListener;
 
+        // bind methods
         this.onPointerDown = this.onPointerDown.bind(this);
         this.onPointerMoveWhileDown = this.onPointerMoveWhileDown.bind(this);
         this.onPointerUp = this.onPointerUp.bind(this);
-        this.addToCanvas = this.addToCanvas.bind(this);
 
+        // register event listeners
         this.addOnPaste();
         this.addOnCopy();
         this.addOnPointerMove();
         this.addOnWheel();
         this.addOnPointerDown();
-        this.assignEventListener('contextmenu', (e) => e.preventDefault());
+
+        // custom context menu
+        this.assignEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            // only show context menu when there is collision with a child object, otherwise clear it
+            const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
+            const child = this.checkCollidingChild(wx, wy);
+            // show different context menu depending on what is being selected
+            if (child) {
+                showContextMenu(e.clientX, e.clientY);
+            } else {
+                clearContextMenu();
+            }
+        });
     }
 
     changeMode() {
@@ -100,6 +120,7 @@ export class PointerEventManager {
     }
 
     private addOnPaste() {
+        // paste event has to be attached to the window instead of document
         window.addEventListener('paste', async (e) => {
             let newImages: Img[] = [];
 
@@ -132,6 +153,7 @@ export class PointerEventManager {
     }
 
     private addOnCopy() {
+        // copy event has to be attached to the window instead of document
         window.addEventListener('copy', async (e) => {
             let selectedImages: Img[] = this.getSelected() as Img[];
             
@@ -171,59 +193,71 @@ export class PointerEventManager {
     // #endregion
 
     private onPointerDown(e: PointerEvent) {
+        e.stopPropagation();
+        e.preventDefault();
+        this.clearContextMenu();
+
         const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
         this.state.initialize(wx, wy);
 
         this.currentTransform = undefined;
 
         if (this.state.mode === PointerMode.PAN) {
-            this.state.clearSelection();
-            this.canvas.isGlobalClick = true;
+            this.handlePanPointerDown();
         } else if (this.state.mode === PointerMode.SELECT) {
-            this.canvas.isGlobalClick = false;
-            if (e.button === 2) {
-                const child = this.checkCollidingChild(wx, wy);
-                if (child) {
-                    this.canvas._selectionManager.remove([child as Rect]);
-                } else if (this.canvas.hitTest(wx, wy)) {
-                    this.state.clearSelection();
-                }
-            } else {
-                const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
-                if (boundingBoxType) {
-                    this.state.resizingDirection = boundingBoxType;
-                } else {
-                    const child = this.checkCollidingChild(wx, wy);
-                    if (child) {
-                        if (!e.shiftKey) {                            
-                            this.state.clearSelection();
-                        }
-                        this.canvas._selectionManager.add([child as Rect]);
-                    } else {
-                        this.state.clearSelection();
-                        if (this.canvas._selectionManager.marqueeBox) {
-                            // TO REFACTOR:
-                            this.canvas._selectionManager.clearMarquee();
-                        } else {
-                            this.canvas._selectionManager.marqueeBox = {x: wx, y: wy};
-                        }
-                    }
-                }
-
-                const selected = this.canvas._selectionManager.selected;
-                if (selected.length) {
-                    this.currentTransform = {
-                        targets: selected.map(ref => ({
-                            ref,
-                            start: { x: ref.x, y: ref.y, sx: ref.sx, sy: ref.sy },
-                        })),
-                    };
-                }
-            }
+            this.handleSelectPointerDown(e, wx, wy);
         }
 
         document.addEventListener('pointermove', this.onPointerMoveWhileDown);
         document.addEventListener('pointerup', this.onPointerUp);
+    }
+
+    private handlePanPointerDown() {
+        this.state.clearSelection();
+        this.canvas.isGlobalClick = true;
+    }
+
+    private handleSelectPointerDown(e: MouseEvent, wx: number, wy: number) {
+        this.canvas.isGlobalClick = false;
+        if (e.button === 2) {
+            this.state.clearSelection();
+            const child = this.checkCollidingChild(wx, wy);
+            if (child) {
+                this.canvas._selectionManager.add([child as Rect]);
+            } else if (this.canvas.hitTest(wx, wy)) {
+                this.state.clearSelection();
+            }
+        } else {
+            const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
+            if (boundingBoxType) {
+                this.state.resizingDirection = boundingBoxType;
+            } else {
+                const child = this.checkCollidingChild(wx, wy);
+                if (child) {
+                    if (!e.shiftKey) {                            
+                        this.state.clearSelection();
+                    }
+                    this.canvas._selectionManager.add([child as Rect]);
+                } else {
+                    this.state.clearSelection();
+                    if (this.canvas._selectionManager.marqueeBox) {
+                        this.canvas._selectionManager.clearMarquee();
+                    } else {
+                        this.canvas._selectionManager.marqueeBox = {x: wx, y: wy};
+                    }
+                }
+            }
+
+            const selected = this.canvas._selectionManager.selected;
+            if (selected.length) {
+                this.currentTransform = {
+                    targets: selected.map(ref => ({
+                        ref,
+                        start: { x: ref.x, y: ref.y, sx: ref.sx, sy: ref.sy },
+                    })),
+                };
+            }
+        }
     }
 
     private onPointerMoveWhileDown(e: PointerEvent) {

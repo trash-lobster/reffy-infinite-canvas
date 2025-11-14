@@ -19,6 +19,11 @@ import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
 import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
 
+interface CanvasFunctionProps {
+	showMenu: (x: number, y: number) => void,
+	clearMenu: () => void,
+}
+
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;	
@@ -42,7 +47,11 @@ export class Canvas extends Renderable {
     // Call this whenever children/layers/z-order change
     markOrderDirty() { this.orderDirty = true; }
 	
-	constructor(canvas: HTMLCanvasElement, history: CanvasHistory) {
+	constructor(
+		canvas: HTMLCanvasElement, 
+		history: CanvasHistory,
+		options: CanvasFunctionProps,
+	) {
 		super();
 		this.canvas = canvas;
 		this.grid = new Grid();
@@ -61,7 +70,13 @@ export class Canvas extends Renderable {
 		this.engine = this.engine.bind(this);
 		this.appendChild = this.appendChild.bind(this);
 		this.addToCanvas = this.addToCanvas.bind(this);
+		
 		this.assignEventListener = this.assignEventListener.bind(this);
+		this.assignEventListener('contextmenu', (e) => {
+			e.preventDefault();
+			return false;
+		});
+
 		this.exportState = this.exportState.bind(this);
 		this.importState = this.importState.bind(this);
 		this.clearChildren = this.clearChildren.bind(this);
@@ -90,6 +105,8 @@ export class Canvas extends Renderable {
 			history,
 			this.addToCanvas,
 			() => this._selectionManager.selected,
+			options.showMenu,
+			options.clearMenu,
 			this.assignEventListener,
 		);
 

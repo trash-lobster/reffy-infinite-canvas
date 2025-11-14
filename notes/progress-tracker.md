@@ -91,3 +91,9 @@
 - Create basic version of serializer
 - Add export and import canvas as json file
 - Add clear canvas API
+- Copy files from selection
+    - due to the navigator.clipboard write API being new, it is not currently possible to copy multiple files
+    - Resort to possibly combining multiple images into a single image to at least keep the images together
+
+20251114:
+- Add image import in jpg and webp format

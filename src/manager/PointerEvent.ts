@@ -1,14 +1,14 @@
 import { Canvas } from "Canvas";
-import { Img, Rect, Shape } from "../shapes";
+import { Img, Rect, Renderable, Shape } from "../shapes";
 import {
     addImages,
+    convertToPNG,
     getWorldCoords,
-    previewImage
 } from "../util";
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
 import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
-import { makeMultiAddChildCommand, SceneSnapshot } from "./SceneCommand";
+import { makeMultiAddChildCommand } from "./SceneCommand";
 
 export interface Point {
     x: number,
@@ -36,7 +36,8 @@ export class PointerEventManager {
     state: PointerEventState;
     canvas: Canvas;
     history: CanvasHistory;
-    addToCanvas: (src: string, x: number, y: number) => Img;
+    addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
+    getSelected: () => Renderable[];
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
     private currentTransform?:
@@ -46,13 +47,15 @@ export class PointerEventManager {
         canvas: Canvas, 
         state: PointerEventState,
         history: CanvasHistory,
-        addToCanvas: (src: string, x: number, y: number) => Img,
+        addToCanvas: (src: string, x: number, y: number) => Promise<Img>,
+        getSelected: () => Renderable[],
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
         this.canvas = canvas;
         this.state = state;
         this.history = history;
         this.addToCanvas = addToCanvas;
+        this.getSelected = getSelected;
         this.assignEventListener = assignEventListener;
 
         this.onPointerDown = this.onPointerDown.bind(this);
@@ -61,6 +64,7 @@ export class PointerEventManager {
         this.addToCanvas = this.addToCanvas.bind(this);
 
         this.addOnPaste();
+        this.addOnCopy();
         this.addOnPointerMove();
         this.addOnWheel();
         this.addOnPointerDown();
@@ -118,11 +122,47 @@ export class PointerEventManager {
             } else {
                 newImages = await addImages(
                     files, 
-                    (src: string) => this.addToCanvas(src, this.state.lastPointerPos.x, this.state.lastPointerPos.y)
+                    async (src: string) => await this.addToCanvas(src, this.state.lastPointerPos.x, this.state.lastPointerPos.y)
                 );
             }
 
             this.history.push(makeMultiAddChildCommand(this.canvas, newImages));
+        });
+    }
+
+    private addOnCopy() {
+        window.addEventListener('copy', async (e) => {
+            let selectedImages: Img[] = this.getSelected() as Img[];
+            
+            if (selectedImages.length <= 0) return;
+            
+            const clipboardItems = selectedImages.map(async (image) => {
+                // check if the image is a png or not
+                const src = 
+                    !image.src.startsWith('data:image/png')
+                    ? 
+                    await convertToPNG(image.src) :
+                    image.src;
+                console.log(src);
+                const data = await fetch(src);
+                const blob = await data.blob();
+                return new ClipboardItem({
+                    [blob.type]: blob
+                })
+            })
+
+            const result = await Promise.all(clipboardItems);
+
+            try {
+                // can only support one item at a time
+                await navigator.clipboard.write(result);
+            } catch (err) {
+                if (err instanceof DOMException) {
+                    console.log(err);
+                }
+                console.error(err);
+            }
+            e.preventDefault();
         });
     }
     // #endregion

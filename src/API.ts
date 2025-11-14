@@ -37,7 +37,7 @@ export class InfiniteCanvasAPI {
 		for (let i = 0; i < fileList.length; i++) {
 			const file = fileList[i];
 			if (!file || !file.type || !file.type.startsWith('image/')) {
-				throw new Error('Only image files are supported. Please select image files only.');
+				throw new Error('Only specific image files are supported. Please select image files only.');
 			}
 		}
 

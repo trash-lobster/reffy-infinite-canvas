@@ -1,4 +1,4 @@
-import { createProgram, getWorldCoords } from './util';
+import { convertToPNG, createProgram, getWorldCoords } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -89,6 +89,7 @@ export class Canvas extends Renderable {
 			pointerEventState,
 			history,
 			this.addToCanvas,
+			() => this._selectionManager.selected,
 			this.assignEventListener,
 		);
 
@@ -189,17 +190,23 @@ export class Canvas extends Renderable {
 		return this.isGlobalClick;
 	}
 
-	addToCanvas(src: string, x: number, y: number, center: boolean = false) {
+	async addToCanvas(src: string, x: number, y: number, center: boolean = false) {
 		const newImg = new Img({ x: x, y: y, src });
-		this.appendChild(newImg);
-
+		
 		if (center) {
 			const preview = new Image();
-			preview.src = src;
+			preview.src = 
+			!src.startsWith('data:image/png') ? 
+			await convertToPNG(src) :
+			src;
+			
 			preview.onload = () => {
 				const w = preview.naturalWidth || preview.width || 0;
 				const h = preview.naturalHeight || preview.height || 0;
 				if (w || h) newImg.updateTranslation(-w / 2, -h / 2);
+				newImg.src = preview.src;
+				console.log(preview.src);
+				this.appendChild(newImg);
 			};
 		}
 

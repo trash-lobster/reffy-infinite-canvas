@@ -116,14 +116,14 @@ export class InfiniteCanvasElement extends LitElement {
 
         const canvas = document.createElement('canvas');
         this.clearContextMenu = this.clearContextMenu.bind(this);
-        this.showContextMenu = this.showContextMenu.bind(this);
+        this.addContextMenu = this.addContextMenu.bind(this);
         this.isContextMenuActive = this.isContextMenuActive.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
             this.#history,
             {
-                showMenu: this.showContextMenu,
+                showMenu: this.addContextMenu,
                 clearMenu: this.clearContextMenu,
                 isMenuActive: this.isContextMenuActive,
             }
@@ -222,10 +222,7 @@ export class InfiniteCanvasElement extends LitElement {
         this.#canvas.clearChildren();
     }
 
-    showContextMenu(x: number, y: number) {
-        // Remove any existing menu
-        this.clearContextMenu();
-
+    addContextMenu(x: number, y: number) {
         // Create new menu
         const options = this.options['contextMenu'];
         const menu = new ContextMenu(options);
@@ -237,16 +234,19 @@ export class InfiniteCanvasElement extends LitElement {
         const relX = x - hostRect.left;
         const relY = y - hostRect.top;
 
-        // determine the width and height of the bound rect and split it into four quarters
+        // determine the width and height of the bound rect
         const hostWidth = hostRect.right;
         const hostHeight = hostRect.bottom;
-        const direction: number[] = [
-            relX > (hostWidth / 2) ? 1 : 0,
-            (relY + hostHeight) > (hostHeight / 2) ? 1 : 0,
-        ]
-
+        
         // place the menu according to the four quarters so it is always in view
         const menuRect = menu.el.getBoundingClientRect();
+        
+        // only flip the position of the menu if leaving it where it would have been, would lead to the menu being out of view
+        const direction: number[] = [
+            relX + menuRect.width > hostWidth ? 1 : 0,
+            relY + menuRect.bottom > hostHeight ? 1 : 0,
+        ]
+        
         const menuHeight = menuRect.height * direction[1];
         const menuWidth = menuRect.width * direction[0];
 

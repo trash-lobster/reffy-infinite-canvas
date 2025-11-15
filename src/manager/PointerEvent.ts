@@ -90,6 +90,7 @@ export class PointerEventManager {
             const child = this.checkCollidingChild(wx, wy);
             // show different context menu depending on what is being selected
             if (child) {
+                // if the context menu option does not have an onclick, then show its children through on hover
                 showContextMenu(e.clientX, e.clientY);
             } else {
                 clearContextMenu();

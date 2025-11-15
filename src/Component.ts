@@ -229,6 +229,7 @@ export class InfiniteCanvasElement extends LitElement {
         // Create new menu
         const options = this.options['contextMenu'];
         const menu = new ContextMenu(options);
+        menu.attachToParent(this.renderRoot as HTMLElement);
         
         // Position the menu
         menu._el.classList.add('context-menu');
@@ -236,9 +237,21 @@ export class InfiniteCanvasElement extends LitElement {
         const relX = x - hostRect.left;
         const relY = y - hostRect.top;
 
-        menu._el.style.left = `${relX}px`;
-        menu._el.style.top = `${relY}px`;
-        menu.attachToParent(this.renderRoot as HTMLElement);
+        // determine the width and height of the bound rect and split it into four quarters
+        const hostWidth = hostRect.right;
+        const hostHeight = hostRect.bottom;
+        const direction: number[] = [
+            relX > (hostWidth / 2) ? 1 : 0,
+            (relY + hostHeight) > (hostHeight / 2) ? 1 : 0,
+        ]
+
+        // place the menu according to the four quarters so it is always in view
+        const menuRect = menu.el.getBoundingClientRect();
+        const menuHeight = menuRect.height * direction[1];
+        const menuWidth = menuRect.width * direction[0];
+
+        menu._el.style.left = `${relX - menuWidth}px`;
+        menu._el.style.top = `${relY - menuHeight}px`;
     }
 
     clearContextMenu() {

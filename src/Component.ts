@@ -30,6 +30,19 @@ export class InfiniteCanvasElement extends LitElement {
             position: relative;
         }
 
+        .context-menu {
+            position: absolute;
+            z-index: 1000;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            min-width: 160px;
+
+            button {
+                width: 100%;
+            }
+        }
+
         canvas {
             width: 100%;
             height: 100%;
@@ -60,6 +73,7 @@ export class InfiniteCanvasElement extends LitElement {
         const canvas = document.createElement('canvas');
         this.clearContextMenu = this.clearContextMenu.bind(this);
         this.showContextMenu = this.showContextMenu.bind(this);
+        this.isContextMenuActive = this.isContextMenuActive.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
@@ -67,8 +81,13 @@ export class InfiniteCanvasElement extends LitElement {
             {
                 showMenu: this.showContextMenu,
                 clearMenu: this.clearContextMenu,
+                isMenuActive: this.isContextMenuActive,
             }
         );
+
+        if (!this.renderRoot.contains(canvas)) {
+            this.renderRoot.appendChild(canvas);
+        }
 
         this.dispatchEvent(new Event('load'));
 
@@ -90,12 +109,10 @@ export class InfiniteCanvasElement extends LitElement {
             requestAnimationFrame(animate);
         };
         animate();
-
-        return this.#canvas.getDOM();
     }
 
     render() {
-        return this.initCanvas();
+        this.initCanvas();
     }
 
     // PUBLIC API
@@ -154,7 +171,6 @@ export class InfiniteCanvasElement extends LitElement {
         if (!file.type || (!file.type.includes('json') && !file.name.toLowerCase().endsWith('.json'))) return;
         const data = await readJSONFile<SerializedCanvas>(file);
         deserializeCanvas(data, this.#canvas);
-        // this.#canvas.markOrderDirty();
     }
 
     clearCanvas() {
@@ -168,20 +184,27 @@ export class InfiniteCanvasElement extends LitElement {
 
         // Create new menu
         const options = this.options['contextMenu'];
-        // options.parent = document;
         const menu = new ContextMenu(options);
-        menu.attachToParent(document.body);
         
         // Position the menu
         menu._el.classList.add('context-menu');
-        menu._el.style.left = `${x}px`;
-        menu._el.style.top = `${y}px`;
+        const hostRect = this.getBoundingClientRect();
+        const relX = x - hostRect.left;
+        const relY = y - hostRect.top;
+
+        menu._el.style.left = `${relX}px`;
+        menu._el.style.top = `${relY}px`;
+        menu.attachToParent(this.renderRoot as HTMLElement);
     }
 
     clearContextMenu() {
         // Remove any existing menu
-        const oldMenu = document.querySelector('.context-menu');
+        const oldMenu = this.renderRoot.querySelector('.context-menu');
         if (oldMenu) oldMenu.remove();
+    }
+
+    isContextMenuActive() {
+        return this.renderRoot.querySelector('.context-menu') !== null;
     }
 }
 

@@ -22,6 +22,7 @@ import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializ
 interface CanvasFunctionProps {
 	showMenu: (x: number, y: number) => void,
 	clearMenu: () => void,
+	isMenuActive: () => boolean,
 }
 
 export class Canvas extends Renderable {
@@ -72,10 +73,6 @@ export class Canvas extends Renderable {
 		this.addToCanvas = this.addToCanvas.bind(this);
 		
 		this.assignEventListener = this.assignEventListener.bind(this);
-		this.assignEventListener('contextmenu', (e) => {
-			e.preventDefault();
-			return false;
-		});
 
 		this.exportState = this.exportState.bind(this);
 		this.importState = this.importState.bind(this);
@@ -107,6 +104,7 @@ export class Canvas extends Renderable {
 			() => this._selectionManager.selected,
 			options.showMenu,
 			options.clearMenu,
+			options.isMenuActive,
 			this.assignEventListener,
 		);
 

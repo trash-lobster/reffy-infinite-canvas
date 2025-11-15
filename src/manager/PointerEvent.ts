@@ -41,6 +41,7 @@ export class PointerEventManager {
     getSelected: () => Renderable[];
     showContextMenu: (x: number, y: number) => void;
     clearContextMenu: () => void;
+    isMenuActive: () => boolean;
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
     private currentTransform?:
@@ -54,6 +55,7 @@ export class PointerEventManager {
         getSelected: () => Renderable[],
         showContextMenu: (x: number, y: number) => void,
         clearContextMenu: () => void,
+        isMenuActive: () => boolean,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
         this.canvas = canvas;
@@ -63,12 +65,14 @@ export class PointerEventManager {
         this.getSelected = getSelected;
         this.showContextMenu = showContextMenu;
         this.clearContextMenu = clearContextMenu;
+        this.isMenuActive = isMenuActive;
         this.assignEventListener = assignEventListener;
 
         // bind methods
         this.onPointerDown = this.onPointerDown.bind(this);
         this.onPointerMoveWhileDown = this.onPointerMoveWhileDown.bind(this);
         this.onPointerUp = this.onPointerUp.bind(this);
+        this.canInteract = this.canInteract.bind(this);
 
         // register event listeners
         this.addOnPaste();
@@ -80,6 +84,7 @@ export class PointerEventManager {
         // custom context menu
         this.assignEventListener('contextmenu', (e) => {
             e.preventDefault();
+
             // only show context menu when there is collision with a child object, otherwise clear it
             const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
             const child = this.checkCollidingChild(wx, wy);
@@ -94,6 +99,10 @@ export class PointerEventManager {
 
     changeMode() {
         this.state.toggleMode();
+    }
+
+    private canInteract() {
+        return !this.isMenuActive();
     }
     
     // #region Add events
@@ -113,7 +122,7 @@ export class PointerEventManager {
     
     private addOnWheel() {
         this.assignEventListener('wheel', (e) => {
-            if (!this.canvas._selectionManager.marqueeBox) {
+            if (!this.isMenuActive()) {
                 this.canvas._camera.onWheel(e);
             }
         }, { passive: false });
@@ -122,6 +131,8 @@ export class PointerEventManager {
     private addOnPaste() {
         // paste event has to be attached to the window instead of document
         window.addEventListener('paste', async (e) => {
+            if (!this.canInteract()) return;
+
             let newImages: Img[] = [];
 
             const files = e.clipboardData.files;
@@ -155,6 +166,8 @@ export class PointerEventManager {
     private addOnCopy() {
         // copy event has to be attached to the window instead of document
         window.addEventListener('copy', async (e) => {
+            if (!this.canInteract()) return;
+            
             let selectedImages: Img[] = this.getSelected() as Img[];
             
             if (selectedImages.length <= 0) return;
@@ -261,10 +274,13 @@ export class PointerEventManager {
     }
 
     private onPointerMoveWhileDown(e: PointerEvent) {
+        // in move, the buttons property is checked
+        if (e.buttons === 2) return;
         const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
         const dx = wx - this.state.lastWorldX;
         const dy = wy - this.state.lastWorldY;
-
+        
+        
         if (this.canvas.isGlobalClick) {
             this.canvas._camera.updateCameraPos(this.state.startWorldX - wx, this.state.startWorldY - wy);
         } else if (this.state.resizingDirection && this.state.resizingDirection !== 'CENTER') {

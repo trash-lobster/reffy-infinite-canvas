@@ -19,11 +19,14 @@ export class InfiniteCanvasElement extends LitElement {
                 {
                     text: "Test",
                     onClick: () => console.log('hey')
+                },
+                {
+                    text: "Test",
+                    onClick: () => console.log('hey')
                 }
             ]
         }
     }
-
 
     static styles = css`
         :host {
@@ -32,15 +35,56 @@ export class InfiniteCanvasElement extends LitElement {
 
         .context-menu {
             position: absolute;
-            z-index: 1000;
             background: white;
-            border: 1px solid #ccc;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            min-width: 160px;
+            min-width: 180px;
+            background: var(--menu-bg, #fff);
+            border-radius: 6px;
+            /* box-shadow: 0 4px 24px rgba(0,0,0,0.16), 0 1.5px 4px rgba(0,0,0,0.08); */
+            border: 1px solid var(--menu-border, #9f9f9fff);
+            box-sizing: border-box;
+            padding: 6px 0;
+            display: flex;
+            gap: 2px;
+            flex-direction: column;
+            font-family: system-ui, sans-serif;
+            animation: fadeInMenu 0.13s cubic-bezier(.4,0,.2,1);
+        }
 
-            button {
-                width: 100%;
-            }
+        @keyframes fadeInMenu {
+            from { opacity: 0; transform: translateY(8px);}
+            to { opacity: 1; transform: none;}
+        }
+
+        .context-menu button {
+            all: unset;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            width: 100%;
+            padding: 8px 18px;
+            font-size: 15px;
+            color: var(--menu-fg, #222);
+            background: none;
+            cursor: pointer;
+            transition: background 0.1s, color 0.1s;
+            user-select: none;
+            outline: none;
+        }
+
+        .context-menu button:hover,
+        .context-menu button:focus-visible {
+            background: var(--menu-hover, #c7d5eaff);
+            color: var(--menu-accent, #155290ff);
+        }
+
+        .context-menu button:active {
+            background: var(--menu-active, #e3eaf3);
+        }
+
+        .context-menu button[disabled] {
+            color: #aaa;
+            cursor: not-allowed;
+            background: none;
         }
 
         canvas {

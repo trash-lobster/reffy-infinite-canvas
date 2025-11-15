@@ -2,17 +2,20 @@
 
 type ContextMenuElCoreOption = {
     text: string;
-    parent?: ContextMenu;
+    parent?: ContextMenuGroup;
     style?: CSSStyleDeclaration;
 }
 
 type ContextMenuElOption = 
-    ( ContextMenuElCoreOption &  { onClick?: (e: MouseEvent) => void } ) | 
+    ( ContextMenuElCoreOption &  { onClick?: (e?: MouseEvent) => void } ) | 
     ( ContextMenuElCoreOption &  { childOptions: ContextMenuElOption[] } )
 
-export type ContextMenuOption = {
-    parent?: ContextMenuElement;
-    childrenOption: ContextMenuElOption[];
+export type ContextMenuProps = {
+    optionGroups: ContextMenuGroupProps[];
+}
+
+export type ContextMenuGroupProps = {
+    childOptions: ContextMenuElOption[];
 }
 
 /**
@@ -20,29 +23,49 @@ export type ContextMenuOption = {
  */
 export class ContextMenu {
     _el: HTMLDivElement;
-    parent?: ContextMenuElement;
-    options: ContextMenuElement[] = [];
+    options: ContextMenuGroup[] = [];
 
     get el() { return this._el; }
 
-    constructor(option: ContextMenuOption) {
+    constructor(option: ContextMenuProps) {
         this._el = document.createElement('div');
-        this._el.style.position = 'absolute';
-        this._el.style.zIndex = '2';
+
+        option.optionGroups.forEach((o, idx) => {
+            this.createOptionGroup(o);
+            if (idx !== option.optionGroups.length - 1) {
+                this.addDivider();
+            }
+        });
+    }
+
+    attachToParent(parent: Node) {
+        parent.appendChild(this.el);
+    }
+
+    private createOptionGroup(option: ContextMenuGroupProps) {
+        const element = new ContextMenuGroup(option);
+        this.options.push(element);
+        this.el.appendChild(element.el);
+    }
+
+    private addDivider() {
+        const divider = document.createElement('div');
+        divider.classList.add('context-menu-divider');
+        this.el.appendChild(divider);
+    }
+}
+
+export class ContextMenuGroup {
+    _el: HTMLDivElement;
+    childOptions: ContextMenuElement[] = [];
+
+    get el() { return this._el; }
+
+    constructor(option: ContextMenuGroupProps) {
+        this._el = document.createElement('div');
         this.createOptionElement = this.createOptionElement.bind(this);
 
-        option.childrenOption.forEach(o => this.createOptionElement(o));
-
-        if ('parent' in option) {
-            this.parent = option.parent;
-            this.parent.el.appendChild(this._el);
-        }
-        
-        this._el.onclick = (e: MouseEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('click');
-        }
+        option.childOptions.forEach(o => this.createOptionElement(o));
     }
 
     attachToParent(parent: Node) {
@@ -52,45 +75,40 @@ export class ContextMenu {
     private createOptionElement(option: ContextMenuElOption) {
         option.parent = this;
         const element = new ContextMenuElement(option);
-        this.options.push(element);
+        this.childOptions.push(element);
     }
 }
 
 /**
- * An element MAY have a submenu that will open up if they are selected
+ * An element MAY have a submenu that will open up if they are selected (we will consider this in the future)
  * Otherwise, trigger the onclick function instead.
  * In its construction, either a sub menu has to be passed or an onclick must be added 
  */
 export class ContextMenuElement {
     displayText: string;
     el: HTMLButtonElement;
-    onClick?: (e: MouseEvent) => void;
-    parent: ContextMenu;
+    parent: ContextMenuGroup;
     subMenu?: ContextMenu;
 
     constructor(option: ContextMenuElOption) {
         this.parent = option.parent;
         this.el = document.createElement('button');
         this.el.textContent = option.text;
-        // if ('style' in option) {
-        //     this.el.style;
-        // }
+        
+        this.parent.el.appendChild(this.el);
+        this.attachEventListener = this.attachEventListener.bind(this);
+        this.detachEventListener = this.detachEventListener.bind(this);
 
         if ('onClick' in option) {
-            this.onClick = (e: MouseEvent) => {
-                e.preventDefault();
-                option.onClick(e);
-            };
+            this.attachEventListener('click', option.onClick);
         }
-        if ('childOptions' in option) {
-            this.subMenu = new ContextMenu({
-                childrenOption: option.childOptions,
-                parent: this,
-            })
-        }
+    }
 
-        // attach style
+    attachEventListener(type: string, event: (e: PointerEvent) => void) {
+        this.el.addEventListener(type, event);
+    }
 
-        this.parent.el.appendChild(this.el);
+    detachEventListener(type: string, event: (e: PointerEvent) => void) {
+        this.el.removeEventListener(type, event);
     }
 }

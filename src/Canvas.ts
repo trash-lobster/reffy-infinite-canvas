@@ -19,7 +19,7 @@ import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
 import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
 
-interface CanvasFunctionProps {
+interface ContextMenuFns {
 	showMenu: (x: number, y: number) => void,
 	clearMenu: () => void,
 	isMenuActive: () => boolean,
@@ -47,11 +47,13 @@ export class Canvas extends Renderable {
 
     // Call this whenever children/layers/z-order change
     markOrderDirty() { this.orderDirty = true; }
+
+	get selectionManager() { return this._selectionManager }
 	
 	constructor(
 		canvas: HTMLCanvasElement, 
 		history: CanvasHistory,
-		options: CanvasFunctionProps,
+		options: ContextMenuFns,
 	) {
 		super();
 		this.canvas = canvas;

@@ -6,27 +6,84 @@ import { getWorldCoords, addImages as innerAddImages } from './util';
 import { downloadJSON, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
-import { ContextMenu, ContextMenuOption } from './contextMenu';
-
-type AcceptedOptions = ContextMenuOption;
+import { ContextMenu, ContextMenuProps } from './contextMenu';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
-    @property({type: Object})
-    options: Record<string, AcceptedOptions> = {
-        'contextMenu': {
-            childrenOption: [
-                {
-                    text: "Test",
-                    onClick: () => console.log('hey')
-                },
-                {
-                    text: "Test",
-                    onClick: () => console.log('hey')
-                }
-            ]
-        }
+
+    // wrap to close context menu after selecting an option
+    private withContextMenuClear<T extends (...args: any[]) => any>(fn: T): T {
+        const self = this;
+        return function(this: any, ...args: Parameters<T>): ReturnType<T> {
+            const result = fn.apply(self, args);
+            self.clearContextMenu();
+            return result;
+        } as T;
     }
+
+    /**
+     * The default ContextMenuOptions for the infinite canvas should have all the functions
+     */
+    @property({type: Object})
+    contextMenuOptions: ContextMenuProps = {
+        optionGroups: [
+            {
+                childOptions: [
+                    {
+                        text: "Cut",
+                        onClick: (e: PointerEvent) => console.log('hey')
+                    },
+                    {
+                        text: "Copy",
+                        onClick: (e: PointerEvent) => console.log('hey')
+                    },
+                    {
+                        text: "Paste",
+                        onClick: (e: PointerEvent) => console.log('hey')
+                    },
+                    {
+                        text: "Delete",
+                        onClick: this.withContextMenuClear(this.deleteSelectedImages.bind(this))
+                    },
+                ]
+            },
+            {
+                childOptions: [
+                    {
+                        text: "Flip Vertical",
+                        onClick: () => console.log('hey')
+                    },
+                    {
+                        text: "Flip Horizontal",
+                        onClick: () => console.log('hey')
+                    }
+                ]
+            },
+            {
+                childOptions: [
+                    {
+                        text: "Align Left",
+                        onClick: () => console.log('hey')
+                    },
+                    {
+                        text: "Align Right",
+                        onClick: () => console.log('hey')
+                    },
+                    {
+                        text: "Align Top",
+                        onClick: () => console.log('hey')
+                    },
+                    {
+                        text: "Align Bottom",
+                        onClick: () => console.log('hey')
+                    }
+                ]
+            }
+        ]
+    }
+
+    @property({type: String})
+    name: string = 'Reffy';
 
     static styles = css`
         :host {
@@ -87,6 +144,13 @@ export class InfiniteCanvasElement extends LitElement {
             background: none;
         }
 
+        .context-menu-divider {
+            height: 1px;
+            background: var(--menu-divider, #c7d5eaff);
+            margin: 6px 12px;
+            border: none;
+        }
+
         canvas {
             width: 100%;
             height: 100%;
@@ -112,11 +176,12 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     private initCanvas() {
+        console.log(this.name);
         this.#history = new CanvasHistory();
 
         const canvas = document.createElement('canvas');
-        this.clearContextMenu = this.clearContextMenu.bind(this);
         this.addContextMenu = this.addContextMenu.bind(this);
+        this.clearContextMenu = this.clearContextMenu.bind(this);
         this.isContextMenuActive = this.isContextMenuActive.bind(this);
 
         this.#canvas = new Canvas(
@@ -201,6 +266,11 @@ export class InfiniteCanvasElement extends LitElement {
         );
         this.#history.push(makeMultiAddChildCommand(this.#canvas, newImages));
     }
+
+    deleteSelectedImages() {
+        if (!this.engine) return;
+        this.engine.selectionManager.deleteSelected();
+    }
     
     exportCanvas(filename = 'infinite-canvas.json') {
         if (!this.#canvas) return;
@@ -224,8 +294,7 @@ export class InfiniteCanvasElement extends LitElement {
 
     addContextMenu(x: number, y: number) {
         // Create new menu
-        const options = this.options['contextMenu'];
-        const menu = new ContextMenu(options);
+        const menu = new ContextMenu(this.contextMenuOptions);
         menu.attachToParent(this.renderRoot as HTMLElement);
         
         // Position the menu
@@ -246,7 +315,7 @@ export class InfiniteCanvasElement extends LitElement {
             relX + menuRect.width > hostWidth ? 1 : 0,
             relY + menuRect.bottom > hostHeight ? 1 : 0,
         ]
-        
+
         const menuHeight = menuRect.height * direction[1];
         const menuWidth = menuRect.width * direction[0];
 

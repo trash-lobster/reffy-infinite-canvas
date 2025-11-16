@@ -56,6 +56,9 @@ export class SelectionManager {
         this.copy = this.copy.bind(this);
         this.paste = this.paste.bind(this);
 
+        this.flipVertical = this.flipVertical.bind(this);
+        this.flipHorizontal = this.flipHorizontal.bind(this);
+
         this.history = history;
     }
 
@@ -219,6 +222,22 @@ export class SelectionManager {
             } else {
                 box.resize(dx, dy, direction);
             }
+        }
+    }
+
+    flipVertical() {
+        if (this._multiBoundingBox) {
+
+        } else {
+            this._boundingBoxes.forEach(v => v.flipVertical());
+        }
+    }
+
+    flipHorizontal() {
+        if (this._multiBoundingBox) {
+
+        } else {
+            this._boundingBoxes.forEach(v => v.flipHorizontal());
         }
     }
 

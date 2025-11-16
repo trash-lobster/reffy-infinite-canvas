@@ -99,3 +99,11 @@
 - Add image import in jpg and webp format
 - fix marquee bug
 - merge images together with canvas to allow copying multiple images
+
+20251115:
+- Add context menu options class and its styling
+- Add copy image and its wrapper to ensure that context menu is cleared
+
+20251116:
+- Refactor functions
+- Add deleted and paste image function to the context menu option

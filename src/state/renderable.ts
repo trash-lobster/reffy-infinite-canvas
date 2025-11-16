@@ -33,6 +33,7 @@ export class RenderableState {
 
             setTranslation: action,
             setScale: action,
+            flipVertical: action,
             setAngle: action,
             getChild: action,
             appendChild: action,
@@ -80,6 +81,18 @@ export class RenderableState {
     updateScale(x: number, y: number) {
         this.scale[0] *= x;
         this.scale[1] *= y;
+        this.markDirty();
+    }
+
+    flipVertical(imageHeight: number) {
+        this.translation[1] += this.scale[1] * imageHeight;
+        this.scale[1] *= -1;
+        this.markDirty();
+    }
+
+    flipHorizontal(imageWidth: number) {
+        this.translation[0] += this.scale[0] * imageWidth;
+        this.scale[0] *= -1;
         this.markDirty();
     }
 

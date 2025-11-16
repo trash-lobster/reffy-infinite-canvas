@@ -243,6 +243,14 @@ export class BoundingBox {
         }
     }
 
+    flipVertical() {
+        this.target.flipVertical(this.height);
+    }
+
+    flipHorizontal() {
+        this.target.flipHorizontal(this.width);
+    }
+
     private addCorners() {
         for (const type of corners) {            
             const r = new Rect(this.getCornersInScreenSpace(type, this.target.worldMatrix));

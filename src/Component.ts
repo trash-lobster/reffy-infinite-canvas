@@ -31,7 +31,10 @@ export class InfiniteCanvasElement extends LitElement {
                 childOptions: [
                     {
                         text: "Cut",
-                        onClick: (e: PointerEvent) => console.log('hey')
+                        onClick: () => {
+                            this.copyImage.bind(this)();
+                            this.withContextMenuClear(this.deleteSelectedImages.bind(this))();
+                        }
                     },
                     {
                         text: "Copy",
@@ -51,11 +54,11 @@ export class InfiniteCanvasElement extends LitElement {
                 childOptions: [
                     {
                         text: "Flip Vertical",
-                        onClick: () => console.log('hey')
+                        onClick: this.withContextMenuClear(this.flipVertical.bind(this))
                     },
                     {
                         text: "Flip Horizontal",
-                        onClick: () => console.log('hey')
+                        onClick: this.withContextMenuClear(this.flipHorizontal.bind(this))
                     }
                 ]
             },
@@ -275,6 +278,16 @@ export class InfiniteCanvasElement extends LitElement {
     async pasteImage(e: PointerEvent) {
         if (!this.engine) return;
         await this.engine.selectionManager.paste(e);
+    }
+
+    flipVertical() {
+        if (!this.engine) return;
+        this.engine.selectionManager.flipVertical();
+    }
+
+    flipHorizontal() {
+        if (!this.engine) return;
+        this.engine.selectionManager.flipHorizontal();
     }
 
     deleteSelectedImages() {

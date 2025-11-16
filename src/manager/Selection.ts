@@ -136,7 +136,10 @@ export class SelectionManager {
     }
 
     isBoundingBoxHit(wx: number, wy: number) {
-        return this._boundingBoxes.size === 1 && this._boundingBoxes.forEach(box => box.hitTest(wx, wy, this.canvas.worldMatrix));
+        return (
+            this._boundingBoxes.size === 1 && 
+            Array.from(this._boundingBoxes)[0].hitTest(wx, wy, this.canvas.worldMatrix)
+        );
     }
 
     hitTestAdjustedCorner(wx: number, wy: number) {

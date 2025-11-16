@@ -93,10 +93,11 @@ export class PointerEventManager {
 
             // only show context menu when there is collision with a child object, otherwise clear it
             const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-            const child = this.checkCollidingChild(wx, wy);
+
             // show different context menu depending on what is being selected
-            if (child) {
-                // if the context menu option does not have an onclick, then show its children through on hover
+            if (this.canvas._selectionManager.isMultiBoundingBoxHit(wx, wy)) {
+                showContextMenu(e.clientX, e.clientY, 'multi');
+            } else if (this.canvas._selectionManager.isBoundingBoxHit(wx, wy)) {
                 showContextMenu(e.clientX, e.clientY);
             } else {
                 showContextMenu(e.clientX, e.clientY, 'canvas');
@@ -209,12 +210,13 @@ export class PointerEventManager {
     private handleSelectPointerDown(e: MouseEvent, wx: number, wy: number) {
         this.canvas.isGlobalClick = false;
         if (e.button === 2) {
-            this.state.clearSelection();
+            if (!this.canvas._selectionManager.hitTest(wx, wy)) {
+                this.state.clearSelection();
+            }
+
             const child = this.checkCollidingChild(wx, wy);
             if (child) {
                 this.canvas._selectionManager.add([child as Rect]);
-            } else if (this.canvas.hitTest(wx, wy)) {
-                this.state.clearSelection();
             }
         } else {
             const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);

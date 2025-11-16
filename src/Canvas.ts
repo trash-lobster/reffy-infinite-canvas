@@ -104,6 +104,7 @@ export class Canvas extends Renderable {
 			history,
 			this.addToCanvas,
 			() => this._selectionManager.selected,
+			this.selectionManager.copy,
 			options.showMenu,
 			options.clearMenu,
 			options.isMenuActive,

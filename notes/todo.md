@@ -15,3 +15,5 @@ Tests
 Add options to initalise canvas with
 
 Save canvas every 5 minutes to designated option
+
+Add a loading interaction when pasting

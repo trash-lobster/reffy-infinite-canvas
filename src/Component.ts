@@ -35,7 +35,7 @@ export class InfiniteCanvasElement extends LitElement {
                     },
                     {
                         text: "Copy",
-                        onClick: (e: PointerEvent) => console.log('hey')
+                        onClick: this.withContextMenuClear(this.copyImage.bind(this))
                     },
                     {
                         text: "Paste",
@@ -265,6 +265,11 @@ export class InfiniteCanvasElement extends LitElement {
             (src: string) => this.#canvas.addToCanvas(src, wx, wy, true),
         );
         this.#history.push(makeMultiAddChildCommand(this.#canvas, newImages));
+    }
+
+    async copyImage() {
+        if (!this.engine) return;
+        await this.engine.selectionManager.copy();
     }
 
     deleteSelectedImages() {

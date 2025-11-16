@@ -1,5 +1,10 @@
-import { BoundingBoxCollisionType, oppositeCorner } from "../util";
-import { Rect } from "../shapes";
+import { 
+    BoundingBoxCollisionType, 
+    convertToPNG, 
+    mergeMultiImg, 
+    oppositeCorner,
+} from "../util";
+import { Img, Rect } from "../shapes";
 import { Canvas } from "Canvas";
 import { Point } from "boundingBox/type";
 import { 
@@ -47,6 +52,8 @@ export class SelectionManager {
         this.canvas = canvas;
         this.clear = this.clear.bind(this);
         this.deleteSelected = this.deleteSelected.bind(this);
+        this.copy = this.copy.bind(this);
+
         this.history = history;
     }
 
@@ -210,6 +217,40 @@ export class SelectionManager {
             } else {
                 box.resize(dx, dy, direction);
             }
+        }
+    }
+
+    async copy() {
+        const images = this.selected as Img[];
+        if (images.length <= 0) return;
+        let src: string;
+    
+        // multiple images
+        if (images.length > 1) {
+            src = await mergeMultiImg(images);
+        } else {
+            const image = images[0];
+            src = 
+                !image.src.startsWith('data:image/png')
+                ? 
+                await convertToPNG(image.src) :
+                image.src;
+        }
+        
+        const data = await fetch(src);
+        const blob = await data.blob();
+        const storedItem = new ClipboardItem({
+            [blob.type]: blob
+        })
+    
+        try {
+            // can only support one item at a time
+            await navigator.clipboard.write([storedItem]);
+        } catch (err) {
+            if (err instanceof DOMException) {
+                console.log(err);
+            }
+            console.error(err);
         }
     }
 }

@@ -2,9 +2,7 @@ import { Canvas } from "Canvas";
 import { Img, Rect, Renderable, Shape } from "../shapes";
 import {
     addImages,
-    convertToPNG,
     getWorldCoords,
-    mergeMultiImg,
 } from "../util";
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
@@ -39,9 +37,12 @@ export class PointerEventManager {
     history: CanvasHistory;
     addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
     getSelected: () => Renderable[];
+    copy: () => Promise<void>;
+
     showContextMenu: (x: number, y: number) => void;
     clearContextMenu: () => void;
     isMenuActive: () => boolean;
+    
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
     private currentTransform?:
@@ -53,6 +54,7 @@ export class PointerEventManager {
         history: CanvasHistory,
         addToCanvas: (src: string, x: number, y: number) => Promise<Img>,
         getSelected: () => Renderable[],
+        copy: () => Promise<void>,
         showContextMenu: (x: number, y: number) => void,
         clearContextMenu: () => void,
         isMenuActive: () => boolean,
@@ -63,6 +65,8 @@ export class PointerEventManager {
         this.history = history;
         this.addToCanvas = addToCanvas;
         this.getSelected = getSelected;
+        this.copy = copy;
+
         this.showContextMenu = showContextMenu;
         this.clearContextMenu = clearContextMenu;
         this.isMenuActive = isMenuActive;
@@ -168,39 +172,8 @@ export class PointerEventManager {
         // copy event has to be attached to the window instead of document
         window.addEventListener('copy', async (e) => {
             if (!this.canInteract()) return;
-            
-            let selectedImages: Img[] = this.getSelected() as Img[];
-            
-            if (selectedImages.length <= 0) return;
-            let src: string;
 
-            // multiple images
-            if (selectedImages.length > 1) {
-                src = await mergeMultiImg(selectedImages);
-            } else {
-                const image = selectedImages[0];
-                src = 
-                    !image.src.startsWith('data:image/png')
-                    ? 
-                    await convertToPNG(image.src) :
-                    image.src;
-            }
-            
-            const data = await fetch(src);
-            const blob = await data.blob();
-            const storedItem = new ClipboardItem({
-                [blob.type]: blob
-            })
-
-            try {
-                // can only support one item at a time
-                await navigator.clipboard.write([storedItem]);
-            } catch (err) {
-                if (err instanceof DOMException) {
-                    console.log(err);
-                }
-                console.error(err);
-            }
+            await this.copy();
             e.preventDefault();
         });
     }

@@ -7,6 +7,7 @@ import {
     BoundingBoxCollisionType,
     applyMatrixToPoint,
     getScalesFromMatrix,
+    getWorldCoords,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { 
@@ -20,6 +21,7 @@ import {
     getEndX,
     getEndY
 } from "./OrderedList";
+import { Canvas } from "Canvas";
 
 const HANDLE_TYPES: BoundingBoxCollisionType[] = [...corners, ...sides] as BoundingBoxCollisionType[];
 
@@ -194,6 +196,46 @@ export class MultiBoundingBox {
 
         this.scale[0] = this.scale[0] * mulSX < 0 ? -1 : 1;
         this.scale[1] = this.scale[1] * mulSY < 0 ? -1 : 1;
+    }
+
+    flipHorizontal(canvas: Canvas) {
+        const [worldScaleX] = getScalesFromMatrix(canvas.worldMatrix);
+
+        const [wtx] = getWorldCoords(this.x, this.y, canvas);
+        const bboxCenterX = wtx + this.width / worldScaleX / 2;
+
+        for (const target of this.targets) {
+            const scaledWidth = target.width * target.sx;
+
+            const distFromCenter = target.x - bboxCenterX;
+
+            const newX = bboxCenterX - distFromCenter - scaledWidth;
+
+            target.setTranslation(newX, target.y);
+            target.flipHorizontal(target.width);
+        }
+
+        this.scale[0] *= -1;
+    }
+
+    flipVertical(canvas: Canvas) {
+        const [_, worldScaleY] = getScalesFromMatrix(canvas.worldMatrix);
+
+        const [wtx, wty] = getWorldCoords(this.x, this.y, canvas);
+        const bboxCenterY = wty + this.height / worldScaleY / 2;
+
+        for (const target of this.targets) {
+            const scaleHeight = target.height * target.sy;
+
+            const distFromCenter = target.y - bboxCenterY;
+
+            const newY = bboxCenterY - distFromCenter - scaleHeight;
+
+            target.setTranslation(target.x, newY);
+            target.flipVertical(target.height);
+        }
+
+        this.scale[1] *= -1;
     }
 
     getPositions(): number[] {

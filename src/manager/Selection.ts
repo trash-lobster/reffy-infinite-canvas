@@ -238,15 +238,15 @@ export class SelectionManager {
 
     flipVertical() {
         if (this._multiBoundingBox) {
-
+            this._multiBoundingBox.flipVertical(this.canvas);
         } else {
             this._boundingBoxes.forEach(v => v.flipVertical());
         }
     }
-
+    
     flipHorizontal() {
         if (this._multiBoundingBox) {
-
+            this._multiBoundingBox.flipHorizontal(this.canvas);
         } else {
             this._boundingBoxes.forEach(v => v.flipHorizontal());
         }

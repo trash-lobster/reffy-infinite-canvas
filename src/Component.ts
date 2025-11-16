@@ -52,13 +52,13 @@ export class InfiniteCanvasElement extends LitElement {
             {
                 childOptions: [
                     {
+                        text: "Flip Horizontal",
+                        onClick: this.withContextMenuClear(this.flipHorizontal.bind(this))
+                    },
+                    {
                         text: "Flip Vertical",
                         onClick: this.withContextMenuClear(this.flipVertical.bind(this))
                     },
-                    {
-                        text: "Flip Horizontal",
-                        onClick: this.withContextMenuClear(this.flipHorizontal.bind(this))
-                    }
                 ]
             },
         ]

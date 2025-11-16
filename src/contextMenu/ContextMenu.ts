@@ -38,6 +38,10 @@ export class ContextMenu {
                 this.addDivider();
             }
         });
+
+        this._el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
     }
 
     attachToParent(parent: Node) {
@@ -88,29 +92,35 @@ export class ContextMenuGroup {
  */
 export class ContextMenuElement {
     displayText: string;
-    el: HTMLButtonElement;
+    _el: HTMLButtonElement;
     parent: ContextMenuGroup;
     subMenu?: ContextMenu;
 
+    get el() { return this._el; }
+
     constructor(option: ContextMenuElOption) {
         this.parent = option.parent;
-        this.el = document.createElement('button');
-        this.el.textContent = option.text;
+        this._el = document.createElement('button');
+        this._el.textContent = option.text;
         
-        this.parent.el.appendChild(this.el);
+        this.parent.el.appendChild(this._el);
         this.attachEventListener = this.attachEventListener.bind(this);
         this.detachEventListener = this.detachEventListener.bind(this);
 
         if ('onClick' in option) {
             this.attachEventListener('click', option.onClick);
         }
+
+        this._el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
     }
 
     attachEventListener(type: string, event: (e: PointerEvent) => void) {
-        this.el.addEventListener(type, event);
+        this._el.addEventListener(type, event);
     }
 
     detachEventListener(type: string, event: (e: PointerEvent) => void) {
-        this.el.removeEventListener(type, event);
+        this._el.removeEventListener(type, event);
     }
 }

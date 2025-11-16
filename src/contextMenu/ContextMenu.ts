@@ -31,6 +31,7 @@ export class ContextMenu {
 
     constructor(option: ContextMenuProps) {
         this._el = document.createElement('div');
+        this._el.classList.add('context-menu');
 
         option.optionGroups.forEach((o, idx) => {
             this.createOptionGroup(o);
@@ -68,7 +69,7 @@ export class ContextMenuGroup {
     get el() { return this._el; }
 
     constructor(option: ContextMenuGroupProps) {
-        this._el = document.createElement('div');
+        this._el = document.createElement('div');        
         this.createOptionElement = this.createOptionElement.bind(this);
 
         option.childOptions.forEach(o => this.createOptionElement(o));
@@ -102,6 +103,7 @@ export class ContextMenuElement {
         this.parent = option.parent;
         this._el = document.createElement('button');
         this._el.textContent = option.text;
+        this._el.classList.add('context-menu-option');
         
         this.parent.el.appendChild(this._el);
         this.attachEventListener = this.attachEventListener.bind(this);

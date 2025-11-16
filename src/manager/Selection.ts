@@ -131,6 +131,14 @@ export class SelectionManager {
         return null;
     }
 
+    isMultiBoundingBoxHit(wx: number, wy: number) {
+        return this._multiBoundingBox && this._multiBoundingBox.hitTest(wx, wy, this.canvas.worldMatrix);
+    }
+
+    isBoundingBoxHit(wx: number, wy: number) {
+        return this._boundingBoxes.size === 1 && this._boundingBoxes.forEach(box => box.hitTest(wx, wy, this.canvas.worldMatrix));
+    }
+
     hitTestAdjustedCorner(wx: number, wy: number) {
         if (this._multiBoundingBox) {
             const ans = this._multiBoundingBox.hitTest(wx, wy, this.canvas.worldMatrix);

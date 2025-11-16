@@ -1,5 +1,7 @@
 // a style for the context menu should be set at the top level context menu and it should trickle down or looked up recurisvely?
 
+export type ContextMenuType = 'single' | 'multi' | 'canvas';
+
 type ContextMenuElCoreOption = {
     text: string;
     parent?: ContextMenuGroup;

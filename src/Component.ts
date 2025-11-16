@@ -6,7 +6,7 @@ import { getWorldCoords, addImages as innerAddImages } from './util';
 import { downloadJSON, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
-import { ContextMenu, ContextMenuProps } from './contextMenu';
+import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -24,8 +24,7 @@ export class InfiniteCanvasElement extends LitElement {
     /**
      * The default ContextMenuOptions for the infinite canvas should have all the functions
      */
-    @property({type: Object})
-    contextMenuOptions: ContextMenuProps = {
+    singleImageMenuOptions: ContextMenuProps = {
         optionGroups: [
             {
                 childOptions: [
@@ -62,6 +61,12 @@ export class InfiniteCanvasElement extends LitElement {
                     }
                 ]
             },
+        ]
+    };
+
+    multiImageMenuOptions: ContextMenuProps = {
+        optionGroups: [
+            ...this.singleImageMenuOptions.optionGroups,
             {
                 childOptions: [
                     {
@@ -82,6 +87,19 @@ export class InfiniteCanvasElement extends LitElement {
                     }
                 ]
             }
+        ]
+    }
+
+    canvasImageMenuOptions: ContextMenuProps = {
+        optionGroups: [
+            {
+                childOptions: [
+                    {
+                        text: "Paste",
+                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
+                    },
+                ]
+            },
         ]
     }
 
@@ -315,9 +333,13 @@ export class InfiniteCanvasElement extends LitElement {
         this.#canvas.clearChildren();
     }
 
-    addContextMenu(x: number, y: number) {
+    addContextMenu(x: number, y: number, type: ContextMenuType = 'single') {
         // Create new menu
-        const menu = new ContextMenu(this.contextMenuOptions);
+        const menu = new ContextMenu(
+            type === 'single' ? this.singleImageMenuOptions :
+                type === 'multi' ? this.multiImageMenuOptions :
+                    this.canvasImageMenuOptions
+        );
         menu.attachToParent(this.renderRoot as HTMLElement);
         
         // Position the menu

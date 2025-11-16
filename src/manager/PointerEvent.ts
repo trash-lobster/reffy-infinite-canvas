@@ -8,6 +8,7 @@ import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
 import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
 import { makeMultiAddChildCommand } from "./SceneCommand";
+import { ContextMenuType } from "../contextMenu";
 
 export interface Point {
     x: number,
@@ -39,7 +40,7 @@ export class PointerEventManager {
     getSelected: () => Renderable[];
     copy: () => Promise<void>;
 
-    showContextMenu: (x: number, y: number) => void;
+    showContextMenu: (x: number, y: number, type?: ContextMenuType) => void;
     clearContextMenu: () => void;
     isMenuActive: () => boolean;
     
@@ -55,7 +56,7 @@ export class PointerEventManager {
         addToCanvas: (src: string, x: number, y: number) => Promise<Img>,
         getSelected: () => Renderable[],
         copy: () => Promise<void>,
-        showContextMenu: (x: number, y: number) => void,
+        showContextMenu: (x: number, y: number, type?: ContextMenuType) => void,
         clearContextMenu: () => void,
         isMenuActive: () => boolean,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
@@ -98,7 +99,7 @@ export class PointerEventManager {
                 // if the context menu option does not have an onclick, then show its children through on hover
                 showContextMenu(e.clientX, e.clientY);
             } else {
-                clearContextMenu();
+                showContextMenu(e.clientX, e.clientY, 'canvas');
             }
         });
     }

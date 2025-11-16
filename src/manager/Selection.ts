@@ -1,6 +1,7 @@
 import { 
     BoundingBoxCollisionType, 
     convertToPNG, 
+    getWorldCoords, 
     mergeMultiImg, 
     oppositeCorner,
 } from "../util";
@@ -12,8 +13,8 @@ import {
     MarqueeSelectionBox, 
     MultiBoundingBox,
 } from "../boundingBox";
-import { CanvasHistory, Command } from "../history";
-import { makeMultiRemoveChildCommand } from "./SceneCommand";
+import { CanvasHistory } from "../history";
+import { makeMultiAddChildCommand, makeMultiRemoveChildCommand } from "./SceneCommand";
 
 export class SelectionManager {
     private canvas: Canvas;
@@ -53,6 +54,7 @@ export class SelectionManager {
         this.clear = this.clear.bind(this);
         this.deleteSelected = this.deleteSelected.bind(this);
         this.copy = this.copy.bind(this);
+        this.paste = this.paste.bind(this);
 
         this.history = history;
     }
@@ -251,6 +253,50 @@ export class SelectionManager {
                 console.log(err);
             }
             console.error(err);
+        }
+    }
+
+    // there is no way currently I've found that can allow us to bypass the permission for reading from the navigator's clipboard
+    // the additional confirmation is required when pasting from a different origin
+    // pasting images copied from the canvas will not trigger the additional permission
+    // In Chrome, the interaction is smoother as it would remember the choice when permission is given
+    // In Firefox, the interaction requires an additional button press every time.
+    async paste(e: PointerEvent) {
+        try {
+            const items = await navigator.clipboard.read();
+            const types = items[0].types;
+
+            const type = types.find(t => 
+                t.startsWith('image/') 
+                || t.startsWith('text/html')
+            );
+            if (!type) return;
+            const blob = await items[0].getType(type);
+
+            const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
+            let base64: string;
+
+            if (type.startsWith('text/html')) {
+                const el = document.createElement('html');
+                el.innerHTML = await blob.text();
+                const image = el.getElementsByTagName('img')[0];
+                base64 = image.src;
+            } else if (type.startsWith('image/svg')) {
+                const svgText = await blob.text();
+                base64 = await convertToPNG(`data:image/svg+xml;base64,${btoa(svgText)}`);
+            } else {
+                base64 = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            }
+            
+            const img = await this.canvas.addToCanvas(base64, wx, wy);
+            this.history.push(makeMultiAddChildCommand(this.canvas, [img]));
+        } catch (ex) {
+
         }
     }
 }

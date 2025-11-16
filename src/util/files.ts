@@ -65,34 +65,6 @@ export async function readJSONFile<T = unknown>(file: File): Promise<T> {
     return JSON.parse(text) as T;
 }
 
-export async function pasteFromClipboard(data: DataTransfer) {
-    let newImages: Img[] = [];
-
-    const files = data.files;
-    const html = data.getData('text/html');
-
-    if (html) {
-        const el = document.createElement('html');
-        el.innerHTML = html;
-        const images = el.getElementsByTagName('img');
-        for (let i = 0; i < images.length; i++) {
-            const image = images[i];
-            const newImg = new Img({
-                x: this.state.lastPointerPos.x,
-                y: this.state.lastPointerPos.y,
-                src: image.src,
-            });
-            this.canvas.appendChild(newImg);
-            newImages.push(newImg);
-        }
-    } else {
-        newImages = await addImages(
-            files, 
-            async (src: string) => await this.addToCanvas(src, this.state.lastPointerPos.x, this.state.lastPointerPos.y)
-        );
-    }
-}
-
 export function convertToPNG(src: string, quality = 1.0): Promise<string> {
     return new Promise((resolve, reject) => {
         const img = new Image();

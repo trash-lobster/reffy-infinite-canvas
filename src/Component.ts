@@ -39,7 +39,7 @@ export class InfiniteCanvasElement extends LitElement {
                     },
                     {
                         text: "Paste",
-                        onClick: (e: PointerEvent) => console.log('hey')
+                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
                     },
                     {
                         text: "Delete",
@@ -270,6 +270,11 @@ export class InfiniteCanvasElement extends LitElement {
     async copyImage() {
         if (!this.engine) return;
         await this.engine.selectionManager.copy();
+    }
+
+    async pasteImage(e: PointerEvent) {
+        if (!this.engine) return;
+        await this.engine.selectionManager.paste(e);
     }
 
     deleteSelectedImages() {

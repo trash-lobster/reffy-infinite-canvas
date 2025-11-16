@@ -88,6 +88,7 @@ export class PointerEventManager {
         // custom context menu
         this.assignEventListener('contextmenu', (e) => {
             e.preventDefault();
+            e.stopPropagation();
 
             // only show context menu when there is collision with a child object, otherwise clear it
             const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);

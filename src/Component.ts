@@ -188,18 +188,20 @@ export class InfiniteCanvasElement extends LitElement {
 
     connectedCallback() {
         super.connectedCallback();
-        window.addEventListener('pointerdown', this.handleGlobalPointerDown, true);
+        this.handleGlobalPointerDown = this.handleGlobalPointerDown.bind(this);
+        document.addEventListener('pointerdown', this.handleGlobalPointerDown, true);
     }
     disconnectedCallback() {
-        window.removeEventListener('pointerdown', this.handleGlobalPointerDown, true);
+        document.removeEventListener('pointerdown', this.handleGlobalPointerDown, true);
         this.#resizeObserver?.disconnect();
         this.#resizeObserver = undefined;
         this.#canvas.destroy();
         super.disconnectedCallback();
     }
 
+    // clear menu when interaction is outside of the infinite canvas
     private handleGlobalPointerDown = (e: PointerEvent) => {
-        if (!this.renderRoot.contains(e.target as Node)) {
+        if (!this.contains(e.target as Node) && !this.renderRoot.contains(e.target as Node)) {
             this.clearContextMenu();
         }
     };

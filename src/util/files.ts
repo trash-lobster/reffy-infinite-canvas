@@ -123,6 +123,51 @@ export async function mergeMultiImg(imgs: Img[]): Promise<string> {
     return data;
 }
 
+export async function mergeImagesToCanvas(images: Img[]): Promise<{ mergedCanvas: HTMLCanvasElement; width: number; height: number }> {
+    if (images.length === 0) {
+        throw new Error("No images to merge.");
+    }
+
+    // Compute bounding box for all images
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const img of images) {
+        minX = Math.min(minX, img.x);
+        minY = Math.min(minY, img.y);
+        maxX = Math.max(maxX, img.x + img.width);
+        maxY = Math.max(maxY, img.y + img.height);
+    }
+    const width = Math.ceil(maxX - minX);
+    const height = Math.ceil(maxY - minY);
+
+    // Create offscreen canvas
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not get 2D context");
+
+    // Draw each image at its relative position
+    await Promise.all(images.map(img => {
+        return new Promise<void>((resolve, reject) => {
+            const imageEl = new window.Image();
+            imageEl.onload = () => {
+                ctx.drawImage(
+                    imageEl,
+                    img.x - minX,
+                    img.y - minY,
+                    img.width,
+                    img.height
+                );
+                resolve();
+            };
+            imageEl.onerror = reject;
+            imageEl.src = img.src;
+        });
+    }));
+
+    return { mergedCanvas: canvas, width, height };
+}
+
 function getSmallestImgX(imgs: Img[]): number {
     return [...imgs].sort((a, b) => {
         return a.x - b.x;

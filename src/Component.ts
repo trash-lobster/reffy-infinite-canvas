@@ -7,6 +7,7 @@ import { downloadJSON, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
 import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
+import { Img } from './shapes';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -30,8 +31,8 @@ export class InfiniteCanvasElement extends LitElement {
                 childOptions: [
                     {
                         text: "Cut",
-                        onClick: () => {
-                            this.copyImage.bind(this)();
+                        onClick: async () => {
+                            await this.copyImage.bind(this)();
                             this.withContextMenuClear(this.deleteSelectedImages.bind(this))();
                         }
                     },
@@ -300,12 +301,14 @@ export class InfiniteCanvasElement extends LitElement {
 
     async copyImage() {
         if (!this.engine) return;
-        await this.engine.selectionManager.copy();
+        await this.engine._clipboardManager.copy(
+            this.engine._selectionManager.selected as Img[]
+        );
     }
 
     async pasteImage(e: PointerEvent) {
         if (!this.engine) return;
-        await this.engine.selectionManager.paste(e);
+        await this.engine._clipboardManager.paste(e.clientX, e.clientY, this.engine, this.#history);
     }
 
     flipVertical() {

@@ -108,3 +108,8 @@
 - Refactor functions
 - Add deleted and paste image function to the context menu option
 - Add flipping vertical and horizontal action (had trouble with multi bounding box's x and y coordinate due to it being screen space instead)
+
+20251117:
+- Fix interaction where context menu does not go away when clicked outside of the shadow dom
+- Move copy and paste into its own manager
+- decided that writing to the clipboard API takes too much time and will keep the images copied from the board exclusively for the board - any images copied from the board will not be pastable to an external place (there should be a replacement function to export the canvas as an image instead)

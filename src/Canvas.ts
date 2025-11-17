@@ -13,7 +13,7 @@ import {
 	Renderable, 
 	Grid,
 } from './shapes';
-import { SelectionManager, PointerEventManager, KeyEventManager } from './manager';
+import { SelectionManager, PointerEventManager, KeyEventManager, FauxClipboardManager } from './manager';
 import { Camera } from './camera';
 import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
@@ -38,6 +38,7 @@ export class Canvas extends Renderable {
 	_selectionManager: SelectionManager;
 	_pointerEventManager: PointerEventManager;
 	_keyPressManager: KeyEventManager;
+	_clipboardManager: FauxClipboardManager;
 	_camera: Camera;
 
 	_history: CanvasHistory;
@@ -94,6 +95,8 @@ export class Canvas extends Renderable {
 			this.assignEventListener
 		)
 
+		this._clipboardManager = new FauxClipboardManager();
+
 		const pointerEventState = new PointerEventState({
 			getCanvas: this.engine,
 			clearSelection: this._selectionManager.clear,
@@ -104,7 +107,8 @@ export class Canvas extends Renderable {
 			history,
 			this.addToCanvas,
 			() => this._selectionManager.selected,
-			this.selectionManager.copy,
+			this._clipboardManager.copy,
+			(clientX: number, clientY: number) => this._clipboardManager.paste(clientX, clientY, this, this._history),
 			options.showMenu,
 			options.clearMenu,
 			options.isMenuActive,

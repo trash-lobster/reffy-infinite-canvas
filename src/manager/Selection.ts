@@ -2,6 +2,7 @@ import {
     BoundingBoxCollisionType, 
     convertToPNG, 
     getWorldCoords, 
+    mergeImagesToCanvas, 
     mergeMultiImg, 
     oppositeCorner,
 } from "../util";
@@ -53,8 +54,6 @@ export class SelectionManager {
         this.canvas = canvas;
         this.clear = this.clear.bind(this);
         this.deleteSelected = this.deleteSelected.bind(this);
-        this.copy = this.copy.bind(this);
-        this.paste = this.paste.bind(this);
 
         this.flipVertical = this.flipVertical.bind(this);
         this.flipHorizontal = this.flipHorizontal.bind(this);
@@ -257,81 +256,33 @@ export class SelectionManager {
         }
     }
 
-    async copy() {
-        const images = this.selected as Img[];
-        if (images.length <= 0) return;
-        let src: string;
-    
-        // multiple images
-        if (images.length > 1) {
-            src = await mergeMultiImg(images);
-        } else {
-            const image = images[0];
-            src = 
-                !image.src.startsWith('data:image/png')
-                ? 
-                await convertToPNG(image.src) :
-                image.src;
-        }
-        
-        const data = await fetch(src);
-        const blob = await data.blob();
-        const storedItem = new ClipboardItem({
-            [blob.type]: blob
-        })
-    
-        try {
-            // can only support one item at a time
-            await navigator.clipboard.write([storedItem]);
-        } catch (err) {
-            if (err instanceof DOMException) {
-                console.log(err);
-            }
-            console.error(err);
-        }
-    }
+    // keep this for exporting as image in the future
+    // async copy() {
+    //     const images = this.selected as Img[];
+    //     if (images.length === 0) return;
 
-    // there is no way currently I've found that can allow us to bypass the permission for reading from the navigator's clipboard
-    // the additional confirmation is required when pasting from a different origin
-    // pasting images copied from the canvas will not trigger the additional permission
-    // In Chrome, the interaction is smoother as it would remember the choice when permission is given
-    // In Firefox, the interaction requires an additional button press every time.
-    async paste(e: PointerEvent) {
-        try {
-            const items = await navigator.clipboard.read();
-            const types = items[0].types;
+    //     let blob: Blob;
 
-            const type = types.find(t => 
-                t.startsWith('image/') 
-                || t.startsWith('text/html')
-            );
-            if (!type) return;
-            const blob = await items[0].getType(type);
+    //     if (images.length === 1 && images[0].src.startsWith('data:image/png')) {
+    //         // Fast path: already a PNG data URL
+    //         const [header, base64] = images[0].src.split(',');
+    //         const binary = atob(base64);
+    //         const array = new Uint8Array(binary.length);
+    //         for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
+    //         blob = new Blob([array], { type: 'image/png' });
+    //     } else {
+    //         // Batch draw all images to an offscreen canvas
+    //         const { mergedCanvas, width, height } = await mergeImagesToCanvas(images);
+    //         blob = await new Promise<Blob>(resolve => mergedCanvas.toBlob(b => resolve(b), 'image/png'));
+    //     }
 
-            const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-            let base64: string;
+    //     const storedItem = new ClipboardItem({ [blob.type]: blob });
+    //     try {
+    //         await navigator.clipboard.write([storedItem]);
+    //     } catch (err) {
+    //         console.error(err);
+    //     }
+    // }
 
-            if (type.startsWith('text/html')) {
-                const el = document.createElement('html');
-                el.innerHTML = await blob.text();
-                const image = el.getElementsByTagName('img')[0];
-                base64 = image.src;
-            } else if (type.startsWith('image/svg')) {
-                const svgText = await blob.text();
-                base64 = await convertToPNG(`data:image/svg+xml;base64,${btoa(svgText)}`);
-            } else {
-                base64 = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            }
-            
-            const img = await this.canvas.addToCanvas(base64, wx, wy);
-            this.history.push(makeMultiAddChildCommand(this.canvas, [img]));
-        } catch (ex) {
 
-        }
-    }
 }

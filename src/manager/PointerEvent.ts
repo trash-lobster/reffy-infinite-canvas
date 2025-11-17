@@ -1,13 +1,12 @@
 import { Canvas } from "Canvas";
 import { Img, Rect, Renderable, Shape } from "../shapes";
 import {
-    addImages,
     getWorldCoords,
+    worldToCamera,
 } from "../util";
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
 import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
-import { makeMultiAddChildCommand } from "./SceneCommand";
 import { ContextMenuType } from "../contextMenu";
 
 export interface Point {
@@ -38,7 +37,6 @@ export class PointerEventManager {
     history: CanvasHistory;
     addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
     getSelected: () => Renderable[];
-    copy: () => Promise<void>;
 
     showContextMenu: (x: number, y: number, type?: ContextMenuType) => void;
     clearContextMenu: () => void;
@@ -55,7 +53,8 @@ export class PointerEventManager {
         history: CanvasHistory,
         addToCanvas: (src: string, x: number, y: number) => Promise<Img>,
         getSelected: () => Renderable[],
-        copy: () => Promise<void>,
+        copy: (images: Img[]) => Promise<void>,
+        paste: (clientX: number, clientY: number) => Promise<void>,
         showContextMenu: (x: number, y: number, type?: ContextMenuType) => void,
         clearContextMenu: () => void,
         isMenuActive: () => boolean,
@@ -66,7 +65,6 @@ export class PointerEventManager {
         this.history = history;
         this.addToCanvas = addToCanvas;
         this.getSelected = getSelected;
-        this.copy = copy;
 
         this.showContextMenu = showContextMenu;
         this.clearContextMenu = clearContextMenu;
@@ -81,7 +79,6 @@ export class PointerEventManager {
 
         // register event listeners
         this.addOnPaste();
-        this.addOnCopy();
         this.addOnPointerMove();
         this.addOnWheel();
         this.addOnPointerDown();
@@ -102,6 +99,25 @@ export class PointerEventManager {
             } else {
                 showContextMenu(e.clientX, e.clientY, 'canvas');
             }
+        });
+
+        window.addEventListener('copy', async (e) => {
+            e.preventDefault();
+            if (!this.canInteract()) return;
+
+            console.log(this.getSelected());
+            await copy(this.getSelected() as Img[]);
+        });
+
+        window.addEventListener('paste', async (e) => {
+            e.preventDefault();
+            if (!this.canInteract()) return;
+            const [clientX, clientY] = worldToCamera(
+                this.state.lastPointerPos.x,
+                this.state.lastPointerPos.y,
+                this.canvas._camera.state.cameraMatrix,
+            )
+            await paste(clientX, clientY);
         });
     }
 
@@ -141,43 +157,33 @@ export class PointerEventManager {
         window.addEventListener('paste', async (e) => {
             if (!this.canInteract()) return;
 
-            let newImages: Img[] = [];
+            // let newImages: Img[] = [];
 
-            const files = e.clipboardData.files;
-            const html = e.clipboardData.getData('text/html');
+            // const files = e.clipboardData.files;
+            // const html = e.clipboardData.getData('text/html');
 
-            if (html) {
-                const el = document.createElement('html');
-                el.innerHTML = html;
-                const images = el.getElementsByTagName('img');
-                for (let i = 0; i < images.length; i++) {
-                    const image = images[i];
-                    const newImg = new Img({
-                        x: this.state.lastPointerPos.x,
-                        y: this.state.lastPointerPos.y,
-                        src: image.src,
-                    });
-                    this.canvas.appendChild(newImg);
-                    newImages.push(newImg);
-                }
-            } else {
-                newImages = await addImages(
-                    files, 
-                    async (src: string) => await this.addToCanvas(src, this.state.lastPointerPos.x, this.state.lastPointerPos.y)
-                );
-            }
+            // if (html) {
+            //     const el = document.createElement('html');
+            //     el.innerHTML = html;
+            //     const images = el.getElementsByTagName('img');
+            //     for (let i = 0; i < images.length; i++) {
+            //         const image = images[i];
+            //         const newImg = new Img({
+            //             x: this.state.lastPointerPos.x,
+            //             y: this.state.lastPointerPos.y,
+            //             src: image.src,
+            //         });
+            //         this.canvas.appendChild(newImg);
+            //         newImages.push(newImg);
+            //     }
+            // } else {
+            //     newImages = await addImages(
+            //         files, 
+            //         async (src: string) => await this.addToCanvas(src, this.state.lastPointerPos.x, this.state.lastPointerPos.y)
+            //     );
+            // }
 
-            this.history.push(makeMultiAddChildCommand(this.canvas, newImages));
-        });
-    }
-
-    private addOnCopy() {
-        // copy event has to be attached to the window instead of document
-        window.addEventListener('copy', async (e) => {
-            if (!this.canInteract()) return;
-
-            await this.copy();
-            e.preventDefault();
+            // this.history.push(makeMultiAddChildCommand(this.canvas, newImages));
         });
     }
     // #endregion

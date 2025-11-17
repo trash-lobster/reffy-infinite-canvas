@@ -19,6 +19,8 @@ Save canvas every 5 minutes to designated option
 Add a loading interaction when pasting
 
 Refactor the different paste functions from both pointer manager and the selection manager
+^ check that this has been done
 
-Current bug: 
-context menu won't close when clicking on non-canvas elements
+calculate where the images should be pasted based on the initial location of the copy and paste (something similar to multibounding box, I guess)
+
+Add history to flip

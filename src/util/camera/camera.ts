@@ -57,6 +57,19 @@ export function getWorldCoords(x: number, y: number, canvas: Canvas) {
     );
 }
 
+/**
+ * Transforms a point from world space to camera (view) space.
+ * @param worldX X coordinate in world space
+ * @param worldY Y coordinate in world space
+ * @param cameraMatrix The camera/view matrix (usually canvas.worldMatrix)
+ * @returns [cameraX, cameraY]
+ */
+export function worldToCamera(worldX: number, worldY: number, cameraMatrix: number[]): number[] {
+    // The camera matrix maps camera space to world space, so invert it
+    const invCamera = m3.inverse(cameraMatrix);
+    return m3.transformPoint(invCamera, [worldX, worldY]);
+}
+
 export function applyMatrixToPoint(matrix: number[], x?: number, y?: number): [number, number] {
     const px = x ?? 0;
     const py = y ?? 0;

@@ -19,3 +19,6 @@ Save canvas every 5 minutes to designated option
 Add a loading interaction when pasting
 
 Refactor the different paste functions from both pointer manager and the selection manager
+
+Current bug: 
+context menu won't close when clicking on non-canvas elements

@@ -213,11 +213,6 @@ export class PointerEventManager {
             if (!this.canvas._selectionManager.hitTest(wx, wy)) {
                 this.state.clearSelection();
             }
-
-            const child = this.checkCollidingChild(wx, wy);
-            if (child) {
-                this.canvas._selectionManager.add([child as Rect]);
-            }
         } else {
             const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
             if (boundingBoxType) {

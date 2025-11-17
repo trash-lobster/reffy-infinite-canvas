@@ -107,3 +107,4 @@
 20251116:
 - Refactor functions
 - Add deleted and paste image function to the context menu option
+- Add flipping vertical and horizontal action (had trouble with multi bounding box's x and y coordinate due to it being screen space instead)

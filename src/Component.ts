@@ -343,7 +343,6 @@ export class InfiniteCanvasElement extends LitElement {
         menu.attachToParent(this.renderRoot as HTMLElement);
         
         // Position the menu
-        menu._el.classList.add('context-menu');
         const hostRect = this.getBoundingClientRect();
         const relX = x - hostRect.left;
         const relY = y - hostRect.top;

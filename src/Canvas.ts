@@ -239,6 +239,7 @@ export class Canvas extends Renderable {
 	}
 
 	clearChildren() {
+		this.selectionManager.clear();
 		this.state.clearChildren(); // should clear history?
 		this._history.clear();
 	}

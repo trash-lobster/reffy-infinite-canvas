@@ -188,13 +188,21 @@ export class InfiniteCanvasElement extends LitElement {
 
     connectedCallback() {
         super.connectedCallback();
+        window.addEventListener('pointerdown', this.handleGlobalPointerDown, true);
     }
     disconnectedCallback() {
+        window.removeEventListener('pointerdown', this.handleGlobalPointerDown, true);
         this.#resizeObserver?.disconnect();
         this.#resizeObserver = undefined;
         this.#canvas.destroy();
         super.disconnectedCallback();
     }
+
+    private handleGlobalPointerDown = (e: PointerEvent) => {
+        if (!this.renderRoot.contains(e.target as Node)) {
+            this.clearContextMenu();
+        }
+    };
 
     private initCanvas() {
         console.log(this.name);
@@ -273,19 +281,19 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     async addImages(fileList: FileList) {
-        if (!this.#canvas) return;
+        if (!this.engine) return;
 
-		const rect = this.#canvas.canvas.getBoundingClientRect();
+		const rect = this.engine.canvas.getBoundingClientRect();
 		const clientX = rect.left + rect.width / 2;
 		const clientY = rect.top + rect.height / 2;
 
-		const [wx, wy] = getWorldCoords(clientX, clientY, this.#canvas);
+		const [wx, wy] = getWorldCoords(clientX, clientY, this.engine);
 
         const newImages = await innerAddImages(
             fileList, 
-            (src: string) => this.#canvas.addToCanvas(src, wx, wy, true),
+            (src: string) => this.engine.addToCanvas(src, wx, wy, true),
         );
-        this.#history.push(makeMultiAddChildCommand(this.#canvas, newImages));
+        this.#history.push(makeMultiAddChildCommand(this.engine, newImages));
     }
 
     async copyImage() {
@@ -368,9 +376,8 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     clearContextMenu() {
-        // Remove any existing menu
         const oldMenu = this.renderRoot.querySelector('.context-menu');
-        if (oldMenu) oldMenu.remove();
+        if (this.isContextMenuActive()) oldMenu.remove();
     }
 
     isContextMenuActive() {

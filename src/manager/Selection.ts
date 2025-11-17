@@ -190,6 +190,10 @@ export class SelectionManager {
         }
     }
 
+    isRectSelected(shape: Rect) {
+        return this._selected.has(shape);
+    }
+
     clear() {
         this._selected.clear();
         this._boundingBoxes.clear();
@@ -242,6 +246,7 @@ export class SelectionManager {
         } else {
             this._boundingBoxes.forEach(v => v.flipVertical());
         }
+        // need to add command to history so we can undo it
     }
     
     flipHorizontal() {

@@ -99,6 +99,14 @@ export class InfiniteCanvasElement extends LitElement {
                         text: "Paste",
                         onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
                     },
+                    {
+                        text: "Toggle Grid",
+                        onClick: () => this.withContextMenuClear(this.toggleGrid.bind(this))()
+                    },
+                    {
+                        text: 'Change mode',
+                        onClick: () => this.withContextMenuClear(this.toggleMode.bind(this))()
+                    }
                 ]
             },
         ]
@@ -330,6 +338,11 @@ export class InfiniteCanvasElement extends LitElement {
         if (!this.#canvas) return;
         const data = serializeCanvas(this.#canvas);
         downloadJSON(filename, data);
+    }
+
+    toggleGrid() {
+        if (!this.engine) return;
+        this.engine.toggleGrid();
     }
 
     async importCanvas(fileList: FileList) {

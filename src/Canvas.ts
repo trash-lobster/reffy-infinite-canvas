@@ -12,6 +12,7 @@ import {
 	Img, 
 	Renderable, 
 	Grid,
+	GRID_TYPE,
 } from './shapes';
 import { SelectionManager, PointerEventManager, KeyEventManager } from './manager';
 import { Camera } from './camera';
@@ -73,6 +74,8 @@ export class Canvas extends Renderable {
 		this.engine = this.engine.bind(this);
 		this.appendChild = this.appendChild.bind(this);
 		this.addToCanvas = this.addToCanvas.bind(this);
+
+		this.toggleGrid = this.toggleGrid.bind(this);
 		
 		this.assignEventListener = this.assignEventListener.bind(this);
 
@@ -241,6 +244,14 @@ export class Canvas extends Renderable {
 		this.selectionManager.clear();
 		this.state.clearChildren(); // should clear history?
 		this._history.clear();
+	}
+
+	toggleGrid() {
+		this.grid.changeGridType(
+			this.grid.gridType === GRID_TYPE.GRID ?
+				GRID_TYPE.NONE :
+				GRID_TYPE.GRID
+		);
 	}
 
 	private collectShapes(node: Renderable, out: Shape[]) {

@@ -113,3 +113,8 @@
 - Fix interaction where context menu does not go away when clicked outside of the shadow dom
 - Move copy and paste into its own manager
 - decided that writing to the clipboard API takes too much time and will keep the images copied from the board exclusively for the board - any images copied from the board will not be pastable to an external place (there should be a replacement function to export the canvas as an image instead)
+
+20251118:
+- Reviewed the clipboard API and decided that it is actually better to use the clipboard API to write the image src without merging them together. That is causing a lot of heavy lifting and slowing things down.
+- Clean up flip code
+- Added two more options to the context menu

@@ -1,3 +1,6 @@
+create export method (done)
+should import write to history? - I don't think so
+
 why does the canvas flicker when resizing
 layer
 

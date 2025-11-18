@@ -13,6 +13,7 @@ import {
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
 import { BoundingBoxMode } from "./type";
+import { FlipDirection } from "manager";
 
 // different from multi bounding box, the corners and handles are separated here because they need to be individually toggled
 export class BoundingBox {
@@ -244,7 +245,7 @@ export class BoundingBox {
     }
 
     flip(
-        direction: 'vertical' | 'horizontal'
+        direction: FlipDirection
     ) {
         const { x, y, sx, sy } = this.target;
         direction === 'vertical' ?

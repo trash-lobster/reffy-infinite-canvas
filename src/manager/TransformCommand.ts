@@ -4,7 +4,7 @@ import { Command } from "../history";
 export interface TransformSnapshotItem {
     ref: Shape,
     start: TransformSnapshot,
-    end: TransformSnapshot,
+    end?: TransformSnapshot,
 }
 
 export interface TransformSnapshot {

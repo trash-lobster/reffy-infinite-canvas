@@ -243,12 +243,24 @@ export class BoundingBox {
         }
     }
 
-    flipVertical() {
-        this.target.flipVertical(this.height);
-    }
+    flip(
+        direction: 'vertical' | 'horizontal'
+    ) {
+        const { x, y, sx, sy } = this.target;
+        direction === 'vertical' ?
+            this.target.flipVertical(this.height) :
+            this.target.flipHorizontal(this.width);
 
-    flipHorizontal() {
-        this.target.flipHorizontal(this.width);
+        return {
+            ref: this.target,
+            start: { x, y, sx, sy },
+            end: {
+                x: this.target.x,
+                y: this.target.y,
+                sx: this.target.sx,
+                sy: this.target.sy,
+            },
+        };
     }
 
     private addCorners() {

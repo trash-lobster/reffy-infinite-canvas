@@ -9,7 +9,6 @@ import {
     getScalesFromMatrix,
     getWorldCoords,
 } from "../util";
-import { Rect } from "../shapes/Rect";
 import { 
     OrderedList, 
     createOrderedByStartX, 
@@ -22,6 +21,11 @@ import {
     getEndY
 } from "./OrderedList";
 import { Canvas } from "Canvas";
+import {
+    TransformSnapshot, 
+    TransformSnapshotItem 
+} from "../manager";
+import { Shape, Rect } from "../shapes";
 
 const HANDLE_TYPES: BoundingBoxCollisionType[] = [...corners, ...sides] as BoundingBoxCollisionType[];
 
@@ -201,10 +205,28 @@ export class MultiBoundingBox {
     flipHorizontal(canvas: Canvas) {
         const [worldScaleX] = getScalesFromMatrix(canvas.worldMatrix);
 
+        const transformArray: TransformSnapshotItem[] = [];
+
         const [wtx] = getWorldCoords(this.x, this.y, canvas);
         const bboxCenterX = wtx + this.width / worldScaleX / 2;
 
         for (const target of this.targets) {
+            const transform: {ref: Rect, start: TransformSnapshot, end: TransformSnapshot} = {
+                ref: target,
+                start: {
+                    x: target.x,
+                    y: target.y,
+                    sx: target.sx,
+                    sy: target.sy,
+                },
+                end: {
+                    x: target.x,
+                    y: target.y,
+                    sx: target.sx,
+                    sy: target.sy,
+                },
+            }
+
             const scaledWidth = target.width * target.sx;
 
             const distFromCenter = target.x - bboxCenterX;
@@ -213,18 +235,45 @@ export class MultiBoundingBox {
 
             target.setTranslation(newX, target.y);
             target.flipHorizontal(target.width);
+
+            transform.end = {
+                x: target.x,
+                y: target.y,
+                sx: target.sx,
+                sy: target.sy,
+            };
+
+            transformArray.push(transform);
         }
 
         this.scale[0] *= -1;
+        return transformArray;
     }
 
     flipVertical(canvas: Canvas) {
         const [_, worldScaleY] = getScalesFromMatrix(canvas.worldMatrix);
 
+        const transformArray: TransformSnapshotItem[] = [];
+
         const [wtx, wty] = getWorldCoords(this.x, this.y, canvas);
         const bboxCenterY = wty + this.height / worldScaleY / 2;
 
         for (const target of this.targets) {
+            const transform: {ref: Shape, start: TransformSnapshot, end: TransformSnapshot} = {
+                ref: target,
+                start: {
+                    x: target.x,
+                    y: target.y,
+                    sx: target.sx,
+                    sy: target.sy,
+                },
+                end: {
+                    x: target.x,
+                    y: target.y,
+                    sx: target.sx,
+                    sy: target.sy,
+                },
+            }
             const scaleHeight = target.height * target.sy;
 
             const distFromCenter = target.y - bboxCenterY;
@@ -233,9 +282,20 @@ export class MultiBoundingBox {
 
             target.setTranslation(target.x, newY);
             target.flipVertical(target.height);
+
+            transform.end = {
+                x: target.x,
+                y: target.y,
+                sx: target.sx,
+                sy: target.sy,
+            };
+
+            transformArray.push(transform);
         }
 
         this.scale[1] *= -1;
+
+        return transformArray;
     }
 
     getPositions(): number[] {

@@ -313,12 +313,12 @@ export class InfiniteCanvasElement extends LitElement {
 
     flipVertical() {
         if (!this.engine) return;
-        this.engine.selectionManager.flipVertical();
+        this.engine.selectionManager.flip('vertical');
     }
 
     flipHorizontal() {
         if (!this.engine) return;
-        this.engine.selectionManager.flipHorizontal();
+        this.engine.selectionManager.flip('horizontal');
     }
 
     deleteSelectedImages() {

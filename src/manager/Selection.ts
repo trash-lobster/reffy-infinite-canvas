@@ -1,12 +1,8 @@
 import { 
-    BoundingBoxCollisionType, 
-    convertToPNG, 
-    getWorldCoords, 
-    mergeImagesToCanvas, 
-    mergeMultiImg, 
+    BoundingBoxCollisionType,
     oppositeCorner,
 } from "../util";
-import { Img, Rect } from "../shapes";
+import { Rect } from "../shapes";
 import { Canvas } from "Canvas";
 import { Point } from "boundingBox/type";
 import { 
@@ -15,7 +11,8 @@ import {
     MultiBoundingBox,
 } from "../boundingBox";
 import { CanvasHistory } from "../history";
-import { makeMultiAddChildCommand, makeMultiRemoveChildCommand } from "./SceneCommand";
+import { makeMultiRemoveChildCommand } from "./SceneCommand";
+import { makeMultiFlipCommand } from "./FlipCommand";
 
 export class SelectionManager {
     private canvas: Canvas;
@@ -55,8 +52,7 @@ export class SelectionManager {
         this.clear = this.clear.bind(this);
         this.deleteSelected = this.deleteSelected.bind(this);
 
-        this.flipVertical = this.flipVertical.bind(this);
-        this.flipHorizontal = this.flipHorizontal.bind(this);
+        this.flip = this.flip.bind(this);
 
         this.history = history;
     }
@@ -239,20 +235,20 @@ export class SelectionManager {
         }
     }
 
-    flipVertical() {
+    flip(direction: 'horizontal' | 'vertical') {
         if (this._multiBoundingBox) {
-            this._multiBoundingBox.flipVertical(this.canvas);
+            const transformArray = 
+                direction === 'horizontal' ?
+                    this._multiBoundingBox.flipHorizontal(this.canvas) :
+                    this._multiBoundingBox.flipVertical(this.canvas);
+            this.canvas._history.push(makeMultiFlipCommand(transformArray, direction, this._multiBoundingBox));
         } else {
-            this._boundingBoxes.forEach(v => v.flipVertical());
-        }
-        // need to add command to history so we can undo it
-    }
-    
-    flipHorizontal() {
-        if (this._multiBoundingBox) {
-            this._multiBoundingBox.flipHorizontal(this.canvas);
-        } else {
-            this._boundingBoxes.forEach(v => v.flipHorizontal());
+            const transformArray  = [];
+            for (const box of this._boundingBoxes) {
+                transformArray.push(box.flip(direction));
+            }
+
+            this.canvas._history.push(makeMultiFlipCommand(transformArray, direction));
         }
     }
 
@@ -283,6 +279,4 @@ export class SelectionManager {
     //         console.error(err);
     //     }
     // }
-
-
 }

@@ -1,5 +1,11 @@
-import { Renderable } from "shapes";
+import { Shape, Renderable } from "shapes";
 import { Command } from "../history";
+
+export interface TransformSnapshotItem {
+    ref: Shape,
+    start: TransformSnapshot,
+    end: TransformSnapshot,
+}
 
 export interface TransformSnapshot {
     x: number;

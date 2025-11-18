@@ -6,3 +6,4 @@ export * from './checks';
 export * from './files';
 export * from './color';
 export * from './debug';
+export * from './clipboard';

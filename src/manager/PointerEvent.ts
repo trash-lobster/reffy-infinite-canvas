@@ -1,7 +1,9 @@
 import { Canvas } from "Canvas";
 import { Img, Rect, Renderable, Shape } from "../shapes";
 import {
+    copy,
     getWorldCoords,
+    paste,
     worldToCamera,
 } from "../util";
 import { PointerEventState } from "../state";
@@ -53,8 +55,6 @@ export class PointerEventManager {
         history: CanvasHistory,
         addToCanvas: (src: string, x: number, y: number) => Promise<Img>,
         getSelected: () => Renderable[],
-        copy: (images: Img[]) => Promise<void>,
-        paste: (clientX: number, clientY: number) => Promise<void>,
         showContextMenu: (x: number, y: number, type?: ContextMenuType) => void,
         clearContextMenu: () => void,
         isMenuActive: () => boolean,
@@ -78,7 +78,6 @@ export class PointerEventManager {
         this.canInteract = this.canInteract.bind(this);
 
         // register event listeners
-        this.addOnPaste();
         this.addOnPointerMove();
         this.addOnWheel();
         this.addOnPointerDown();
@@ -105,19 +104,18 @@ export class PointerEventManager {
             e.preventDefault();
             if (!this.canInteract()) return;
 
-            console.log(this.getSelected());
             await copy(this.getSelected() as Img[]);
         });
 
         window.addEventListener('paste', async (e) => {
             e.preventDefault();
             if (!this.canInteract()) return;
-            const [clientX, clientY] = worldToCamera(
+            await paste(                
                 this.state.lastPointerPos.x,
                 this.state.lastPointerPos.y,
-                this.canvas._camera.state.cameraMatrix,
-            )
-            await paste(clientX, clientY);
+                canvas, 
+                history,
+            );
         });
     }
 
@@ -150,41 +148,6 @@ export class PointerEventManager {
                 this.canvas._camera.onWheel(e);
             }
         }, { passive: false });
-    }
-
-    private addOnPaste() {
-        // paste event has to be attached to the window instead of document
-        window.addEventListener('paste', async (e) => {
-            if (!this.canInteract()) return;
-
-            // let newImages: Img[] = [];
-
-            // const files = e.clipboardData.files;
-            // const html = e.clipboardData.getData('text/html');
-
-            // if (html) {
-            //     const el = document.createElement('html');
-            //     el.innerHTML = html;
-            //     const images = el.getElementsByTagName('img');
-            //     for (let i = 0; i < images.length; i++) {
-            //         const image = images[i];
-            //         const newImg = new Img({
-            //             x: this.state.lastPointerPos.x,
-            //             y: this.state.lastPointerPos.y,
-            //             src: image.src,
-            //         });
-            //         this.canvas.appendChild(newImg);
-            //         newImages.push(newImg);
-            //     }
-            // } else {
-            //     newImages = await addImages(
-            //         files, 
-            //         async (src: string) => await this.addToCanvas(src, this.state.lastPointerPos.x, this.state.lastPointerPos.y)
-            //     );
-            // }
-
-            // this.history.push(makeMultiAddChildCommand(this.canvas, newImages));
-        });
     }
     // #endregion
 

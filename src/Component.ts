@@ -2,7 +2,7 @@ import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
-import { getWorldCoords, addImages as innerAddImages } from './util';
+import { copy, getWorldCoords, addImages as innerAddImages, paste } from './util';
 import { downloadJSON, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
@@ -294,21 +294,21 @@ export class InfiniteCanvasElement extends LitElement {
 
         const newImages = await innerAddImages(
             fileList, 
-            (src: string) => this.engine.addToCanvas(src, wx, wy, true),
+            (src: string) => this.engine.addToCanvas(src, wx, wy, 1, 1, true),
         );
         this.#history.push(makeMultiAddChildCommand(this.engine, newImages));
     }
 
     async copyImage() {
         if (!this.engine) return;
-        await this.engine._clipboardManager.copy(
+        await copy(
             this.engine._selectionManager.selected as Img[]
         );
     }
 
     async pasteImage(e: PointerEvent) {
         if (!this.engine) return;
-        await this.engine._clipboardManager.paste(e.clientX, e.clientY, this.engine, this.#history);
+        await paste(e.clientX, e.clientY, this.engine, this.#history, false);
     }
 
     flipVertical() {

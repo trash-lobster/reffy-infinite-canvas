@@ -5,7 +5,7 @@ import { MultiBoundingBox } from "../boundingBox";
 export interface FlipSnapshotItem {
     ref: Rect,
     start: FlipSnapshot,
-    end: FlipSnapshot,
+    end?: FlipSnapshot,
 }
 
 export interface FlipSnapshot {
@@ -15,7 +15,7 @@ export interface FlipSnapshot {
     sy: number;
 }
 
-type FlipDirection = 'vertical' | 'horizontal';
+export type FlipDirection = 'vertical' | 'horizontal';
 
 function applyFlip(target: Renderable, t: FlipSnapshot) {
     target.setTranslation(t.x, t.y);
@@ -36,19 +36,17 @@ export function makeFlipCommand(
 }
 
 export function makeMultiFlipCommand(
-    entries: Array<{ ref: any; start: FlipSnapshot; end: FlipSnapshot }>,
+    entries: FlipSnapshotItem[],
     direction: FlipDirection,
     multiBoundingBox?: MultiBoundingBox,
 ): Command {
-    let firstDo = true;
     return {
         label: 'Flip',
         do() { 
             for (const e of entries) applyFlip(e.ref, e.end);
-            if (multiBoundingBox && !firstDo) {
+            if (multiBoundingBox) {
                 multiBoundingBox.scale[direction === 'horizontal' ? 0 : 1] *= -1;
             }
-            firstDo = false;
         },
         undo() { 
             for (const e of entries) applyFlip(e.ref, e.start);

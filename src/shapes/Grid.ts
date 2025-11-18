@@ -1,10 +1,9 @@
 import { m3 } from "../util";
 import { WebGLRenderable } from "./Renderable";
 
-enum GRID_TYPE {
+export enum GRID_TYPE {
     NONE,
     GRID,
-    DOTS
 }
 
 export class Grid extends WebGLRenderable {

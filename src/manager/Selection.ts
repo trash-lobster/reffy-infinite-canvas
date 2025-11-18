@@ -12,7 +12,7 @@ import {
 } from "../boundingBox";
 import { CanvasHistory } from "../history";
 import { makeMultiRemoveChildCommand } from "./SceneCommand";
-import { makeMultiFlipCommand } from "./FlipCommand";
+import { FlipDirection, makeMultiFlipCommand } from "./FlipCommand";
 
 export class SelectionManager {
     private canvas: Canvas;
@@ -235,12 +235,9 @@ export class SelectionManager {
         }
     }
 
-    flip(direction: 'horizontal' | 'vertical') {
+    flip(direction: FlipDirection) {
         if (this._multiBoundingBox) {
-            const transformArray = 
-                direction === 'horizontal' ?
-                    this._multiBoundingBox.flipHorizontal(this.canvas) :
-                    this._multiBoundingBox.flipVertical(this.canvas);
+            const transformArray = this._multiBoundingBox.flip(this.canvas, direction);
             this.canvas._history.push(makeMultiFlipCommand(transformArray, direction, this._multiBoundingBox));
         } else {
             const transformArray  = [];

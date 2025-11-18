@@ -22,10 +22,10 @@ import {
 } from "./OrderedList";
 import { Canvas } from "Canvas";
 import {
-    TransformSnapshot, 
-    TransformSnapshotItem 
+    FlipDirection,
+    FlipSnapshotItem,
 } from "../manager";
-import { Shape, Rect } from "../shapes";
+import { Rect } from "../shapes";
 
 const HANDLE_TYPES: BoundingBoxCollisionType[] = [...corners, ...sides] as BoundingBoxCollisionType[];
 
@@ -202,98 +202,40 @@ export class MultiBoundingBox {
         this.scale[1] = this.scale[1] * mulSY < 0 ? -1 : 1;
     }
 
-    flipHorizontal(canvas: Canvas) {
-        const [worldScaleX] = getScalesFromMatrix(canvas.worldMatrix);
+    flip(canvas: Canvas, direction: FlipDirection) {
+        const [worldScaleX, worldScaleY] = getScalesFromMatrix(canvas.worldMatrix);
 
-        const transformArray: TransformSnapshotItem[] = [];
-
-        const [wtx] = getWorldCoords(this.x, this.y, canvas);
-        const bboxCenterX = wtx + this.width / worldScaleX / 2;
-
-        for (const target of this.targets) {
-            const transform: {ref: Rect, start: TransformSnapshot, end: TransformSnapshot} = {
-                ref: target,
-                start: {
-                    x: target.x,
-                    y: target.y,
-                    sx: target.sx,
-                    sy: target.sy,
-                },
-                end: {
-                    x: target.x,
-                    y: target.y,
-                    sx: target.sx,
-                    sy: target.sy,
-                },
-            }
-
-            const scaledWidth = target.width * target.sx;
-
-            const distFromCenter = target.x - bboxCenterX;
-
-            const newX = bboxCenterX - distFromCenter - scaledWidth;
-
-            target.setTranslation(newX, target.y);
-            target.flipHorizontal(target.width);
-
-            transform.end = {
-                x: target.x,
-                y: target.y,
-                sx: target.sx,
-                sy: target.sy,
-            };
-
-            transformArray.push(transform);
-        }
-
-        this.scale[0] *= -1;
-        return transformArray;
-    }
-
-    flipVertical(canvas: Canvas) {
-        const [_, worldScaleY] = getScalesFromMatrix(canvas.worldMatrix);
-
-        const transformArray: TransformSnapshotItem[] = [];
+        const transformArray: FlipSnapshotItem[] = [];
 
         const [wtx, wty] = getWorldCoords(this.x, this.y, canvas);
+        const bboxCenterX = wtx + this.width / worldScaleX / 2;
         const bboxCenterY = wty + this.height / worldScaleY / 2;
 
         for (const target of this.targets) {
-            const transform: {ref: Shape, start: TransformSnapshot, end: TransformSnapshot} = {
+            const transform: FlipSnapshotItem = {
                 ref: target,
-                start: {
-                    x: target.x,
-                    y: target.y,
-                    sx: target.sx,
-                    sy: target.sy,
-                },
-                end: {
-                    x: target.x,
-                    y: target.y,
-                    sx: target.sx,
-                    sy: target.sy,
-                },
+                start: { x: target.x, y: target.y, sx: target.sx, sy: target.sy, },
             }
-            const scaleHeight = target.height * target.sy;
 
-            const distFromCenter = target.y - bboxCenterY;
+            if (direction === 'vertical') {
+                const scaleH = target.height * target.sy;
+                target.setTranslation(
+                    target.x,
+                    bboxCenterY - (target.y - bboxCenterY) - scaleH
+                );
+                target.flipVertical(target.height);
+            } else {
+                const scaleW = target.width * target.sx;
+                target.setTranslation(
+                    bboxCenterX - (target.x - bboxCenterX) - scaleW,
+                    target.y
+                );
+                target.flipHorizontal(target.width);
+            }
 
-            const newY = bboxCenterY - distFromCenter - scaleHeight;
-
-            target.setTranslation(target.x, newY);
-            target.flipVertical(target.height);
-
-            transform.end = {
-                x: target.x,
-                y: target.y,
-                sx: target.sx,
-                sy: target.sy,
-            };
-
+            transform.end = { x: target.x, y: target.y, sx: target.sx, sy: target.sy, };
             transformArray.push(transform);
         }
-
-        this.scale[1] *= -1;
 
         return transformArray;
     }

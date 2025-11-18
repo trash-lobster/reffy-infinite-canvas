@@ -88,3 +88,28 @@
 
 20251113:
 - Update file upload position to add to center of the canvas no matter where we are
+- Create basic version of serializer
+- Add export and import canvas as json file
+- Add clear canvas API
+- Copy files from selection
+    - due to the navigator.clipboard write API being new, it is not currently possible to copy multiple files
+    - Resort to possibly combining multiple images into a single image to at least keep the images together
+
+20251114:
+- Add image import in jpg and webp format
+- fix marquee bug
+- merge images together with canvas to allow copying multiple images
+
+20251115:
+- Add context menu options class and its styling
+- Add copy image and its wrapper to ensure that context menu is cleared
+
+20251116:
+- Refactor functions
+- Add deleted and paste image function to the context menu option
+- Add flipping vertical and horizontal action (had trouble with multi bounding box's x and y coordinate due to it being screen space instead)
+
+20251117:
+- Fix interaction where context menu does not go away when clicked outside of the shadow dom
+- Move copy and paste into its own manager
+- decided that writing to the clipboard API takes too much time and will keep the images copied from the board exclusively for the board - any images copied from the board will not be pastable to an external place (there should be a replacement function to export the canvas as an image instead)

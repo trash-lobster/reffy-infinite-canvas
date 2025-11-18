@@ -20,6 +20,8 @@ export abstract class Renderable {
     updateScale(x: number, y: number) { this.state.updateScale(x, y); }
     setScale(x: number, y: number) { this.state.setScale(x, y); }
     setAngle(rotationDegree: number) { return this.state.setAngle(rotationDegree); }
+    flipVertical(height: number) { this.state.flipVertical(height); }
+    flipHorizontal(width: number) { this.state.flipHorizontal(width); }
 
     markDirty() { this.state.markDirty(); }
     clearDirty() { this.state.clearDirty(); }

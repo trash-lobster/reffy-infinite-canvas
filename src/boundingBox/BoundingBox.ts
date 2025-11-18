@@ -243,6 +243,26 @@ export class BoundingBox {
         }
     }
 
+    flip(
+        direction: 'vertical' | 'horizontal'
+    ) {
+        const { x, y, sx, sy } = this.target;
+        direction === 'vertical' ?
+            this.target.flipVertical(this.height) :
+            this.target.flipHorizontal(this.width);
+
+        return {
+            ref: this.target,
+            start: { x, y, sx, sy },
+            end: {
+                x: this.target.x,
+                y: this.target.y,
+                sx: this.target.sx,
+                sy: this.target.sy,
+            },
+        };
+    }
+
     private addCorners() {
         for (const type of corners) {            
             const r = new Rect(this.getCornersInScreenSpace(type, this.target.worldMatrix));

@@ -33,6 +33,7 @@ export class RenderableState {
 
             setTranslation: action,
             setScale: action,
+            flipVertical: action,
             setAngle: action,
             getChild: action,
             appendChild: action,
@@ -83,6 +84,18 @@ export class RenderableState {
         this.markDirty();
     }
 
+    flipVertical(imageHeight: number) {
+        this.translation[1] += this.scale[1] * imageHeight;
+        this.scale[1] *= -1;
+        this.markDirty();
+    }
+
+    flipHorizontal(imageWidth: number) {
+        this.translation[0] += this.scale[0] * imageWidth;
+        this.scale[0] *= -1;
+        this.markDirty();
+    }
+
     setAngle(rotationDegree: number) {
         const angleInDegrees = 360 - rotationDegree;
         const radians = angleInDegrees * Math.PI / 180;
@@ -118,7 +131,11 @@ export class RenderableState {
 
     clearChildren() {
         if (this.children) {
+            for (const child of this.children) {
+                child.destroy();
+            }
             this.children = [];
+            this.markDirty();
         }
     }
 

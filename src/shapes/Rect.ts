@@ -6,8 +6,17 @@ export class Rect extends Shape {
     private _width: number;
     private _height: number;
 
-    constructor(config: Partial<{x: number, y: number, width: number, height: number}>) {
-        super(config.x, config.y);
+    constructor(
+        config: Partial<{
+            x: number, 
+            y: number, 
+            width: number, 
+            height: number,
+            sx?: number,
+            sy?: number,
+        }>
+    ) {
+        super(config.x, config.y, config.sx, config.sy);
         this._width = config.width ?? 100;
         this._height = config.height ?? 100;
     }

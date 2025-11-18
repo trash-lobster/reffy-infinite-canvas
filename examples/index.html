@@ -30,13 +30,18 @@
   </style>
   <body>
     <!-- <canvas id="canvas"></canvas> -->
-    <infinite-canvas></infinite-canvas>
+    <infinite-canvas id="canvas"></infinite-canvas>
     <div id="control-container">
       <button id="mode-button">Toggle Mode</button>
       <button id="zoom-in-button">+</button>
       <button id="zoom-out-button">-</button>
+      <button id="export-canvas-button">Export</button>
+      <button id="import-canvas-button">Import</button>
+      <!-- This should only certain files -->
+      <input id="import-canvas-input" type="file" accept=".json" style="display:none"> 
       <button id="add-image-btn">Add Image</button>
       <input id="add-image-input" type="file" accept="image/*" multiple style="display:none">
+      <button id="clear-canvas-button">Clear</button>
     </div>
   </body>
 </html>

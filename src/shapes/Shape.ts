@@ -16,9 +16,10 @@ export abstract class Shape extends WebGLRenderable {
     private _renderOrder: number = 0;
     abstract getVertexCount(): number;
 
-    constructor(x: number, y: number) {
+    constructor(x: number, y: number, sx: number = 1, sy: number = 1) {
         super();
         this.setTranslation(x, y);
+        this.setScale(sx, sy);
     }
 
     get layer() { return this._layer; }

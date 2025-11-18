@@ -1,169 +1,154 @@
 import { Canvas } from "../Canvas";
-import { Renderable, Shape, Rect, Img, Grid } from "../shapes";
+import { Renderable, Rect, Img, Grid } from "../shapes";
+
+/**
+ * What should be exposed?
+ * the images created - their position, scale and src - maintain the order they have been saved
+ * 
+ * grid state should be tracked to decide if grid lines are there or not - TO BE IMPLEMENTED
+ * 
+ * Should camera position be tracked
+ * 
+ * How often should we write to the chosen method fo storage? When initialising the exporter, we can decide between indexdb and an actual db
+ * is there anyway to force a save when the app closes? In what circumstances will that not work? An ungraceful shutdown?
+ */
 
 export type SerializedTransform = {
-  x: number;
-  y: number;
-  sx?: number;
-  sy?: number;
-  // You can add rotation later if you expose it on Renderable
+	x: number;
+	y: number;
+	sx: number;
+	sy: number;
 };
 
 export type SerializedNodeBase = {
-  id?: number;           // seq if available
-  kind: string;          // 'Rect' | 'Img' | 'Grid' | 'Group' | ...
-  layer?: number;
-  renderOrder?: number;
-  transform: SerializedTransform;
-  children?: SerializedNode[];
+	id?: number;
+	type: string;
+	transform?: SerializedTransform;
+	children?: SerializedNode[];
+	layer?: number;
+	renderOrder?: number;
 };
 
 export type SerializedRect = SerializedNodeBase & {
-  kind: "Rect";
-  width: number;
-  height: number;
-  color?: [number, number, number, number];
+	type: "Rect";
+	width: number;
+	height: number;
+	color: [number, number, number, number];
 };
 
 export type SerializedImg = SerializedNodeBase & {
-  kind: "Img";
-  width: number;
-  height: number;
-  color?: [number, number, number, number];
-  src?: string; // image URL or data URL if available
+	type: "Img";
+	width: number;
+	height: number;
+	src: string;
 };
 
 export type SerializedGrid = SerializedNodeBase & {
-  kind: "Grid";
-  // add grid-specific props if needed
-};
+	type: "Grid";
+	style?: number;
+}
 
 export type SerializedNode = SerializedRect | SerializedImg | SerializedGrid | SerializedNodeBase;
 
 export type SerializedCanvas = {
-  version: 1;
-  canvas: {
-    width: number;
-    height: number;
-    dpr: number;
-  };
-  camera?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    rotation: number;
-    zoom: number;
-  };
-  root: SerializedNode;
+	version: 1;
+	canvas: {
+		width: number;
+		height: number;
+		dpr: number;
+	};
+	camera?: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+		rotation: number;
+		zoom: number;
+	};
+	root: SerializedNode;
 };
 
 function transformOf(node: Renderable): SerializedTransform {
-  // Assumes Renderable exposes x, y, sx, sy getters
-  return {
-    x: (node as any).x ?? 0,
-    y: (node as any).y ?? 0,
-    sx: (node as any).sx ?? 1,
-    sy: (node as any).sy ?? 1,
-  };
+	return {
+		x: node.x ?? 0,
+		y: node.y ?? 0,
+		sx: node.sx ?? 1,
+		sy: node.sy ?? 1,
+	};
 }
 
 function serializeChildren(node: Renderable): SerializedNode[] {
-  return node.children.map(serializeNode);
+  	return node.children.map(serializeNode);
 }
 
 export function serializeNode(node: Renderable): SerializedNode {
-  // Custom per-type serialization with safe fallbacks
-  if (node instanceof Img) {
-    const base: SerializedImg = {
-      kind: "Img",
-      id: (node as any).seq,
-      layer: (node as any).layer,
-      renderOrder: (node as any).renderOrder,
-      transform: transformOf(node),
-      width: (node as any).width,
-      height: (node as any).height,
-      color: (node as any).color,
-      src:
-        (node as any).src ??
-        (node as any)._src ??
-        ((node as any)._image && (node as any)._image.src) ??
-        undefined,
-      children: node.children?.length ? serializeChildren(node) : undefined,
-    };
-    return base;
-  }
+	if (node instanceof Img) {
+		const base: SerializedImg = {
+			type: "Img",
+			id: (node as Img).seq,
+			layer: (node as Img).layer,
+			renderOrder: (node as Img).renderOrder,
+			transform: transformOf(node),
+			width: (node as Img).width,
+			height: (node as Img).height,
+			src:
+				(node as Img).src ??
+				undefined,
+			children: node.children?.length ? serializeChildren(node) : undefined,
+		};
+		return base;
+	}
 
-  if (node instanceof Rect) {
-    const base: SerializedRect = {
-      kind: "Rect",
-      id: (node as any).seq,
-      layer: (node as any).layer,
-      renderOrder: (node as any).renderOrder,
-      transform: transformOf(node),
-      width: (node as any).width,
-      height: (node as any).height,
-      color: (node as any).color,
-      children: node.children?.length ? serializeChildren(node) : undefined,
-    };
-    return base;
-  }
+	if (node instanceof Rect) {
+		const base: SerializedRect = {
+			type: "Rect",
+			id: (node as Rect).seq,
+			layer: (node as Rect).layer,
+			renderOrder: (node as Rect).renderOrder,
+			transform: transformOf(node),
+			width: (node as Rect).width,
+			height: (node as Rect).height,
+			color: (node as Rect).color,
+			children: node.children?.length ? serializeChildren(node) : undefined,
+		};
+		return base;
+	}
 
-  if (node instanceof Grid) {
-    const base: SerializedGrid = {
-      kind: "Grid",
-      id: (node as any).seq,
-      layer: (node as any).layer,
-      renderOrder: (node as any).renderOrder,
-      transform: transformOf(node),
-      children: node.children?.length ? serializeChildren(node) : undefined,
-    };
-    return base;
-  }
+	if (node instanceof Grid) {
+		const base: SerializedGrid = {
+			type: "Grid",
+			style: (node as Grid).gridType
+		};
+		return base;
+	}
 
-  // Fallback generic node
-  const generic: SerializedNodeBase = {
-    kind: node.constructor?.name || "Renderable",
-    id: (node as any).seq,
-    layer: (node as any).layer,
-    renderOrder: (node as any).renderOrder,
-    transform: transformOf(node),
-    children: node.children?.length ? serializeChildren(node) : undefined,
-  };
-  return generic;
+	const generic: SerializedNodeBase = {
+		type: "Renderable",
+		children: node.children?.length ? serializeChildren(node) : undefined,
+	};
+	return generic;
 }
 
 export function serializeCanvas(canvas: Canvas): SerializedCanvas {
-  const cam = (canvas as any)._camera?.state;
-  return {
-    version: 1,
-    canvas: {
-      width: canvas.gl.canvas.width,
-      height: canvas.gl.canvas.height,
-      dpr: window.devicePixelRatio || 1,
-    },
-    camera: cam
-      ? {
-          x: cam.x,
-          y: cam.y,
-          width: cam.width,
-          height: cam.height,
-          rotation: cam.rotation,
-          zoom: cam.zoom,
-        }
-      : undefined,
-    root: serializeNode(canvas),
-  };
+	return {
+		version: 1,
+		canvas: {
+			width: canvas.gl.canvas.width,
+			height: canvas.gl.canvas.height,
+			dpr: window.devicePixelRatio || 1,
+		},
+		root: serializeNode(canvas)
+	};
 }
 
-// export function deserializeCanvas(data: SerializedCanvas, canvas: Canvas) {
+export function deserializeCanvas(data: SerializedCanvas, canvas: Canvas) {
 //   // Basic version check
 //   if (data.version !== 1) {
 //     // run migration(s)
 //     data = migrate(data);
 //   }
 //   // Clear existing children
-//   canvas.children.length = 0;
+  	canvas.children.length = 0;
 
 //   // Restore camera
 //   if (data.camera && canvas._camera?.state) {
@@ -176,52 +161,44 @@ export function serializeCanvas(canvas: Canvas): SerializedCanvas {
 //     cs.zoom = data.camera.zoom;
 //   }
 
-//   function build(node: SerializedNode, parent: Canvas | Renderable) {
-//     let instance: Renderable;
-//     switch (node.kind) {
-//       case 'Rect':
-//         instance = new Rect({
-//           x: node.transform.x,
-//           y: node.transform.y,
-//           width: node.width,
-//           height: node.height,
-//           color: node.color
-//         });
-//         break;
-//       case 'Img':
-//         instance = new Img({
-//           x: node.transform.x,
-//           y: node.transform.y,
-//           width: node.width,
-//           height: node.height,
-//           src: node.src
-//         });
-//         break;
-//       case 'Grid':
-//         instance = new Grid({
-//           x: node.transform.x,
-//           y: node.transform.y
-//         });
-//         break;
-//       default:
-//         // fallback generic group
-//         instance = new Shape({
-//           x: node.transform.x,
-//           y: node.transform.y,
-//         });
-//     }
+	function build(node: SerializedNode, parent: Canvas | Renderable) {
+		let instance: Renderable;
+		switch (node.type) {
+			case 'Rect':
+				instance = new Rect({
+					x: node.transform.x,
+					y: node.transform.y,
+					width: (node as SerializedRect).width,
+					height: (node as SerializedRect).height,
+				});
+				instance.setScale(node.transform.sx, node.transform.sy);
+				canvas.appendChild(instance);
+				break;
+			case 'Img':
+				instance = new Img({
+					x: node.transform.x,
+					y: node.transform.y,
+					src: (node as SerializedImg).src,
+					width: (node as SerializedImg).width,
+					height: (node as SerializedImg).height,
+				});
+				instance.setScale(node.transform.sx, node.transform.sy);
+				canvas.appendChild(instance);
+				break;
+			case 'Grid':
+				if (parent instanceof Canvas) {
+					parent.grid.gridType = (node as SerializedGrid).style;
+				}
+				break;
+			default:				
+				break;
+		}
 
-//     if (node.transform.sx != null || node.transform.sy != null) {
-//       instance.setScale(node.transform.sx ?? 1, node.transform.sy ?? 1);
-//     }
+		if (node.children) {
+			for (const child of node.children) build(child, instance);
+		}
+	}
 
-//     (parent as any).appendChild(instance);
-
-//     if (node.children) {
-//       for (const child of node.children) build(child, instance);
-//     }
-//   }
-
-//   build(data.root, canvas);
-//   return canvas;
-// }
+	build(data.root, canvas);
+  	return canvas;
+}

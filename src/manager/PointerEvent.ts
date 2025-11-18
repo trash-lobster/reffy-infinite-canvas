@@ -1,14 +1,15 @@
 import { Canvas } from "Canvas";
-import { Img, Rect, Shape } from "../shapes";
+import { Img, Rect, Renderable, Shape } from "../shapes";
 import {
-    addImages,
+    copy,
     getWorldCoords,
-    previewImage
+    paste,
+    worldToCamera,
 } from "../util";
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
 import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
-import { makeMultiAddChildCommand, SceneSnapshot } from "./SceneCommand";
+import { ContextMenuType } from "../contextMenu";
 
 export interface Point {
     x: number,
@@ -36,7 +37,13 @@ export class PointerEventManager {
     state: PointerEventState;
     canvas: Canvas;
     history: CanvasHistory;
-    addToCanvas: (src: string, x: number, y: number) => Img;
+    addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
+    getSelected: () => Renderable[];
+
+    showContextMenu: (x: number, y: number, type?: ContextMenuType) => void;
+    clearContextMenu: () => void;
+    isMenuActive: () => boolean;
+    
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
     private currentTransform?:
@@ -46,29 +53,78 @@ export class PointerEventManager {
         canvas: Canvas, 
         state: PointerEventState,
         history: CanvasHistory,
-        addToCanvas: (src: string, x: number, y: number) => Img,
+        addToCanvas: (src: string, x: number, y: number) => Promise<Img>,
+        getSelected: () => Renderable[],
+        showContextMenu: (x: number, y: number, type?: ContextMenuType) => void,
+        clearContextMenu: () => void,
+        isMenuActive: () => boolean,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
         this.canvas = canvas;
         this.state = state;
         this.history = history;
         this.addToCanvas = addToCanvas;
+        this.getSelected = getSelected;
+
+        this.showContextMenu = showContextMenu;
+        this.clearContextMenu = clearContextMenu;
+        this.isMenuActive = isMenuActive;
         this.assignEventListener = assignEventListener;
 
+        // bind methods
         this.onPointerDown = this.onPointerDown.bind(this);
         this.onPointerMoveWhileDown = this.onPointerMoveWhileDown.bind(this);
         this.onPointerUp = this.onPointerUp.bind(this);
-        this.addToCanvas = this.addToCanvas.bind(this);
+        this.canInteract = this.canInteract.bind(this);
 
-        this.addOnPaste();
+        // register event listeners
         this.addOnPointerMove();
         this.addOnWheel();
         this.addOnPointerDown();
-        this.assignEventListener('contextmenu', (e) => e.preventDefault());
+
+        // custom context menu
+        this.assignEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // only show context menu when there is collision with a child object, otherwise clear it
+            const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
+
+            // show different context menu depending on what is being selected
+            if (this.canvas._selectionManager.isMultiBoundingBoxHit(wx, wy)) {
+                showContextMenu(e.clientX, e.clientY, 'multi');
+            } else if (this.canvas._selectionManager.isBoundingBoxHit(wx, wy)) {
+                showContextMenu(e.clientX, e.clientY);
+            } else {
+                showContextMenu(e.clientX, e.clientY, 'canvas');
+            }
+        });
+
+        window.addEventListener('copy', async (e) => {
+            e.preventDefault();
+            if (!this.canInteract()) return;
+
+            await copy(this.getSelected() as Img[]);
+        });
+
+        window.addEventListener('paste', async (e) => {
+            e.preventDefault();
+            if (!this.canInteract()) return;
+            await paste(                
+                this.state.lastPointerPos.x,
+                this.state.lastPointerPos.y,
+                canvas, 
+                history,
+            );
+        });
     }
 
     changeMode() {
         this.state.toggleMode();
+    }
+
+    private canInteract() {
+        return !this.isMenuActive();
     }
     
     // #region Add events
@@ -88,106 +144,90 @@ export class PointerEventManager {
     
     private addOnWheel() {
         this.assignEventListener('wheel', (e) => {
-            if (!this.canvas._selectionManager.marqueeBox) {
+            if (!this.isMenuActive()) {
                 this.canvas._camera.onWheel(e);
             }
         }, { passive: false });
     }
-
-    private addOnPaste() {
-        window.addEventListener('paste', async (e) => {
-            let newImages: Img[] = [];
-
-            const files = e.clipboardData.files;
-            const html = e.clipboardData.getData('text/html');
-
-            if (html) {
-                const el = document.createElement('html');
-                el.innerHTML = html;
-                const images = el.getElementsByTagName('img');
-                for (let i = 0; i < images.length; i++) {
-                    const image = images[i];
-                    const newImg = new Img({
-                        x: this.state.lastPointerPos.x,
-                        y: this.state.lastPointerPos.y,
-                        src: image.src,
-                    });
-                    this.canvas.appendChild(newImg);
-                    newImages.push(newImg);
-                }
-            } else {
-                newImages = await addImages(
-                    files, 
-                    (src: string) => this.addToCanvas(src, this.state.lastPointerPos.x, this.state.lastPointerPos.y)
-                );
-            }
-
-            this.history.push(makeMultiAddChildCommand(this.canvas, newImages));
-        });
-    }
     // #endregion
 
     private onPointerDown(e: PointerEvent) {
+        e.stopPropagation();
+        e.preventDefault();
+        this.clearContextMenu();
+
         const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
         this.state.initialize(wx, wy);
 
         this.currentTransform = undefined;
 
         if (this.state.mode === PointerMode.PAN) {
-            this.state.clearSelection();
-            this.canvas.isGlobalClick = true;
+            this.handlePanPointerDown();
         } else if (this.state.mode === PointerMode.SELECT) {
-            this.canvas.isGlobalClick = false;
-            if (e.button === 2) {
-                const child = this.checkCollidingChild(wx, wy);
-                if (child) {
-                    this.canvas._selectionManager.remove([child as Rect]);
-                } else if (this.canvas.hitTest(wx, wy)) {
-                    this.state.clearSelection();
-                }
-            } else {
-                const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
-                if (boundingBoxType) {
-                    this.state.resizingDirection = boundingBoxType;
-                } else {
-                    const child = this.checkCollidingChild(wx, wy);
-                    if (child) {
-                        if (!e.shiftKey) {                            
-                            this.state.clearSelection();
-                        }
-                        this.canvas._selectionManager.add([child as Rect]);
-                    } else {
-                        this.state.clearSelection();
-                        if (this.canvas._selectionManager.marqueeBox) {
-                            // TO REFACTOR:
-                            this.canvas._selectionManager.clearMarquee();
-                        } else {
-                            this.canvas._selectionManager.marqueeBox = {x: wx, y: wy};
-                        }
-                    }
-                }
-
-                const selected = this.canvas._selectionManager.selected;
-                if (selected.length) {
-                    this.currentTransform = {
-                        targets: selected.map(ref => ({
-                            ref,
-                            start: { x: ref.x, y: ref.y, sx: ref.sx, sy: ref.sy },
-                        })),
-                    };
-                }
-            }
+            this.handleSelectPointerDown(e, wx, wy);
         }
 
         document.addEventListener('pointermove', this.onPointerMoveWhileDown);
         document.addEventListener('pointerup', this.onPointerUp);
     }
 
+    private handlePanPointerDown() {
+        this.state.clearSelection();
+        this.canvas.isGlobalClick = true;
+    }
+
+    private handleSelectPointerDown(e: MouseEvent, wx: number, wy: number) {
+        this.canvas.isGlobalClick = false;
+        if (e.button === 2) {
+            if (!this.canvas._selectionManager.hitTest(wx, wy)) {
+                this.state.clearSelection();
+            }
+
+            const child = this.checkCollidingChild(wx, wy);
+            if (child && !this.canvas._selectionManager.isRectSelected(child as Rect)) {
+                this.canvas._selectionManager.add([child as Rect]);
+            }
+        } else {
+            const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
+            if (boundingBoxType) {
+                this.state.resizingDirection = boundingBoxType;
+            } else {
+                const child = this.checkCollidingChild(wx, wy);
+                if (child) {
+                    if (!e.shiftKey) {                            
+                        this.state.clearSelection();
+                    }
+                    this.canvas._selectionManager.add([child as Rect]);
+                } else {
+                    this.state.clearSelection();
+                    if (this.canvas._selectionManager.marqueeBox) {
+                        this.canvas._selectionManager.clearMarquee();
+                    } else {
+                        this.canvas._selectionManager.marqueeBox = {x: wx, y: wy};
+                    }
+                }
+            }
+
+            const selected = this.canvas._selectionManager.selected;
+            if (selected.length) {
+                this.currentTransform = {
+                    targets: selected.map(ref => ({
+                        ref,
+                        start: { x: ref.x, y: ref.y, sx: ref.sx, sy: ref.sy },
+                    })),
+                };
+            }
+        }
+    }
+
     private onPointerMoveWhileDown(e: PointerEvent) {
+        // in move, the buttons property is checked
+        if (e.buttons === 2) return;
         const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
         const dx = wx - this.state.lastWorldX;
         const dy = wy - this.state.lastWorldY;
-
+        
+        
         if (this.canvas.isGlobalClick) {
             this.canvas._camera.updateCameraPos(this.state.startWorldX - wx, this.state.startWorldY - wy);
         } else if (this.state.resizingDirection && this.state.resizingDirection !== 'CENTER') {

@@ -70,9 +70,9 @@ export class MarqueeSelectionBox {
         this.updateRects();
     }
 
-    destroy(gl: WebGLRenderingContext) {
+    destroy() {
         for (const [_, rect] of this.rects.entries()) {
-            rect.destroy(gl);
+            rect.destroy();
         }
     }
 
@@ -94,8 +94,8 @@ export class MarqueeSelectionBox {
             const [wx1, wy1] = applyMatrixToPoint(canvas.worldMatrix, child.x, child.y);
             const [wx2, wy2] = applyMatrixToPoint(
                 canvas.worldMatrix,
-                child.x + child.width,
-                child.y + child.height
+                child.x + child.width * child.sx,
+                child.y + child.height * child.sy
             );
 
             const cx1 = Math.min(wx1, wx2);

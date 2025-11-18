@@ -1,5 +1,4 @@
 import { Rect } from "./Rect";
-import { Renderable } from "./Renderable";
 
 export class Img extends Rect {
     private texcoordBuffer?: WebGLBuffer;
@@ -20,7 +19,15 @@ export class Img extends Rect {
     private _src: string;
     private _image: HTMLImageElement;
 
-    constructor(config: Partial<{x: number, y: number, src: string, width?: number, height?: number, }>) {
+    constructor(config: Partial<{
+        x: number, 
+        y: number, 
+        src: string,
+        sx?: number,
+        sy?: number,
+        width?: number, 
+        height?: number, 
+    }>) {
         super(config);
         this._src = config.src;
         

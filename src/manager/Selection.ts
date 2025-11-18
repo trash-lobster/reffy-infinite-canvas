@@ -1,4 +1,7 @@
-import { BoundingBoxCollisionType, oppositeCorner } from "../util";
+import { 
+    BoundingBoxCollisionType,
+    oppositeCorner,
+} from "../util";
 import { Rect } from "../shapes";
 import { Canvas } from "Canvas";
 import { Point } from "boundingBox/type";
@@ -7,8 +10,9 @@ import {
     MarqueeSelectionBox, 
     MultiBoundingBox,
 } from "../boundingBox";
-import { CanvasHistory, Command } from "../history";
+import { CanvasHistory } from "../history";
 import { makeMultiRemoveChildCommand } from "./SceneCommand";
+import { makeMultiFlipCommand } from "./FlipCommand";
 
 export class SelectionManager {
     private canvas: Canvas;
@@ -47,6 +51,9 @@ export class SelectionManager {
         this.canvas = canvas;
         this.clear = this.clear.bind(this);
         this.deleteSelected = this.deleteSelected.bind(this);
+
+        this.flip = this.flip.bind(this);
+
         this.history = history;
     }
 
@@ -119,6 +126,17 @@ export class SelectionManager {
         return null;
     }
 
+    isMultiBoundingBoxHit(wx: number, wy: number) {
+        return this._multiBoundingBox && this._multiBoundingBox.hitTest(wx, wy, this.canvas.worldMatrix);
+    }
+
+    isBoundingBoxHit(wx: number, wy: number) {
+        return (
+            this._boundingBoxes.size === 1 && 
+            Array.from(this._boundingBoxes)[0].hitTest(wx, wy, this.canvas.worldMatrix)
+        );
+    }
+
     hitTestAdjustedCorner(wx: number, wy: number) {
         if (this._multiBoundingBox) {
             const ans = this._multiBoundingBox.hitTest(wx, wy, this.canvas.worldMatrix);
@@ -167,6 +185,10 @@ export class SelectionManager {
         }
     }
 
+    isRectSelected(shape: Rect) {
+        return this._selected.has(shape);
+    }
+
     clear() {
         this._selected.clear();
         this._boundingBoxes.clear();
@@ -212,4 +234,49 @@ export class SelectionManager {
             }
         }
     }
+
+    flip(direction: 'horizontal' | 'vertical') {
+        if (this._multiBoundingBox) {
+            const transformArray = 
+                direction === 'horizontal' ?
+                    this._multiBoundingBox.flipHorizontal(this.canvas) :
+                    this._multiBoundingBox.flipVertical(this.canvas);
+            this.canvas._history.push(makeMultiFlipCommand(transformArray, direction, this._multiBoundingBox));
+        } else {
+            const transformArray  = [];
+            for (const box of this._boundingBoxes) {
+                transformArray.push(box.flip(direction));
+            }
+
+            this.canvas._history.push(makeMultiFlipCommand(transformArray, direction));
+        }
+    }
+
+    // keep this for exporting as image in the future
+    // async copy() {
+    //     const images = this.selected as Img[];
+    //     if (images.length === 0) return;
+
+    //     let blob: Blob;
+
+    //     if (images.length === 1 && images[0].src.startsWith('data:image/png')) {
+    //         // Fast path: already a PNG data URL
+    //         const [header, base64] = images[0].src.split(',');
+    //         const binary = atob(base64);
+    //         const array = new Uint8Array(binary.length);
+    //         for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
+    //         blob = new Blob([array], { type: 'image/png' });
+    //     } else {
+    //         // Batch draw all images to an offscreen canvas
+    //         const { mergedCanvas, width, height } = await mergeImagesToCanvas(images);
+    //         blob = await new Promise<Blob>(resolve => mergedCanvas.toBlob(b => resolve(b), 'image/png'));
+    //     }
+
+    //     const storedItem = new ClipboardItem({ [blob.type]: blob });
+    //     try {
+    //         await navigator.clipboard.write([storedItem]);
+    //     } catch (err) {
+    //         console.error(err);
+    //     }
+    // }
 }

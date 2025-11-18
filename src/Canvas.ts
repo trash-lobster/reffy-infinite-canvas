@@ -1,4 +1,4 @@
-import { createProgram, getWorldCoords } from './util';
+import { convertToPNG, createProgram } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -17,6 +17,13 @@ import { SelectionManager, PointerEventManager, KeyEventManager } from './manage
 import { Camera } from './camera';
 import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
+import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
+
+interface ContextMenuFns {
+	showMenu: (x: number, y: number) => void,
+	clearMenu: () => void,
+	isMenuActive: () => boolean,
+}
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
@@ -33,13 +40,21 @@ export class Canvas extends Renderable {
 	_keyPressManager: KeyEventManager;
 	_camera: Camera;
 
+	_history: CanvasHistory;
+
 	private orderDirty = true;
     private renderList: Shape[] = [];
 
     // Call this whenever children/layers/z-order change
     markOrderDirty() { this.orderDirty = true; }
+
+	get selectionManager() { return this._selectionManager }
 	
-	constructor(canvas: HTMLCanvasElement, history: CanvasHistory) {
+	constructor(
+		canvas: HTMLCanvasElement, 
+		history: CanvasHistory,
+		options: ContextMenuFns,
+	) {
 		super();
 		this.canvas = canvas;
 		this.grid = new Grid();
@@ -53,9 +68,17 @@ export class Canvas extends Renderable {
 		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 		
+		this._history = history;
+		
 		this.engine = this.engine.bind(this);
+		this.appendChild = this.appendChild.bind(this);
 		this.addToCanvas = this.addToCanvas.bind(this);
+		
 		this.assignEventListener = this.assignEventListener.bind(this);
+
+		this.exportState = this.exportState.bind(this);
+		this.importState = this.importState.bind(this);
+		this.clearChildren = this.clearChildren.bind(this);
 		
 		this._selectionManager = new SelectionManager(
 			this.gl, 
@@ -80,6 +103,10 @@ export class Canvas extends Renderable {
 			pointerEventState,
 			history,
 			this.addToCanvas,
+			() => this._selectionManager.selected,
+			options.showMenu,
+			options.clearMenu,
+			options.isMenuActive,
 			this.assignEventListener,
 		);
 
@@ -180,27 +207,40 @@ export class Canvas extends Renderable {
 		return this.isGlobalClick;
 	}
 
-	addToCanvas(src: string, x: number, y: number, center: boolean = false) {
-		const rect = this.canvas.getBoundingClientRect();
-		const clientX = center ? (rect.left + rect.width / 2) : (rect.left + x);
-		const clientY = center ? (rect.top + rect.height / 2) : (rect.top + y);
-
-		const [wx, wy] = getWorldCoords(clientX, clientY, this);
-		const newImg = new Img({ x: wx, y: wy, src });
-
-		this.appendChild(newImg);
-
+	async addToCanvas(src: string, x: number, y: number, sx: number = 1, sy: number = 1, center: boolean = false) {
+		const newImg = new Img({ x: x, y: y, src, sx, sy });
+		
 		if (center) {
 			const preview = new Image();
-			preview.src = src;
+			preview.src = 
+			!src.startsWith('data:image/png') ? 
+			await convertToPNG(src) :
+			src;
+			
 			preview.onload = () => {
 				const w = preview.naturalWidth || preview.width || 0;
 				const h = preview.naturalHeight || preview.height || 0;
 				if (w || h) newImg.updateTranslation(-w / 2, -h / 2);
+				newImg.src = preview.src;
+				this.appendChild(newImg);
 			};
 		}
 
 		return newImg;
+	}
+
+	exportState() {
+		return serializeCanvas(this);
+	}
+
+	importState(data: SerializedCanvas) {
+		return deserializeCanvas(data, this);
+	}
+
+	clearChildren() {
+		this.selectionManager.clear();
+		this.state.clearChildren(); // should clear history?
+		this._history.clear();
 	}
 
 	private collectShapes(node: Renderable, out: Shape[]) {
@@ -219,14 +259,6 @@ export class Canvas extends Renderable {
         this.renderList = list;
         this.orderDirty = false;
     }
-
-	// toJSON() {
-    //     return serializeCanvas(this);
-    // }
-
-    // exportAsString(space = 2) {
-    //     return JSON.stringify(this.toJSON(), null, space);
-    // }
 	
 	private static webglStats = {
         buffersCreated: 0,

@@ -28,6 +28,10 @@ export class Grid extends WebGLRenderable {
         ]);
     }
 
+    changeGridType(type: GRID_TYPE) {
+        this.gridType = type;
+    }
+
     render(gl: WebGLRenderingContext, program: WebGLProgram): void {
         if (!this.buffer) {
             this.buffer = gl.createBuffer();
@@ -78,9 +82,8 @@ export class Grid extends WebGLRenderable {
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
 
-    destroy(gl: WebGLRenderingContext): void {
+    destroy(): void {
         if (this.buffer) {
-            gl.deleteBuffer(this.buffer);
             this.buffer = null;
         }
     }

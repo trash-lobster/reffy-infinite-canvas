@@ -1,5 +1,4 @@
 import { Canvas } from "Canvas";
-import { makeObservable, observable, computed, action } from "mobx";
 import { BoundingBoxCollisionType } from "../util";
 import { Point, PointerMode } from "../manager";
 
@@ -33,30 +32,6 @@ export class PointerEventState {
         this.getCanvas = getCanvas;
         this.clearSelection = clearSelection;
         this.mode = mode;
-
-        makeObservable(this, {
-            // observables
-            lastPointerPos: observable,
-            startWorldX: observable,
-            startWorldY: observable,
-            lastWorldX: observable,
-            lastWorldY: observable,
-            mode: observable,
-            resizingDirection: observable,
-
-            // computed
-            isResizing: computed,
-            dragDXFromStart: computed,
-            dragDYFromStart: computed,
-
-            // actions
-            setMode: action,
-            toggleMode: action,
-            setResizingDirection: action,
-            clearResizingDirection: action,
-            initialize: action,
-            updateLastWorldCoord: action,
-        });
     }
 
     // computed

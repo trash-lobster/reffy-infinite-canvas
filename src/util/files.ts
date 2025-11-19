@@ -1,3 +1,4 @@
+import { SerializedCanvas } from "serializer";
 import { Img } from "../shapes";
 
 export async function previewImage(file: File) {
@@ -47,7 +48,7 @@ export async function addImages(files: FileList, addToCanvas: (src: string) => P
     return images;
 }
 
-export function downloadJSON(filename: string, data: unknown) {
+export function downloadJSON(filename: string, data: SerializedCanvas) {
     const text = JSON.stringify(data, null, 2);
     const blob = new Blob([text], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

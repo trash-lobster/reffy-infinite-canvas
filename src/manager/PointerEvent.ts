@@ -271,6 +271,8 @@ export class PointerEventManager {
         if (this.canvas._selectionManager.marqueeBox) {
             this.canvas._selectionManager.clearMarquee();
         }
+
+        this.canvas.eventEmitter.emit('save');
     }
 
     private checkCollidingChild(wx: number, wy: number) {

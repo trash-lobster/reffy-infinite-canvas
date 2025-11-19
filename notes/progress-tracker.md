@@ -118,3 +118,8 @@
 - Reviewed the clipboard API and decided that it is actually better to use the clipboard API to write the image src without merging them together. That is causing a lot of heavy lifting and slowing things down.
 - Clean up flip code
 - Added two more options to the context menu
+
+20251119:
+- Add basic storage class for writing to memory
+- Add basic implementation for indexed DB
+- Add starter code for writing but will need to look into refactoring to fit an event & subscriber model instead

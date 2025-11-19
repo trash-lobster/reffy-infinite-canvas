@@ -8,6 +8,7 @@ import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializ
 import { makeMultiAddChildCommand } from './manager';
 import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 import { Img } from './shapes';
+import { CanvasStorage } from 'storage';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -194,6 +195,10 @@ export class InfiniteCanvasElement extends LitElement {
     #canvas: Canvas;
     #resizeObserver?: ResizeObserver;
     #history: CanvasHistory;
+    #storage: CanvasStorage;
+    #saveFrequency = 300000;
+	#timeoutId: number | null;
+    #intervalId: number | null;
 
     connectedCallback() {
         super.connectedCallback();
@@ -216,17 +221,21 @@ export class InfiniteCanvasElement extends LitElement {
     };
 
     private initCanvas() {
-        console.log(this.name);
         this.#history = new CanvasHistory();
 
         const canvas = document.createElement('canvas');
         this.addContextMenu = this.addContextMenu.bind(this);
         this.clearContextMenu = this.clearContextMenu.bind(this);
         this.isContextMenuActive = this.isContextMenuActive.bind(this);
+        
+        this.saveNow = this.saveNow.bind(this);
+        this.scheduleSave = this.scheduleSave.bind(this);
+        this.assignStorage = this.assignStorage.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
             this.#history,
+            this.scheduleSave,
             {
                 showMenu: this.addContextMenu,
                 clearMenu: this.clearContextMenu,
@@ -266,6 +275,24 @@ export class InfiniteCanvasElement extends LitElement {
 
     // PUBLIC API
     get engine(): Canvas { return this.#canvas }
+
+	assignStorage(storage: CanvasStorage, saveFrequency: number = this.#saveFrequency) {
+		this.#storage = storage;
+		this.#saveFrequency = saveFrequency;
+        this.#intervalId && clearInterval(this.#intervalId);
+		this.#intervalId = setInterval(this.saveNow, this.#saveFrequency);
+	}
+
+    scheduleSave() {
+		if (!this.#storage) return;
+		clearTimeout(this.#timeoutId);
+		this.#timeoutId = setTimeout(this.saveNow, 1000);
+	}
+    
+    saveNow() {
+        if (this.#storage) this.#storage.write(this.engine);
+        console.log('write to canvas');
+    }
 
     toggleMode() {
         if (!this.#canvas) return;

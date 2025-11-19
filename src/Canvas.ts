@@ -19,6 +19,7 @@ import { Camera } from './camera';
 import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
 import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
+import EventEmitter from 'eventemitter3';
 
 interface ContextMenuFns {
 	showMenu: (x: number, y: number) => void,
@@ -42,18 +43,21 @@ export class Canvas extends Renderable {
 	_camera: Camera;
 
 	_history: CanvasHistory;
+	writeToStorage: () => void;
 
 	private orderDirty = true;
     private renderList: Shape[] = [];
 
     // Call this whenever children/layers/z-order change
     markOrderDirty() { this.orderDirty = true; }
+	eventEmitter: EventEmitter;
 
 	get selectionManager() { return this._selectionManager }
 	
 	constructor(
 		canvas: HTMLCanvasElement, 
 		history: CanvasHistory,
+		writeToStorage: () => void,
 		options: ContextMenuFns,
 	) {
 		super();
@@ -70,6 +74,7 @@ export class Canvas extends Renderable {
 		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
 		
 		this._history = history;
+		this.writeToStorage = writeToStorage;
 		
 		this.engine = this.engine.bind(this);
 		this.appendChild = this.appendChild.bind(this);
@@ -117,6 +122,9 @@ export class Canvas extends Renderable {
 			getCanvas: this.engine
 		})
 		this._camera = new Camera(this, cameraState);
+
+		this.eventEmitter = new EventEmitter();
+		this.eventEmitter.on('save', this.writeToStorage);
 	}
 
 	engine() {
@@ -228,7 +236,6 @@ export class Canvas extends Renderable {
 				this.appendChild(newImg);
 			};
 		}
-
 		return newImg;
 	}
 
@@ -242,7 +249,7 @@ export class Canvas extends Renderable {
 
 	clearChildren() {
 		this.selectionManager.clear();
-		this.state.clearChildren(); // should clear history?
+		this.state.clearChildren(); // should clear history?	
 		this._history.clear();
 	}
 

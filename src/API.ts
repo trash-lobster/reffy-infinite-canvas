@@ -1,3 +1,4 @@
+import { CanvasStorage } from './storage';
 import { InfiniteCanvasElement } from './Component';
 
 export class InfiniteCanvasAPI {
@@ -6,6 +7,15 @@ export class InfiniteCanvasAPI {
     constructor(el: InfiniteCanvasElement) {
         if (!el) throw new Error('InfiniteCanvasElement is required');
         this.el = el;
+
+		this.assignStorage = this.assignStorage.bind(this);
+		this.zoomIn = this.zoomIn.bind(this);
+		this.zoomOut = this.zoomOut.bind(this);
+		this.toggleMode = this.toggleMode.bind(this);
+		this.addImageFromLocal = this.addImageFromLocal.bind(this);
+		this.exportCanvas = this.exportCanvas.bind(this);
+		this.importCanvas = this.importCanvas.bind(this);
+		this.clearCanvas = this.clearCanvas.bind(this);
     }
 
 	static async forElement(selectorOrElement: string | InfiniteCanvasElement): Promise<InfiniteCanvasAPI> {
@@ -22,6 +32,16 @@ export class InfiniteCanvasAPI {
         }
         return new InfiniteCanvasAPI(el);
     }
+
+	/**
+	 * Without assigning storage, the canvas will not save any data
+	 * @param storage 
+	 * @param saveFrequency How often auto save occurs in ms
+	 */
+	assignStorage(storage: CanvasStorage, saveFrequency: number = 3000) {
+		this.el.assignStorage(storage, saveFrequency);
+		return this;
+	}
 
     async zoomIn() {
 		this.el.zoomIn();

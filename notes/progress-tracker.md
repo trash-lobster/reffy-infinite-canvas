@@ -123,3 +123,7 @@
 - Add basic storage class for writing to memory
 - Add basic implementation for indexed DB
 - Add starter code for writing but will need to look into refactoring to fit an event & subscriber model instead
+
+20251120:
+- Messed around to switch to event emitter but this didn't work very well
+- restored to original version

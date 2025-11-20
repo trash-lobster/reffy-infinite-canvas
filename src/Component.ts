@@ -256,10 +256,22 @@ export class InfiniteCanvasElement extends LitElement {
 
         const resizeCanvas = () => {
             const dpr = window.devicePixelRatio || 1;
-            const w = Math.max(1, window.innerWidth);
-            const h = Math.max(1, window.innerHeight);
+            const parent = canvas.parentElement || this; // fallback to host if no parent
+            const rect = parent.getBoundingClientRect();
+            let w = Math.max(1, rect.width);
+            let h = Math.max(1, rect.height);
+
+            // Maintain a fixed aspect ratio, e.g., 16:9
+            const aspect = 16 / 9;
+            if (w / h > aspect) {
+                h = w / aspect;
+            } else {
+                w = h * aspect;
+            }
             canvas.width = w * dpr;
             canvas.height = h * dpr;
+            canvas.style.width = `${w}px`;
+            canvas.style.height = `${h}px`;
         };
 
         resizeCanvas();

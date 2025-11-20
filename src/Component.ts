@@ -8,7 +8,7 @@ import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializ
 import { makeMultiAddChildCommand } from './manager';
 import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 import { Img } from './shapes';
-import { CanvasStorage } from 'storage';
+import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, FileStorageEntry } from 'storage';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -195,7 +195,8 @@ export class InfiniteCanvasElement extends LitElement {
     #canvas: Canvas;
     #resizeObserver?: ResizeObserver;
     #history: CanvasHistory;
-    #storage: CanvasStorage;
+    #fileStorage: FileStorage;
+    #canvasStorage: CanvasStorage;
     #saveFrequency = 300000;
 	#timeoutId: number | null;
     #intervalId: number | null;
@@ -230,7 +231,7 @@ export class InfiniteCanvasElement extends LitElement {
         
         this.saveNow = this.saveNow.bind(this);
         this.scheduleSave = this.scheduleSave.bind(this);
-        this.assignStorage = this.assignStorage.bind(this);
+        this.assignCanvasStorage = this.assignCanvasStorage.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
@@ -276,22 +277,42 @@ export class InfiniteCanvasElement extends LitElement {
     // PUBLIC API
     get engine(): Canvas { return this.#canvas }
 
-	assignStorage(storage: CanvasStorage, saveFrequency: number = this.#saveFrequency) {
-		this.#storage = storage;
+	assignCanvasStorage(storage: CanvasStorage, saveFrequency: number = this.#saveFrequency) {
+		this.#canvasStorage = storage;
 		this.#saveFrequency = saveFrequency;
         this.#intervalId && clearInterval(this.#intervalId);
 		this.#intervalId = setInterval(this.saveNow, this.#saveFrequency);
 	}
 
+    assignFileStorage(storage: FileStorage) {
+        this.#fileStorage = storage;
+    }
+
+    saveFile(data: string, mimetype: string) {
+        if (!this.#fileStorage) {
+            this.#fileStorage = new DefaultIndexedDbStorage();
+        }
+        try {
+            this.#fileStorage.write(data, mimetype);
+            
+        } catch (err) {
+
+        }
+    }
+
     scheduleSave() {
-		if (!this.#storage) return;
+		if (!this.#canvasStorage) {
+            this.#canvasStorage = new DefaultLocalStorage();
+        }
 		clearTimeout(this.#timeoutId);
 		this.#timeoutId = setTimeout(this.saveNow, 1000);
 	}
     
     saveNow() {
-        if (this.#storage) this.#storage.write(this.engine);
-        console.log('write to canvas');
+		if (!this.#canvasStorage) {
+            this.#canvasStorage = new DefaultLocalStorage();
+        }
+        this.#canvasStorage.write(serializeCanvas(this.engine));
     }
 
     toggleMode() {

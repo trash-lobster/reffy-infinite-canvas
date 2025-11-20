@@ -1,5 +1,4 @@
 import { InfiniteCanvasAPI, InfiniteCanvasElement } from '../src';
-import { IndexedDBStorage } from '../src/storage';
 
 const el = document.querySelector('#canvas') as InfiniteCanvasElement;
 InfiniteCanvasAPI.forElement(el).then(api => {
@@ -42,6 +41,4 @@ InfiniteCanvasAPI.forElement(el).then(api => {
         await api.importCanvas(hiddenImportCanvasInput.files);
         hiddenInput.value = '';
     };
-
-    api.assignStorage(new IndexedDBStorage());
 })

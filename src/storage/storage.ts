@@ -1,14 +1,31 @@
-import { Canvas } from "../Canvas";
-import { SerializedCanvas } from "../serializer";
+import { SerializedCanvas } from "serializer";
 
-export abstract class CanvasStorage {
+export interface FileStorageEntry {
     id: string;
-    protected dbName: string;
-    timeoutId: number | null;
+    dataURL: string;
+    mimetype: string;
+    created: number;
+    lastRetrieved: number;
+}
 
-    abstract updateDbName(newName: string): void;
-    abstract register(id?: string): void;
-    abstract write(canvas: Canvas): void;
-    abstract read(): SerializedCanvas;
-    abstract delete(): void;
+export abstract class FileStorage {
+    abstract write(data: string, mimetype: string): Promise<string>;
+    abstract readAll(): Promise<FileStorageEntry[]>;
+    abstract readPage(offset: number, limit: number): Promise<FileStorageEntry[]>;
+    abstract read(id: string): Promise<FileStorageEntry>;
+    abstract delete(id: string): Promise<FileStorageEntry>
+    abstract update(newVersion: FileStorageEntry): Promise<FileStorageEntry>;
+    abstract checkIfImageStored(url: string): Promise<boolean>;
+}
+
+export type CanvasStorageEntry = SerializedCanvas;
+
+/**
+ * Writes the canvas data into storage
+ */
+export abstract class CanvasStorage {
+    abstract write(value: CanvasStorageEntry): Promise<void>;
+    abstract read(): Promise<string>;
+    abstract delete(): Promise<void>
+    abstract update(value: CanvasStorageEntry): Promise<void>;
 }

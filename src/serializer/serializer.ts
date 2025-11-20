@@ -1,3 +1,4 @@
+import { FileStorageEntry } from "storage";
 import { Canvas } from "../Canvas";
 import { Renderable, Rect, Img, Grid } from "../shapes";
 
@@ -40,7 +41,6 @@ export type SerializedImg = SerializedNodeBase & {
 	type: "Img";
 	width: number;
 	height: number;
-	src: string;
 };
 
 export type SerializedGrid = SerializedNodeBase & {
@@ -57,15 +57,8 @@ export type SerializedCanvas = {
 		height: number;
 		dpr: number;
 	};
-	camera?: {
-		x: number;
-		y: number;
-		width: number;
-		height: number;
-		rotation: number;
-		zoom: number;
-	};
 	root: SerializedNode;
+	files?: FileStorageEntry;
 };
 
 function transformOf(node: Renderable): SerializedTransform {
@@ -91,9 +84,6 @@ export function serializeNode(node: Renderable): SerializedNode {
 			transform: transformOf(node),
 			width: (node as Img).width,
 			height: (node as Img).height,
-			src:
-				(node as Img).src ??
-				undefined,
 			children: node.children?.length ? serializeChildren(node) : undefined,
 		};
 		return base;
@@ -142,24 +132,7 @@ export function serializeCanvas(canvas: Canvas): SerializedCanvas {
 }
 
 export function deserializeCanvas(data: SerializedCanvas, canvas: Canvas) {
-//   // Basic version check
-//   if (data.version !== 1) {
-//     // run migration(s)
-//     data = migrate(data);
-//   }
-//   // Clear existing children
   	canvas.children.length = 0;
-
-//   // Restore camera
-//   if (data.camera && canvas._camera?.state) {
-//     const cs = canvas._camera.state;
-//     cs.x = data.camera.x;
-//     cs.y = data.camera.y;
-//     cs.width = data.camera.width;
-//     cs.height = data.camera.height;
-//     cs.rotation = data.camera.rotation;
-//     cs.zoom = data.camera.zoom;
-//   }
 
 	function build(node: SerializedNode, parent: Canvas | Renderable) {
 		let instance: Renderable;
@@ -175,10 +148,13 @@ export function deserializeCanvas(data: SerializedCanvas, canvas: Canvas) {
 				canvas.appendChild(instance);
 				break;
 			case 'Img':
+				// get file from canvas
+				const src =  '';
+
 				instance = new Img({
 					x: node.transform.x,
 					y: node.transform.y,
-					src: (node as SerializedImg).src,
+					src,
 					width: (node as SerializedImg).width,
 					height: (node as SerializedImg).height,
 				});

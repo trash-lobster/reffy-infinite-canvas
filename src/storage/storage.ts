@@ -1,7 +1,7 @@
 import { SerializedCanvas } from "serializer";
 import { getMimeType, hashStringToId } from "../util";
 
-export class FileStorageEntry {
+export class ImageFileMetadata {
     private _id: string | number;
     private _dataURL: string;
     private _mimetype: string;
@@ -44,8 +44,8 @@ export class FileStorageEntry {
         this._lastRetrieved = Date.now();
     }
 
-    static async create(dataURL: string): Promise<FileStorageEntry> {
-        const entry = new FileStorageEntry(dataURL);
+    static async create(dataURL: string): Promise<ImageFileMetadata> {
+        const entry = new ImageFileMetadata(dataURL);
         entry._id = await hashStringToId(dataURL);
         return entry;
     }
@@ -53,11 +53,11 @@ export class FileStorageEntry {
 
 export abstract class FileStorage {
     abstract write(data: string): Promise<string | number>;
-    abstract readAll(): Promise<FileStorageEntry[]>;
-    abstract readPage(offset: number, limit: number): Promise<FileStorageEntry[]>;
-    abstract read(id: string): Promise<FileStorageEntry>;
-    abstract delete(id: string): Promise<FileStorageEntry>
-    abstract update(newVersion: FileStorageEntry): Promise<FileStorageEntry>;
+    abstract readAll(): Promise<ImageFileMetadata[]>;
+    abstract readPage(offset: number, limit: number): Promise<ImageFileMetadata[]>;
+    abstract read(id: string): Promise<ImageFileMetadata>;
+    abstract delete(id: string): Promise<ImageFileMetadata>
+    abstract update(newVersion: ImageFileMetadata): Promise<ImageFileMetadata>;
     abstract checkIfImageStored(url: string): Promise<string | number | null>;
 }
 

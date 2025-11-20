@@ -8,7 +8,7 @@ import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializ
 import { makeMultiAddChildCommand } from './manager';
 import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 import { Img } from './shapes';
-import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, FileStorageEntry } from './storage';
+import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, ImageFileMetadata } from './storage';
 import EventEmitter from 'eventemitter3';
 import { v4 as uuid } from 'uuid';
 import Dexie from 'dexie';
@@ -308,6 +308,10 @@ export class InfiniteCanvasElement extends LitElement {
     // PUBLIC API
     get engine(): Canvas { return this.#canvas }
 
+    /**
+     * @param storage Canvas storage stores the positions of all the renderables
+     * @param saveFrequency How often should auto save execute
+     */
 	assignCanvasStorage(storage: CanvasStorage, saveFrequency: number = this.#saveFrequency) {
 		this.#canvasStorage = storage;
 		this.#saveFrequency = saveFrequency;
@@ -315,26 +319,39 @@ export class InfiniteCanvasElement extends LitElement {
 		this.#intervalId = setInterval(this.saveNow, this.#saveFrequency);
 	}
 
+    /**
+     * @param storage File storage captures the information about the image data that has previously been added. Made more efficient by using SHA of the image data for storage.
+     */
     assignFileStorage(storage: FileStorage) {
         this.#fileStorage = storage;
     }
 
-    async saveFile(data: string): Promise<string | number | null> {
+    /**
+     * Duplicate images will not be written to the database
+     * @param dataURL 
+     * @returns The unique ID that the image has been logged with. This is a hashed version of the image data URL
+     */
+    async saveFile(dataURL: string): Promise<string | number | null> {
         if (!this.#fileStorage) {
             this.#fileStorage = new DefaultIndexedDbStorage();
         }
         try {
-            if (!await this.#fileStorage.checkIfImageStored(data)) {
-                return await this.#fileStorage.write(data);
+            if (!await this.#fileStorage.checkIfImageStored(dataURL)) {
+                return await this.#fileStorage.write(dataURL);
             } else {
-                return await hashStringToId(data);
+                return await hashStringToId(dataURL);
             }
         } catch (err) {
             console.error(err);
         }
     }
 
-    async getFile(fileId: string) : Promise<FileStorageEntry> {
+    /**
+     * 
+     * @param fileId Retrieves the file metadata
+     * @returns 
+     */
+    async getFile(fileId: string) : Promise<ImageFileMetadata> {
         if (!this.#fileStorage) {
             this.#fileStorage = new DefaultIndexedDbStorage();
         }

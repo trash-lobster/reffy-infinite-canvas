@@ -1,6 +1,6 @@
 import './dexie-primary-key.js';
 import Dexie, { DexieConstructor, EntityTable } from "dexie";
-import { FileStorageEntry, FileStorage, CanvasStorage, CanvasStorageEntry } from "./storage";
+import { ImageFileMetadata, FileStorage, CanvasStorage, CanvasStorageEntry } from "./storage";
 
 const dbVersion1 = {
     files: '$$id, dataURL, mimetype, created, lastRetrieved',
@@ -15,7 +15,7 @@ type DexieConstructorWithUUID = DexieConstructor & {
 };
 
 interface IndexDb extends Dexie {
-    files: EntityTable<FileStorageEntry, 'id'>;
+    files: EntityTable<ImageFileMetadata, 'id'>;
 }
 
 export class DefaultIndexedDbStorage extends FileStorage {
@@ -52,7 +52,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
      * @returns the file ID
      */
     async write(data: string): Promise<string | number> {
-        const file: FileStorageEntry = await FileStorageEntry.create(data);
+        const file: ImageFileMetadata = await ImageFileMetadata.create(data);
 
         return this.dbQueue.add(() =>
             handleQuotaError(async (): Promise<string | number> => {
@@ -81,22 +81,22 @@ export class DefaultIndexedDbStorage extends FileStorage {
         );
     }
 
-    async readAll(): Promise<FileStorageEntry[]> {
-        return handleQuotaError(async (): Promise<FileStorageEntry[]> => {
+    async readAll(): Promise<ImageFileMetadata[]> {
+        return handleQuotaError(async (): Promise<ImageFileMetadata[]> => {
             const db: IndexDb = await this.getIndexDb();
             return await db.files.toArray();
         });
     }
 
-    async readPage(offset: number, limit: number): Promise<FileStorageEntry[]> {
-        return handleQuotaError(async (): Promise<FileStorageEntry[]> => {
+    async readPage(offset: number, limit: number): Promise<ImageFileMetadata[]> {
+        return handleQuotaError(async (): Promise<ImageFileMetadata[]> => {
             const db: IndexDb = await this.getIndexDb();
             return await db.files.offset(offset).limit(limit).toArray();
         });
     }
 
-    async read(id: string | number): Promise<FileStorageEntry> {
-        return handleQuotaError(async (): Promise<FileStorageEntry> => {
+    async read(id: string | number): Promise<ImageFileMetadata> {
+        return handleQuotaError(async (): Promise<ImageFileMetadata> => {
             const db: IndexDb = await this.getIndexDb();
             await db.transaction('rw', db.files, async () => {
                 await db.files.update(id, {
@@ -108,9 +108,9 @@ export class DefaultIndexedDbStorage extends FileStorage {
         });
     }
 
-    async delete(id: string): Promise<FileStorageEntry> {
+    async delete(id: string): Promise<ImageFileMetadata> {
         return this.dbQueue.add(() =>
-            handleQuotaError(async (): Promise<FileStorageEntry> => {
+            handleQuotaError(async (): Promise<ImageFileMetadata> => {
                 const db: IndexDb = await this.getIndexDb();
 
                 return await db
@@ -130,9 +130,9 @@ export class DefaultIndexedDbStorage extends FileStorage {
         );
     }
 
-    async update(newVersion: FileStorageEntry): Promise<FileStorageEntry> {
+    async update(newVersion: ImageFileMetadata): Promise<ImageFileMetadata> {
         return this.dbQueue.add(() =>
-            handleQuotaError(async (): Promise<FileStorageEntry> => {
+            handleQuotaError(async (): Promise<ImageFileMetadata> => {
                 const db: IndexDb = await this.getIndexDb();
 
                 await db.transaction('rw', db.files, async () => {

@@ -1,4 +1,4 @@
-import { FileStorageEntry } from "storage";
+import { ImageFileMetadata } from "storage";
 import { Canvas } from "../Canvas";
 import { Renderable, Rect, Img, Grid } from "../shapes";
 import { hashStringToId } from "../util";
@@ -60,7 +60,7 @@ export type SerializedCanvas = {
 		dpr: number;
 	};
 	root: SerializedNode;
-	files?: FileStorageEntry[];
+	files?: ImageFileMetadata[];
 };
 
 function transformOf(node: Renderable): SerializedTransform {
@@ -123,7 +123,7 @@ export function serializeNode(node: Renderable): SerializedNode {
 	return generic;
 }
 
-export function serializeCanvas(canvas: Canvas, files?: FileStorageEntry[]): SerializedCanvas {
+export function serializeCanvas(canvas: Canvas, files?: ImageFileMetadata[]): SerializedCanvas {
 	return {
 		version: 1,
 		canvas: {
@@ -136,7 +136,7 @@ export function serializeCanvas(canvas: Canvas, files?: FileStorageEntry[]): Ser
 	};
 }
 
-export async function deserializeCanvas(data: SerializedCanvas, canvas: Canvas, getFile: (id: string | number) => Promise<FileStorageEntry>) {
+export async function deserializeCanvas(data: SerializedCanvas, canvas: Canvas, getFile: (id: string | number) => Promise<ImageFileMetadata>) {
   	canvas.children.length = 0;
 
 	async function build(node: SerializedNode, parent: Canvas | Renderable) {

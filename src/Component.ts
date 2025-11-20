@@ -3,12 +3,12 @@ import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import { copy, getWorldCoords, addImages as innerAddImages, paste } from './util';
-import { downloadJSON, getMimeType, readJSONFile } from './util/files';
+import { downloadJSON, getMimeType, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
 import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 import { Img } from './shapes';
-import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage } from './storage';
+import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, FileStorageEntry } from './storage';
 import EventEmitter from 'eventemitter3';
 import { v4 as uuid } from 'uuid';
 import Dexie from 'dexie';
@@ -225,7 +225,7 @@ export class InfiniteCanvasElement extends LitElement {
         }
     };
 
-    private initCanvas() {
+    private async initCanvas() {
         this.#history = new CanvasHistory();
         this.#eventHub = new EventEmitter();
 
@@ -234,10 +234,13 @@ export class InfiniteCanvasElement extends LitElement {
         this.clearContextMenu = this.clearContextMenu.bind(this);
         this.isContextMenuActive = this.isContextMenuActive.bind(this);
         
+        this.read = this.read.bind(this);
+        this.getFile = this.getFile.bind(this);
+        this.getAllFiles = this.getAllFiles.bind(this);
+        this.saveFile = this.saveFile.bind(this);
         this.saveNow = this.saveNow.bind(this);
         this.scheduleSave = this.scheduleSave.bind(this);
         this.assignCanvasStorage = this.assignCanvasStorage.bind(this);
-        this.saveFile = this.saveFile.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
@@ -283,6 +286,14 @@ export class InfiniteCanvasElement extends LitElement {
         this.#resizeObserver = new ResizeObserver(() => resizeCanvas());
         this.#resizeObserver.observe(canvas);
 
+        this.#eventHub.emit('startloading');
+        try {
+            await this.read();
+        } catch (err) {
+            console.error('Failed to restore canvas');
+        }
+        this.#eventHub.emit('completeloading');
+
         const animate = () => {
             this.#canvas.render();
             requestAnimationFrame(animate);
@@ -315,7 +326,32 @@ export class InfiniteCanvasElement extends LitElement {
         try {
             if (!await this.#fileStorage.checkIfImageStored(data)) {
                 return await this.#fileStorage.write(data);
+            } else {
+                return await hashStringToId(data);
             }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async getFile(fileId: string) : Promise<FileStorageEntry> {
+        if (!this.#fileStorage) {
+            this.#fileStorage = new DefaultIndexedDbStorage();
+        }
+        try {
+            return await this.#fileStorage.read(fileId);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async getAllFiles() {
+        if (!this.#fileStorage) {
+            this.#fileStorage = new DefaultIndexedDbStorage();
+        }
+
+        try {
+            return await this.#fileStorage.readAll();
         } catch (err) {
             console.error(err);
         }
@@ -334,6 +370,15 @@ export class InfiniteCanvasElement extends LitElement {
             this.#canvasStorage = new DefaultLocalStorage();
         }
         await this.#canvasStorage.write(serializeCanvas(this.engine));
+    }
+
+    async read() {
+        if (!this.#canvasStorage) {
+            this.#canvasStorage = new DefaultLocalStorage();
+        }
+        const dataAsString = await this.#canvasStorage.read();
+        const data = JSON.parse(dataAsString) as SerializedCanvas;
+        if (data) await deserializeCanvas(data, this.#canvas, this.getFile);
     }
 
     toggleMode() {
@@ -403,9 +448,10 @@ export class InfiniteCanvasElement extends LitElement {
         this.engine.selectionManager.deleteSelected();
     }
     
-    exportCanvas(filename = 'infinite-canvas.json') {
+    async exportCanvas(filename = 'infinite-canvas.json') {
         if (!this.#canvas) return;
-        const data = serializeCanvas(this.#canvas);
+        const files = await this.getAllFiles();
+        const data = serializeCanvas(this.#canvas, files);
         downloadJSON(filename, data);
     }
 
@@ -420,7 +466,7 @@ export class InfiniteCanvasElement extends LitElement {
         const file = fileList[0];
         if (!file.type || (!file.type.includes('json') && !file.name.toLowerCase().endsWith('.json'))) return;
         const data = await readJSONFile<SerializedCanvas>(file);
-        deserializeCanvas(data, this.#canvas);
+        await deserializeCanvas(data, this.#canvas, this.getFile);
     }
 
     clearCanvas() {

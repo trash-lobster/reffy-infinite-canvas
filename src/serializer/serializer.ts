@@ -1,6 +1,7 @@
 import { FileStorageEntry } from "storage";
 import { Canvas } from "../Canvas";
 import { Renderable, Rect, Img, Grid } from "../shapes";
+import { hashStringToId } from "../util";
 
 /**
  * What should be exposed?
@@ -41,6 +42,7 @@ export type SerializedImg = SerializedNodeBase & {
 	type: "Img";
 	width: number;
 	height: number;
+	fileId: number | string;
 };
 
 export type SerializedGrid = SerializedNodeBase & {
@@ -58,7 +60,7 @@ export type SerializedCanvas = {
 		dpr: number;
 	};
 	root: SerializedNode;
-	files?: FileStorageEntry;
+	files?: FileStorageEntry[];
 };
 
 function transformOf(node: Renderable): SerializedTransform {
@@ -76,6 +78,7 @@ function serializeChildren(node: Renderable): SerializedNode[] {
 
 export function serializeNode(node: Renderable): SerializedNode {
 	if (node instanceof Img) {
+		console.log('writing images');
 		const base: SerializedImg = {
 			type: "Img",
 			id: (node as Img).seq,
@@ -84,6 +87,7 @@ export function serializeNode(node: Renderable): SerializedNode {
 			transform: transformOf(node),
 			width: (node as Img).width,
 			height: (node as Img).height,
+			fileId: (node as Img).fileId,
 			children: node.children?.length ? serializeChildren(node) : undefined,
 		};
 		return base;
@@ -119,7 +123,7 @@ export function serializeNode(node: Renderable): SerializedNode {
 	return generic;
 }
 
-export function serializeCanvas(canvas: Canvas): SerializedCanvas {
+export function serializeCanvas(canvas: Canvas, files?: FileStorageEntry[]): SerializedCanvas {
 	return {
 		version: 1,
 		canvas: {
@@ -127,14 +131,15 @@ export function serializeCanvas(canvas: Canvas): SerializedCanvas {
 			height: canvas.gl.canvas.height,
 			dpr: window.devicePixelRatio || 1,
 		},
-		root: serializeNode(canvas)
+		root: serializeNode(canvas),
+		files
 	};
 }
 
-export function deserializeCanvas(data: SerializedCanvas, canvas: Canvas) {
+export async function deserializeCanvas(data: SerializedCanvas, canvas: Canvas, getFile: (id: string | number) => Promise<FileStorageEntry>) {
   	canvas.children.length = 0;
 
-	function build(node: SerializedNode, parent: Canvas | Renderable) {
+	async function build(node: SerializedNode, parent: Canvas | Renderable) {
 		let instance: Renderable;
 		switch (node.type) {
 			case 'Rect':
@@ -148,9 +153,7 @@ export function deserializeCanvas(data: SerializedCanvas, canvas: Canvas) {
 				canvas.appendChild(instance);
 				break;
 			case 'Img':
-				// get file from canvas
-				const src =  '';
-
+				const src = (await getFile((node as SerializedImg).fileId)).dataURL;
 				instance = new Img({
 					x: node.transform.x,
 					y: node.transform.y,
@@ -158,6 +161,7 @@ export function deserializeCanvas(data: SerializedCanvas, canvas: Canvas) {
 					width: (node as SerializedImg).width,
 					height: (node as SerializedImg).height,
 				});
+				(instance as Img).fileId = await hashStringToId(src);
 				instance.setScale(node.transform.sx, node.transform.sy);
 				canvas.appendChild(instance);
 				break;
@@ -175,6 +179,6 @@ export function deserializeCanvas(data: SerializedCanvas, canvas: Canvas) {
 		}
 	}
 
-	build(data.root, canvas);
+	await build(data.root, canvas);
   	return canvas;
 }

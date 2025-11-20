@@ -1,4 +1,4 @@
-import { CanvasStorage, FileStorage } from './storage';
+import { CanvasStorage } from './storage';
 import { InfiniteCanvasElement } from './Component';
 
 export class InfiniteCanvasAPI {

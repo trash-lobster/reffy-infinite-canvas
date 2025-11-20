@@ -20,6 +20,7 @@ import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
 import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
 import EventEmitter from 'eventemitter3';
+import { FileStorageEntry } from 'storage';
 
 interface ContextMenuFns {
 	showMenu: (x: number, y: number) => void,
@@ -241,6 +242,8 @@ export class Canvas extends Renderable {
 				this.appendChild(newImg);
 			};
 		}
+
+		this.eventEmitter.emit('save');
 		return newImg;
 	}
 
@@ -248,8 +251,8 @@ export class Canvas extends Renderable {
 		return serializeCanvas(this);
 	}
 
-	importState(data: SerializedCanvas) {
-		return deserializeCanvas(data, this);
+	async importState(data: SerializedCanvas, getFile: (fileId: string | number) => Promise<FileStorageEntry>) {
+		return await deserializeCanvas(data, this, getFile);
 	}
 
 	clearChildren() {

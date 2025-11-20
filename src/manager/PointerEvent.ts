@@ -1,15 +1,15 @@
 import { Canvas } from "Canvas";
 import { Img, Rect, Renderable, Shape } from "../shapes";
 import {
+    ContextMenuEvent,
     copy,
     getWorldCoords,
     paste,
-    worldToCamera,
 } from "../util";
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
 import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
-import { ContextMenuType } from "../contextMenu";
+import EventEmitter from "eventemitter3";
 
 export interface Point {
     x: number,
@@ -37,11 +37,11 @@ export class PointerEventManager {
     state: PointerEventState;
     canvas: Canvas;
     history: CanvasHistory;
+    eventHub: EventEmitter;
+
     addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
     getSelected: () => Renderable[];
 
-    showContextMenu: (x: number, y: number, type?: ContextMenuType) => void;
-    clearContextMenu: () => void;
     isMenuActive: () => boolean;
     
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
@@ -53,21 +53,19 @@ export class PointerEventManager {
         canvas: Canvas, 
         state: PointerEventState,
         history: CanvasHistory,
+        eventHub: EventEmitter,
         addToCanvas: (src: string, x: number, y: number) => Promise<Img>,
         getSelected: () => Renderable[],
-        showContextMenu: (x: number, y: number, type?: ContextMenuType) => void,
-        clearContextMenu: () => void,
         isMenuActive: () => boolean,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
         this.canvas = canvas;
         this.state = state;
         this.history = history;
+        this.eventHub = eventHub;
         this.addToCanvas = addToCanvas;
         this.getSelected = getSelected;
 
-        this.showContextMenu = showContextMenu;
-        this.clearContextMenu = clearContextMenu;
         this.isMenuActive = isMenuActive;
         this.assignEventListener = assignEventListener;
 
@@ -81,24 +79,6 @@ export class PointerEventManager {
         this.addOnPointerMove();
         this.addOnWheel();
         this.addOnPointerDown();
-
-        // custom context menu
-        this.assignEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // only show context menu when there is collision with a child object, otherwise clear it
-            const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
-
-            // show different context menu depending on what is being selected
-            if (this.canvas._selectionManager.isMultiBoundingBoxHit(wx, wy)) {
-                showContextMenu(e.clientX, e.clientY, 'multi');
-            } else if (this.canvas._selectionManager.isBoundingBoxHit(wx, wy)) {
-                showContextMenu(e.clientX, e.clientY);
-            } else {
-                showContextMenu(e.clientX, e.clientY, 'canvas');
-            }
-        });
 
         window.addEventListener('copy', async (e) => {
             e.preventDefault();
@@ -127,7 +107,7 @@ export class PointerEventManager {
         return !this.isMenuActive();
     }
     
-    // #region Add events
+    // Add events
     private addOnPointerDown() {
         this.assignEventListener('pointerdown', this.onPointerDown);
     }
@@ -149,12 +129,11 @@ export class PointerEventManager {
             }
         }, { passive: false });
     }
-    // #endregion
 
     private onPointerDown(e: PointerEvent) {
         e.stopPropagation();
         e.preventDefault();
-        this.clearContextMenu();
+        this.eventHub.emit(ContextMenuEvent.Close);
 
         const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
         this.state.initialize(wx, wy);

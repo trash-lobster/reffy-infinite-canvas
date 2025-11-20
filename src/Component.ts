@@ -2,7 +2,7 @@ import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
-import { copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste } from './util';
+import { ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste } from './util';
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
@@ -198,12 +198,7 @@ export class InfiniteCanvasElement extends LitElement {
             this.#history,
             this.debounceSaveToCanvasStorage,
             this.saveImageFileMetadata,
-            this.#eventHub,
-            {
-                showMenu: this.addContextMenu,
-                clearMenu: this.clearContextMenu,
-                isMenuActive: this.isContextMenuActive,
-            }
+            this.#eventHub
         );
 
         if (!this.renderRoot.contains(canvas)) {
@@ -259,6 +254,8 @@ export class InfiniteCanvasElement extends LitElement {
     private registerSignal() {
         this.#eventHub.on(LoaderEvent.start, this.showLoader, 'spinner');
         this.#eventHub.on(LoaderEvent.done, this.hideLoader);
+        this.#eventHub.on(ContextMenuEvent.Open, this.addContextMenu);
+        this.#eventHub.on(ContextMenuEvent.Close, this.clearContextMenu);
     }
 
     // Storage & Persistence

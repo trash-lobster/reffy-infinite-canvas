@@ -14,19 +14,13 @@ import {
 	Grid,
 	GRID_TYPE,
 } from './shapes';
-import { SelectionManager, PointerEventManager, KeyEventManager } from './manager';
+import { SelectionManager, PointerEventManager, KeyEventManager, ContextMenuManager } from './manager';
 import { Camera } from './camera';
 import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
 import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
 import EventEmitter from 'eventemitter3';
 import { ImageFileMetadata } from 'storage';
-
-interface ContextMenuFns {
-	showMenu: (x: number, y: number) => void,
-	clearMenu: () => void,
-	isMenuActive: () => boolean,
-}
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
@@ -41,6 +35,8 @@ export class Canvas extends Renderable {
 	_selectionManager: SelectionManager;
 	_pointerEventManager: PointerEventManager;
 	_keyPressManager: KeyEventManager;
+	_contextMenuManager: ContextMenuManager;
+
 	_camera: Camera;
 
 	_history: CanvasHistory;
@@ -62,7 +58,6 @@ export class Canvas extends Renderable {
 		writeToStorage: () => void,
 		saveImgFileToStorage: (data: string) => Promise<string | number | null>,
 		eventHub: EventEmitter,
-		options: ContextMenuFns,
 	) {
 		super();
 		this.canvas = canvas;
@@ -107,19 +102,25 @@ export class Canvas extends Renderable {
 			this.assignEventListener
 		)
 
+		this._contextMenuManager = new ContextMenuManager(
+			this, 
+			eventHub, 
+			this.assignEventListener
+		);
+
 		const pointerEventState = new PointerEventState({
 			getCanvas: this.engine,
 			clearSelection: this._selectionManager.clear,
 		})
+
 		this._pointerEventManager = new PointerEventManager(
 			this, 
 			pointerEventState,
 			history,
+			eventHub,
 			this.addToCanvas,
 			() => this._selectionManager.selected,
-			options.showMenu,
-			options.clearMenu,
-			options.isMenuActive,
+			() => this._contextMenuManager.isMenuActive,
 			this.assignEventListener,
 		);
 
@@ -128,7 +129,7 @@ export class Canvas extends Renderable {
 		})
 		this._camera = new Camera(this, cameraState);
 
-		this.eventEmitter = new EventEmitter();
+		this.eventEmitter = eventHub;
 		this.eventEmitter.on('save', this.writeToStorage);
 	}
 

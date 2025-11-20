@@ -17,7 +17,7 @@ export class Img extends Rect {
     ])
     
     // since these won't change over the lifetime of this object, there is no need for a reactive state store
-    private _id: string;
+    private _fileId: string | number;
     private _src: string;
     private _image: HTMLImageElement;
 
@@ -31,20 +31,21 @@ export class Img extends Rect {
         height?: number, 
     }>) {
         super(config);
-
-        this._id = uuid();
         this._src = config.src;
-        
+        this.loadImage(config.src, config.width, config.height);
+    }
+
+    private loadImage(src: string, width?: number, height?: number) {
         this._image = new Image();
-        this._image.crossOrigin = 'anonymous'; // Enable CORS
-        this._image.src = config.src;
+        this._image.crossOrigin = 'anonymous';
+        this._image.src = src;
         this._image.onload = () => {
             this.markDirty();
-            this.width = config.width ?? this._image.naturalWidth;
-            this.height = config.height ?? this._image.naturalHeight;
+            this.width = width ?? this._image.naturalWidth;
+            this.height = height ?? this._image.naturalHeight;
         };
         this._image.onerror = (error) => {
-            console.error('Failed to load image:', this._src, error);
+            console.error('Failed to load image:', src, error);
         };
     }
 
@@ -56,11 +57,9 @@ export class Img extends Rect {
         }
     }
 
-    get id() { return this._id }
-    set id(val: string) {
-        if (this._id !== val) {
-            this._id = val;
-        }
+    get fileId() { return this._fileId; }
+    set fileId(val: string | number) {
+        this._fileId = val;
     }
     
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {

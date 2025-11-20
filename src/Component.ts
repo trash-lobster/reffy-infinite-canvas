@@ -3,13 +3,15 @@ import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import { copy, getWorldCoords, addImages as innerAddImages, paste } from './util';
-import { downloadJSON, readJSONFile } from './util/files';
+import { downloadJSON, getMimeType, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
 import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 import { Img } from './shapes';
 import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage } from './storage';
 import EventEmitter from 'eventemitter3';
+import { v4 as uuid } from 'uuid';
+import Dexie from 'dexie';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -235,6 +237,7 @@ export class InfiniteCanvasElement extends LitElement {
         this.saveNow = this.saveNow.bind(this);
         this.scheduleSave = this.scheduleSave.bind(this);
         this.assignCanvasStorage = this.assignCanvasStorage.bind(this);
+        this.saveFile = this.saveFile.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
@@ -305,15 +308,16 @@ export class InfiniteCanvasElement extends LitElement {
         this.#fileStorage = storage;
     }
 
-    async saveFile(id: string, data: string, mimetype: string) {
+    async saveFile(data: string): Promise<string | number | null> {
         if (!this.#fileStorage) {
             this.#fileStorage = new DefaultIndexedDbStorage();
         }
         try {
-            await this.#fileStorage.write(id, data, mimetype);
-            
+            if (!await this.#fileStorage.checkIfImageStored(data)) {
+                return await this.#fileStorage.write(data);
+            }
         } catch (err) {
-
+            console.error(err);
         }
     }
 

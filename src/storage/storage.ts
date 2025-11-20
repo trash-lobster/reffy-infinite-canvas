@@ -1,15 +1,8 @@
 import { SerializedCanvas } from "serializer";
-
-// export interface FileStorageEntry {
-//     id: string;
-//     dataURL: string;
-//     mimetype: string;
-//     created: number;
-//     lastRetrieved: number;
-// }
+import { getMimeType, hashStringToId } from "../util";
 
 export class FileStorageEntry {
-    private _id: string;
+    private _id: string | number;
     private _dataURL: string;
     private _mimetype: string;
     private _created: number;
@@ -21,7 +14,7 @@ export class FileStorageEntry {
 
     get id() {
         this._touch();
-        return this.id;
+        return this._id;
     }
 
     get dataURL() {
@@ -44,23 +37,28 @@ export class FileStorageEntry {
         return this._lastRetrieved;
     }
 
-    constructor(id: string, dataURL: string, mimetype: string) {
-        this._id = id;
+    constructor(dataURL: string) {
         this._dataURL = dataURL;
-        this._mimetype = mimetype;
+        this._mimetype = getMimeType(dataURL);
         this._created = Date.now();
         this._lastRetrieved = Date.now();
+    }
+
+    static async create(dataURL: string): Promise<FileStorageEntry> {
+        const entry = new FileStorageEntry(dataURL);
+        entry._id = await hashStringToId(dataURL);
+        return entry;
     }
 }
 
 export abstract class FileStorage {
-    abstract write(id: string, data: string, mimetype: string): Promise<string>;
+    abstract write(data: string): Promise<string | number>;
     abstract readAll(): Promise<FileStorageEntry[]>;
     abstract readPage(offset: number, limit: number): Promise<FileStorageEntry[]>;
     abstract read(id: string): Promise<FileStorageEntry>;
     abstract delete(id: string): Promise<FileStorageEntry>
     abstract update(newVersion: FileStorageEntry): Promise<FileStorageEntry>;
-    abstract checkIfImageStored(url: string): Promise<boolean>;
+    abstract checkIfImageStored(url: string): Promise<string | number | null>;
 }
 
 export type CanvasStorageEntry = SerializedCanvas;

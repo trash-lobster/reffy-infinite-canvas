@@ -44,7 +44,7 @@ export class Canvas extends Renderable {
 
 	_history: CanvasHistory;
 	writeToStorage: () => void;
-	saveImgFileToStorage: (id: string, data: string, mimetype: string) => Promise<void>;
+	saveImgFileToStorage: (data: string) => Promise<string | number | null>;
 
 	private orderDirty = true;
     private renderList: Shape[] = [];
@@ -59,7 +59,7 @@ export class Canvas extends Renderable {
 		canvas: HTMLCanvasElement, 
 		history: CanvasHistory,
 		writeToStorage: () => void,
-		saveImgFileToStorage: (id: string, data: string, mimetype: string) => Promise<void>,
+		saveImgFileToStorage: (data: string) => Promise<string | number | null>,
 		eventHub: EventEmitter,
 		options: ContextMenuFns,
 	) {
@@ -223,9 +223,8 @@ export class Canvas extends Renderable {
 	}
 
 	async addToCanvas(src: string, x: number, y: number, sx: number = 1, sy: number = 1, center: boolean = false) {
-		// take the string, check if it's stored in the file system
-		// save to database if the string
 		const newImg = new Img({ x: x, y: y, src, sx, sy });
+		newImg.fileId = await this.saveImgFileToStorage(src);
 		
 		if (center) {
 			const preview = new Image();

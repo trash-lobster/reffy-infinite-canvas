@@ -1,3 +1,4 @@
+import './dexie-primary-key.js';
 import Dexie, { DexieConstructor, EntityTable } from "dexie";
 import { FileStorageEntry, FileStorage, CanvasStorage, CanvasStorageEntry } from "./storage";
 
@@ -6,7 +7,7 @@ const dbVersion1 = {
 }
 
 const DB_LIMITS = {
-    MAX_IMAGE_ENTRIES: 500,
+    MAX_IMAGE_ENTRIES: 1000,
 } as const;
 
 type DexieConstructorWithUUID = DexieConstructor & {
@@ -50,22 +51,24 @@ export class DefaultIndexedDbStorage extends FileStorage {
      * @param mimetype 
      * @returns the file ID
      */
-    async write(id: string, data: string, mimetype: string): Promise<string> {
-        const file: FileStorageEntry = new FileStorageEntry(id, data, mimetype);
+    async write(data: string): Promise<string | number> {
+        const file: FileStorageEntry = await FileStorageEntry.create(data);
 
         return this.dbQueue.add(() =>
-            handleQuotaError(async (): Promise<string> => {
+            handleQuotaError(async (): Promise<string | number> => {
                 const db: IndexDb = await this.getIndexDb();
-                let imageId: string;
 
                 return await db
                     .transaction('rw', db.files, async () => {
                         await checkImageLimit(db);
 
-                        imageId = await db.files.add(file);
-                    })
-                    .then(() => {
-                        return imageId;
+                        return await db.files.add({
+                            id: file.id,
+                            dataURL: file.dataURL,
+                            mimetype: file.mimetype,
+                            created: file.created,
+                            lastRetrieved: file.lastRetrieved,
+                        });
                     })
                     .catch((error) => {
                         console.error(
@@ -92,7 +95,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
         });
     }
 
-    async read(id: string): Promise<FileStorageEntry> {
+    async read(id: string | number): Promise<FileStorageEntry> {
         return handleQuotaError(async (): Promise<FileStorageEntry> => {
             const db: IndexDb = await this.getIndexDb();
             await db.transaction('rw', db.files, async () => {
@@ -146,14 +149,13 @@ export class DefaultIndexedDbStorage extends FileStorage {
         );
     }
     
-    async checkIfImageStored(url: string): Promise<boolean> {
-        return handleQuotaError(async (): Promise<boolean> => {
+    async checkIfImageStored(url: string): Promise<string | number | null> {
+        return handleQuotaError(async (): Promise<string | number | null> => {
             const db: IndexDb = await this.getIndexDb();
             const entry = await db.files.where('dataURL').equals(url).first();
-            return !!entry;
+            return entry ? entry.id : null;
         });
     }
-
 }
 
 export class DefaultLocalStorage extends CanvasStorage {

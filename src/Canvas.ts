@@ -58,6 +58,7 @@ export class Canvas extends Renderable {
 		canvas: HTMLCanvasElement, 
 		history: CanvasHistory,
 		writeToStorage: () => void,
+		eventHub: EventEmitter,
 		options: ContextMenuFns,
 	) {
 		super();

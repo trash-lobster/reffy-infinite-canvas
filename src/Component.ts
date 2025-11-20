@@ -8,7 +8,8 @@ import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializ
 import { makeMultiAddChildCommand } from './manager';
 import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 import { Img } from './shapes';
-import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, FileStorageEntry } from 'storage';
+import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage } from './storage';
+import EventEmitter from 'eventemitter3';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -193,6 +194,7 @@ export class InfiniteCanvasElement extends LitElement {
     `;
 
     #canvas: Canvas;
+    #eventHub: EventEmitter;
     #resizeObserver?: ResizeObserver;
     #history: CanvasHistory;
     #fileStorage: FileStorage;
@@ -223,6 +225,7 @@ export class InfiniteCanvasElement extends LitElement {
 
     private initCanvas() {
         this.#history = new CanvasHistory();
+        this.#eventHub = new EventEmitter();
 
         const canvas = document.createElement('canvas');
         this.addContextMenu = this.addContextMenu.bind(this);
@@ -237,6 +240,7 @@ export class InfiniteCanvasElement extends LitElement {
             canvas, 
             this.#history,
             this.scheduleSave,
+            this.#eventHub,
             {
                 showMenu: this.addContextMenu,
                 clearMenu: this.clearContextMenu,

@@ -138,6 +138,7 @@ export function serializeCanvas(canvas: Canvas, files?: ImageFileMetadata[]): Se
 
 export async function deserializeCanvas(data: SerializedCanvas, canvas: Canvas, getFile: (id: string | number) => Promise<ImageFileMetadata>) {
   	canvas.children.length = 0;
+	const promises = [];
 
 	async function build(node: SerializedNode, parent: Canvas | Renderable) {
 		let instance: Renderable;
@@ -175,10 +176,11 @@ export async function deserializeCanvas(data: SerializedCanvas, canvas: Canvas, 
 		}
 
 		if (node.children) {
-			for (const child of node.children) await build(child, instance);
+			for (const child of node.children) promises.push(build(child, instance));
 		}
 	}
 
 	await build(data.root, canvas);
+	await Promise.all(promises);
   	return canvas;
 }

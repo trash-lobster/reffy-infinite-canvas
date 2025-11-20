@@ -28,6 +28,14 @@ function isPermissibleImageType(fileType: string): boolean {
     return PERMISSIBLE_IMAGE_TYPES.includes(fileType);
 }
 
+/**
+ * Extract mimetype from base64 string
+ */
+export function getMimeType(data: string) {
+    const match = /^data:([^;]+);base64,/.exec(data);
+    return match ? match[1] : undefined;
+}
+
 export async function addImages(files: FileList, addToCanvas: (src: string) => Promise<Img>) {
     const images = [];
     if (files.length > 0) {

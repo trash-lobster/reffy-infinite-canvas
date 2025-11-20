@@ -8,8 +8,18 @@ export interface FileStorageEntry {
     lastRetrieved: number;
 }
 
+export function createFileStorageEntry(id: string, data: string, mimetype: string) {
+    return {
+            id,
+            dataURL: data,
+            mimetype,
+            created: Date.now(),
+            lastRetrieved: Date.now(),
+    }
+}
+
 export abstract class FileStorage {
-    abstract write(data: string, mimetype: string): Promise<string>;
+    abstract write(id: string, data: string, mimetype: string): Promise<string>;
     abstract readAll(): Promise<FileStorageEntry[]>;
     abstract readPage(offset: number, limit: number): Promise<FileStorageEntry[]>;
     abstract read(id: string): Promise<FileStorageEntry>;

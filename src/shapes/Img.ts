@@ -1,4 +1,5 @@
 import { Rect } from "./Rect";
+import { v4 as uuid} from 'uuid';
 
 export class Img extends Rect {
     private texcoordBuffer?: WebGLBuffer;
@@ -16,6 +17,7 @@ export class Img extends Rect {
     ])
     
     // since these won't change over the lifetime of this object, there is no need for a reactive state store
+    private _id: string;
     private _src: string;
     private _image: HTMLImageElement;
 
@@ -29,6 +31,8 @@ export class Img extends Rect {
         height?: number, 
     }>) {
         super(config);
+
+        this._id = uuid();
         this._src = config.src;
         
         this._image = new Image();
@@ -49,6 +53,13 @@ export class Img extends Rect {
         if (this._src !== val) {
             this._src = val;
             this.markDirty();
+        }
+    }
+
+    get id() { return this._id }
+    set id(val: string) {
+        if (this._id !== val) {
+            this._id = val;
         }
     }
     

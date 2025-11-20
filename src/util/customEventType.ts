@@ -24,3 +24,8 @@ export const CustomClipboardEvent = {
     Cut: 'cut',
     Paste: 'paste',
 } as const;
+
+export const LoaderEvent = {
+    start: 'startloading',
+    done: 'completeloading',
+} as const;

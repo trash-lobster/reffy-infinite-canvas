@@ -7,3 +7,4 @@ export * from './files';
 export * from './color';
 export * from './debug';
 export * from './clipboard';
+export * from './customEventType';

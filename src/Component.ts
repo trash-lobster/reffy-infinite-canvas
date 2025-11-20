@@ -2,7 +2,7 @@ import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
-import { copy, getWorldCoords, addImages as innerAddImages, paste } from './util';
+import { copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste } from './util';
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
@@ -10,6 +10,7 @@ import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 import { Img } from './shapes';
 import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, ImageFileMetadata } from './storage';
 import EventEmitter from 'eventemitter3';
+import { Loader, LoaderType } from './loader';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -90,6 +91,48 @@ export class InfiniteCanvasElement extends LitElement {
             margin: 0;
             touch-action: none;
         }
+
+        .canvas-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .canvas-loader-spinner {
+            width: 48px;
+            height: 48px;
+            border: 6px solid #e0e0e0;
+            border-top: 6px solid #1976d2;
+            border-radius: 50%;
+            animation: canvas-loader-spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes canvas-loader-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .canvas-loader-message {
+            font-size: 1.1rem;
+            color: #333;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-top: 8px;
+            text-align: center;
+            max-width: 80%;
+            word-break: break-word;
+        }
     `;
 
     #canvas: Canvas;
@@ -127,23 +170,36 @@ export class InfiniteCanvasElement extends LitElement {
         this.#eventHub = new EventEmitter();
 
         const canvas = document.createElement('canvas');
+
+        // persistent state set up
+        this.assignFileStorage = this.assignFileStorage.bind(this);
+        this.getImageFileMetadata = this.getImageFileMetadata.bind(this);
+        this.getAllImageFileMetdata = this.getAllImageFileMetdata.bind(this);
+        this.saveImageFileMetadata = this.saveImageFileMetadata.bind(this);
+        
+        this.restoreStateFromCanvasStorage = this.restoreStateFromCanvasStorage.bind(this);
+        this.assignCanvasStorage = this.assignCanvasStorage.bind(this);
+        this.saveToCanvasStorage = this.saveToCanvasStorage.bind(this);
+        this.debounceSaveToCanvasStorage = this.debounceSaveToCanvasStorage.bind(this);
+        
+        // import and export
+        this.importCanvas = this.importCanvas.bind(this);
+        this.exportCanvas = this.exportCanvas.bind(this);
+
+        // context menu set up
         this.addContextMenu = this.addContextMenu.bind(this);
         this.clearContextMenu = this.clearContextMenu.bind(this);
         this.isContextMenuActive = this.isContextMenuActive.bind(this);
         
-        this.restoreStateFromCanvasStorage = this.restoreStateFromCanvasStorage.bind(this);
-        this.getImageFileMetadata = this.getImageFileMetadata.bind(this);
-        this.getAllImageFileMetdata = this.getAllImageFileMetdata.bind(this);
-        this.saveFile = this.saveFile.bind(this);
-        this.saveToCanvasStorage = this.saveToCanvasStorage.bind(this);
-        this.debounceSaveToCanvasStorage = this.debounceSaveToCanvasStorage.bind(this);
-        this.assignCanvasStorage = this.assignCanvasStorage.bind(this);
+        // loader set up
+        this.showLoader = this.showLoader.bind(this);
+        this.hideLoader = this.hideLoader.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
             this.#history,
             this.debounceSaveToCanvasStorage,
-            this.saveFile,
+            this.saveImageFileMetadata,
             this.#eventHub,
             {
                 showMenu: this.addContextMenu,
@@ -156,7 +212,7 @@ export class InfiniteCanvasElement extends LitElement {
             this.renderRoot.appendChild(canvas);
         }
 
-        this.dispatchEvent(new Event('load'));
+        this.registerSignal();
 
         const resizeCanvas = () => {
             const dpr = window.devicePixelRatio || 1;
@@ -183,19 +239,25 @@ export class InfiniteCanvasElement extends LitElement {
         this.#resizeObserver = new ResizeObserver(() => resizeCanvas());
         this.#resizeObserver.observe(canvas);
 
-        this.#eventHub.emit('startloading');
+        this.showLoader('spinner');
         try {
             await this.restoreStateFromCanvasStorage();
         } catch (err) {
             console.error('Failed to restore canvas');
         }
-        this.#eventHub.emit('completeloading');
+        // this.hideLoader();
 
         const animate = () => {
             this.#canvas.render();
             requestAnimationFrame(animate);
         };
         animate();
+    }
+
+    // Register signal
+    private registerSignal() {
+        this.#eventHub.on(LoaderEvent.start, this.showLoader, 'spinner');
+        this.#eventHub.on(LoaderEvent.done, this.hideLoader);
     }
 
     // Storage & Persistence
@@ -222,7 +284,7 @@ export class InfiniteCanvasElement extends LitElement {
      * @param dataURL 
      * @returns The unique ID that the image has been logged with. This is a hashed version of the image data URL
      */
-    async saveFile(dataURL: string): Promise<string | number | null> {
+    async saveImageFileMetadata(dataURL: string): Promise<string | number | null> {
         if (!this.#fileStorage) {
             this.#fileStorage = new DefaultIndexedDbStorage();
         }
@@ -375,12 +437,14 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     async importCanvas(fileList: FileList) {
+        this.#eventHub.emit('startloading');
         if (!this.#canvas) return;
         if (!fileList || fileList.length !== 1) return;
         const file = fileList[0];
         if (!file.type || (!file.type.includes('json') && !file.name.toLowerCase().endsWith('.json'))) return;
         const data = await readJSONFile<SerializedCanvas>(file);
         await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
+        this.#eventHub.emit('completeloading');
     }
 
     clearCanvas() {
@@ -528,6 +592,21 @@ export class InfiniteCanvasElement extends LitElement {
 
     isContextMenuActive() {
         return this.renderRoot.querySelector('.context-menu') !== null;
+    }
+
+    // Loader
+    showLoader(type: LoaderType, message?: string) {
+        console.log('loader called');
+        const loader = new Loader({ type, message });
+        loader.attachToParent(this.renderRoot as HTMLElement);
+    }
+
+    hideLoader() {
+        const oldLoader = this.renderRoot.querySelector('.canvas-loader');
+        if (oldLoader) {
+            console.log('loader removed');
+            oldLoader.remove();
+        }
     }
 
     // Global helper

@@ -1,10 +1,7 @@
 import EventEmitter from "eventemitter3";
-import { copy, getWorldCoords, paste } from "../util";
+import { getWorldCoords } from "../util";
 import { Canvas } from "Canvas";
-import { Img, Renderable } from "../shapes";
-import { Point } from "../boundingBox/type";
-import { CanvasHistory } from "../history";
-import { CanvasEvent, ContextMenuEvent, CustomClipboardEvent } from "./EventType";
+import { ContextMenuEvent } from "../util/customEventType";
 
 export class ContextMenuManager {
     canvas: Canvas;

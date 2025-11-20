@@ -142,7 +142,10 @@ export class InfiniteCanvasElement extends LitElement {
     #saveFrequency = 300000;
 	#timeoutId: number | null;
     #intervalId: number | null;
+    #onChange?: () => void;
 
+    get onChange() { return this.#onChange; }
+    set onChange(fn: (() => void) | undefined) { this.#onChange = fn; }
     get engine(): Canvas { return this.#canvas }
 
     // Lifecycle

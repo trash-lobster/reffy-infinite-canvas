@@ -292,12 +292,12 @@ export class InfiniteCanvasElement extends LitElement {
         this.#fileStorage = storage;
     }
 
-    saveFile(data: string, mimetype: string) {
+    saveFile(id: string, data: string, mimetype: string) {
         if (!this.#fileStorage) {
             this.#fileStorage = new DefaultIndexedDbStorage();
         }
         try {
-            this.#fileStorage.write(data, mimetype);
+            this.#fileStorage.write(id, data, mimetype);
             
         } catch (err) {
 

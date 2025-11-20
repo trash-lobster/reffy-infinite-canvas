@@ -240,6 +240,7 @@ export class InfiniteCanvasElement extends LitElement {
             canvas, 
             this.#history,
             this.scheduleSave,
+            this.saveFile,
             this.#eventHub,
             {
                 showMenu: this.addContextMenu,
@@ -304,12 +305,12 @@ export class InfiniteCanvasElement extends LitElement {
         this.#fileStorage = storage;
     }
 
-    saveFile(id: string, data: string, mimetype: string) {
+    async saveFile(id: string, data: string, mimetype: string) {
         if (!this.#fileStorage) {
             this.#fileStorage = new DefaultIndexedDbStorage();
         }
         try {
-            this.#fileStorage.write(id, data, mimetype);
+            await this.#fileStorage.write(id, data, mimetype);
             
         } catch (err) {
 
@@ -324,11 +325,11 @@ export class InfiniteCanvasElement extends LitElement {
 		this.#timeoutId = setTimeout(this.saveNow, 1000);
 	}
     
-    saveNow() {
+    async saveNow() {
 		if (!this.#canvasStorage) {
             this.#canvasStorage = new DefaultLocalStorage();
         }
-        this.#canvasStorage.write(serializeCanvas(this.engine));
+        await this.#canvasStorage.write(serializeCanvas(this.engine));
     }
 
     toggleMode() {

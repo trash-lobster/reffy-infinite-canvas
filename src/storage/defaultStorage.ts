@@ -1,6 +1,5 @@
 import Dexie, { DexieConstructor, EntityTable } from "dexie";
-import { FileStorageEntry, FileStorage, CanvasStorage, CanvasStorageEntry, createFileStorageEntry } from "./storage";
-import { v4 as uuid } from 'uuid';
+import { FileStorageEntry, FileStorage, CanvasStorage, CanvasStorageEntry } from "./storage";
 
 const dbVersion1 = {
     files: '$$id, dataURL, mimetype, created, lastRetrieved',
@@ -52,7 +51,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
      * @returns the file ID
      */
     async write(id: string, data: string, mimetype: string): Promise<string> {
-        const file: FileStorageEntry = createFileStorageEntry(id, data, mimetype);
+        const file: FileStorageEntry = new FileStorageEntry(id, data, mimetype);
 
         return this.dbQueue.add(() =>
             handleQuotaError(async (): Promise<string> => {

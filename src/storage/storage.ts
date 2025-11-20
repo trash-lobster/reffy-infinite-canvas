@@ -1,20 +1,55 @@
 import { SerializedCanvas } from "serializer";
 
-export interface FileStorageEntry {
-    id: string;
-    dataURL: string;
-    mimetype: string;
-    created: number;
-    lastRetrieved: number;
-}
+// export interface FileStorageEntry {
+//     id: string;
+//     dataURL: string;
+//     mimetype: string;
+//     created: number;
+//     lastRetrieved: number;
+// }
 
-export function createFileStorageEntry(id: string, data: string, mimetype: string) {
-    return {
-            id,
-            dataURL: data,
-            mimetype,
-            created: Date.now(),
-            lastRetrieved: Date.now(),
+export class FileStorageEntry {
+    private _id: string;
+    private _dataURL: string;
+    private _mimetype: string;
+    private _created: number;
+    private _lastRetrieved: number;
+
+    private _touch() {
+        this._lastRetrieved = Date.now();
+    }
+
+    get id() {
+        this._touch();
+        return this.id;
+    }
+
+    get dataURL() {
+        this._touch();
+        return this._dataURL;
+    }
+
+    get mimetype() {
+        this._touch();
+        return this._mimetype;
+    }
+
+    get created() {
+        this._touch();
+        return this._created;
+    }
+
+    get lastRetrieved() {
+        this._touch();
+        return this._lastRetrieved;
+    }
+
+    constructor(id: string, dataURL: string, mimetype: string) {
+        this._id = id;
+        this._dataURL = dataURL;
+        this._mimetype = mimetype;
+        this._created = Date.now();
+        this._lastRetrieved = Date.now();
     }
 }
 

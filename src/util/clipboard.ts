@@ -3,7 +3,7 @@ import { Img } from "../shapes";
 import { Canvas } from "Canvas";
 import { CanvasHistory } from "history";
 import { makeMultiAddChildCommand } from "../manager/SceneCommand";
-import { createFileStorageEntry } from "../storage";
+import { FileStorageEntry } from "storage";
 
 interface InfiniteCanvasClipboardElement {
     src: string;
@@ -158,7 +158,7 @@ export async function paste(
             );
 
             // add to files to storage
-            const imageEntries = images.map(img => createFileStorageEntry(
+            const imageEntries = images.map(img => new FileStorageEntry(
                 img.id, 
                 img.src,
                 getMimeType(img.src),

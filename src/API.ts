@@ -52,7 +52,7 @@ export class InfiniteCanvasAPI {
     }
     
     async toggleMode() {
-		this.el.toggleMode();
+		this.el.togglePointerMode();
     }
 
     async addImageFromLocal(fileList: FileList) {

@@ -3,119 +3,16 @@ import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import { copy, getWorldCoords, addImages as innerAddImages, paste } from './util';
-import { downloadJSON, getMimeType, hashStringToId, readJSONFile } from './util/files';
+import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
 import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 import { Img } from './shapes';
 import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, ImageFileMetadata } from './storage';
 import EventEmitter from 'eventemitter3';
-import { v4 as uuid } from 'uuid';
-import Dexie from 'dexie';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
-
-    // wrap to close context menu after selecting an option
-    private withContextMenuClear<T extends (...args: any[]) => any>(fn: T): T {
-        const self = this;
-        return function(this: any, ...args: Parameters<T>): ReturnType<T> {
-            const result = fn.apply(self, args);
-            self.clearContextMenu();
-            return result;
-        } as T;
-    }
-
-    /**
-     * The default ContextMenuOptions for the infinite canvas should have all the functions
-     */
-    singleImageMenuOptions: ContextMenuProps = {
-        optionGroups: [
-            {
-                childOptions: [
-                    {
-                        text: "Cut",
-                        onClick: async () => {
-                            await this.copyImage.bind(this)();
-                            this.withContextMenuClear(this.deleteSelectedImages.bind(this))();
-                        }
-                    },
-                    {
-                        text: "Copy",
-                        onClick: this.withContextMenuClear(this.copyImage.bind(this))
-                    },
-                    {
-                        text: "Paste",
-                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
-                    },
-                    {
-                        text: "Delete",
-                        onClick: this.withContextMenuClear(this.deleteSelectedImages.bind(this))
-                    },
-                ]
-            },
-            {
-                childOptions: [
-                    {
-                        text: "Flip Horizontal",
-                        onClick: this.withContextMenuClear(this.flipHorizontal.bind(this))
-                    },
-                    {
-                        text: "Flip Vertical",
-                        onClick: this.withContextMenuClear(this.flipVertical.bind(this))
-                    },
-                ]
-            },
-        ]
-    };
-
-    multiImageMenuOptions: ContextMenuProps = {
-        optionGroups: [
-            ...this.singleImageMenuOptions.optionGroups,
-            {
-                childOptions: [
-                    {
-                        text: "Align Left",
-                        onClick: () => console.log('hey')
-                    },
-                    {
-                        text: "Align Right",
-                        onClick: () => console.log('hey')
-                    },
-                    {
-                        text: "Align Top",
-                        onClick: () => console.log('hey')
-                    },
-                    {
-                        text: "Align Bottom",
-                        onClick: () => console.log('hey')
-                    }
-                ]
-            }
-        ]
-    }
-
-    canvasImageMenuOptions: ContextMenuProps = {
-        optionGroups: [
-            {
-                childOptions: [
-                    {
-                        text: "Paste",
-                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
-                    },
-                    {
-                        text: "Toggle Grid",
-                        onClick: () => this.withContextMenuClear(this.toggleGrid.bind(this))()
-                    },
-                    {
-                        text: 'Change mode',
-                        onClick: () => this.withContextMenuClear(this.toggleMode.bind(this))()
-                    }
-                ]
-            },
-        ]
-    }
-
     @property({type: String})
     name: string = 'Reffy';
 
@@ -205,6 +102,9 @@ export class InfiniteCanvasElement extends LitElement {
 	#timeoutId: number | null;
     #intervalId: number | null;
 
+    get engine(): Canvas { return this.#canvas }
+
+    // Lifecycle
     connectedCallback() {
         super.connectedCallback();
         this.handleGlobalPointerDown = this.handleGlobalPointerDown.bind(this);
@@ -218,12 +118,9 @@ export class InfiniteCanvasElement extends LitElement {
         super.disconnectedCallback();
     }
 
-    // clear menu when interaction is outside of the infinite canvas
-    private handleGlobalPointerDown = (e: PointerEvent) => {
-        if (!this.contains(e.target as Node) && !this.renderRoot.contains(e.target as Node)) {
-            this.clearContextMenu();
-        }
-    };
+    render() {
+        this.initCanvas();
+    }
 
     private async initCanvas() {
         this.#history = new CanvasHistory();
@@ -234,18 +131,18 @@ export class InfiniteCanvasElement extends LitElement {
         this.clearContextMenu = this.clearContextMenu.bind(this);
         this.isContextMenuActive = this.isContextMenuActive.bind(this);
         
-        this.read = this.read.bind(this);
-        this.getFile = this.getFile.bind(this);
-        this.getAllFiles = this.getAllFiles.bind(this);
+        this.restoreStateFromCanvasStorage = this.restoreStateFromCanvasStorage.bind(this);
+        this.getImageFileMetadata = this.getImageFileMetadata.bind(this);
+        this.getAllImageFileMetdata = this.getAllImageFileMetdata.bind(this);
         this.saveFile = this.saveFile.bind(this);
-        this.saveNow = this.saveNow.bind(this);
-        this.scheduleSave = this.scheduleSave.bind(this);
+        this.saveToCanvasStorage = this.saveToCanvasStorage.bind(this);
+        this.debounceSaveToCanvasStorage = this.debounceSaveToCanvasStorage.bind(this);
         this.assignCanvasStorage = this.assignCanvasStorage.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
             this.#history,
-            this.scheduleSave,
+            this.debounceSaveToCanvasStorage,
             this.saveFile,
             this.#eventHub,
             {
@@ -288,7 +185,7 @@ export class InfiniteCanvasElement extends LitElement {
 
         this.#eventHub.emit('startloading');
         try {
-            await this.read();
+            await this.restoreStateFromCanvasStorage();
         } catch (err) {
             console.error('Failed to restore canvas');
         }
@@ -301,13 +198,7 @@ export class InfiniteCanvasElement extends LitElement {
         animate();
     }
 
-    render() {
-        this.initCanvas();
-    }
-
-    // PUBLIC API
-    get engine(): Canvas { return this.#canvas }
-
+    // Storage & Persistence
     /**
      * @param storage Canvas storage stores the positions of all the renderables
      * @param saveFrequency How often should auto save execute
@@ -316,7 +207,7 @@ export class InfiniteCanvasElement extends LitElement {
 		this.#canvasStorage = storage;
 		this.#saveFrequency = saveFrequency;
         this.#intervalId && clearInterval(this.#intervalId);
-		this.#intervalId = setInterval(this.saveNow, this.#saveFrequency);
+		this.#intervalId = setInterval(this.saveToCanvasStorage, this.#saveFrequency);
 	}
 
     /**
@@ -347,11 +238,10 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     /**
-     * 
      * @param fileId Retrieves the file metadata
      * @returns 
      */
-    async getFile(fileId: string) : Promise<ImageFileMetadata> {
+    async getImageFileMetadata(fileId: string) : Promise<ImageFileMetadata> {
         if (!this.#fileStorage) {
             this.#fileStorage = new DefaultIndexedDbStorage();
         }
@@ -362,7 +252,10 @@ export class InfiniteCanvasElement extends LitElement {
         }
     }
 
-    async getAllFiles() {
+    /**
+     * @returns All file metadata saved in connected storage
+     */
+    async getAllImageFileMetdata() : Promise<ImageFileMetadata[]> {
         if (!this.#fileStorage) {
             this.#fileStorage = new DefaultIndexedDbStorage();
         }
@@ -374,33 +267,42 @@ export class InfiniteCanvasElement extends LitElement {
         }
     }
 
-    scheduleSave() {
+    /**
+     * Schedule the auto save to the canvas storage based on timer
+     */
+    debounceSaveToCanvasStorage(timeout: number = 1000) {
 		if (!this.#canvasStorage) {
             this.#canvasStorage = new DefaultLocalStorage();
         }
 		clearTimeout(this.#timeoutId);
-		this.#timeoutId = setTimeout(this.saveNow, 1000);
+		this.#timeoutId = setTimeout(this.saveToCanvasStorage, timeout);
 	}
     
-    async saveNow() {
+    async saveToCanvasStorage() {
 		if (!this.#canvasStorage) {
             this.#canvasStorage = new DefaultLocalStorage();
         }
         await this.#canvasStorage.write(serializeCanvas(this.engine));
     }
 
-    async read() {
+    async restoreStateFromCanvasStorage() {
         if (!this.#canvasStorage) {
             this.#canvasStorage = new DefaultLocalStorage();
         }
         const dataAsString = await this.#canvasStorage.read();
         const data = JSON.parse(dataAsString) as SerializedCanvas;
-        if (data) await deserializeCanvas(data, this.#canvas, this.getFile);
+        if (data) await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
     }
 
-    toggleMode() {
+    // Canvas API
+    togglePointerMode() {
         if (!this.#canvas) return;
         this.#canvas._pointerEventManager.changeMode();
+    }
+
+    toggleGrid() {
+        if (!this.engine) return;
+        this.engine.toggleGrid();
     }
 
     zoomIn() {
@@ -467,14 +369,9 @@ export class InfiniteCanvasElement extends LitElement {
     
     async exportCanvas(filename = 'infinite-canvas.json') {
         if (!this.#canvas) return;
-        const files = await this.getAllFiles();
+        const files = await this.getAllImageFileMetdata();
         const data = serializeCanvas(this.#canvas, files);
         downloadJSON(filename, data);
-    }
-
-    toggleGrid() {
-        if (!this.engine) return;
-        this.engine.toggleGrid();
     }
 
     async importCanvas(fileList: FileList) {
@@ -483,12 +380,111 @@ export class InfiniteCanvasElement extends LitElement {
         const file = fileList[0];
         if (!file.type || (!file.type.includes('json') && !file.name.toLowerCase().endsWith('.json'))) return;
         const data = await readJSONFile<SerializedCanvas>(file);
-        await deserializeCanvas(data, this.#canvas, this.getFile);
+        await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
     }
 
     clearCanvas() {
         if (!this.#canvas) return;
         this.#canvas.clearChildren();
+    }
+
+    // ContextMenu
+    //The default ContextMenuOptions for the infinite canvas should have all the functions
+    singleImageMenuOptions: ContextMenuProps = {
+        optionGroups: [
+            {
+                childOptions: [
+                    {
+                        text: "Cut",
+                        onClick: async () => {
+                            await this.copyImage.bind(this)();
+                            this.withContextMenuClear(this.deleteSelectedImages.bind(this))();
+                        }
+                    },
+                    {
+                        text: "Copy",
+                        onClick: this.withContextMenuClear(this.copyImage.bind(this))
+                    },
+                    {
+                        text: "Paste",
+                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
+                    },
+                    {
+                        text: "Delete",
+                        onClick: this.withContextMenuClear(this.deleteSelectedImages.bind(this))
+                    },
+                ]
+            },
+            {
+                childOptions: [
+                    {
+                        text: "Flip Horizontal",
+                        onClick: this.withContextMenuClear(this.flipHorizontal.bind(this))
+                    },
+                    {
+                        text: "Flip Vertical",
+                        onClick: this.withContextMenuClear(this.flipVertical.bind(this))
+                    },
+                ]
+            },
+        ]
+    };
+
+    multiImageMenuOptions: ContextMenuProps = {
+        optionGroups: [
+            ...this.singleImageMenuOptions.optionGroups,
+            {
+                childOptions: [
+                    {
+                        text: "Align Left",
+                        onClick: () => console.log('hey')
+                    },
+                    {
+                        text: "Align Right",
+                        onClick: () => console.log('hey')
+                    },
+                    {
+                        text: "Align Top",
+                        onClick: () => console.log('hey')
+                    },
+                    {
+                        text: "Align Bottom",
+                        onClick: () => console.log('hey')
+                    }
+                ]
+            }
+        ]
+    }
+
+    canvasImageMenuOptions: ContextMenuProps = {
+        optionGroups: [
+            {
+                childOptions: [
+                    {
+                        text: "Paste",
+                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
+                    },
+                    {
+                        text: "Toggle Grid",
+                        onClick: () => this.withContextMenuClear(this.toggleGrid.bind(this))()
+                    },
+                    {
+                        text: 'Change mode',
+                        onClick: () => this.withContextMenuClear(this.togglePointerMode.bind(this))()
+                    }
+                ]
+            },
+        ]
+    }
+
+    // wrap to close context menu after selecting an option
+    private withContextMenuClear<T extends (...args: any[]) => any>(fn: T): T {
+        const self = this;
+        return function(this: any, ...args: Parameters<T>): ReturnType<T> {
+            const result = fn.apply(self, args);
+            self.clearContextMenu();
+            return result;
+        } as T;
     }
 
     addContextMenu(x: number, y: number, type: ContextMenuType = 'single') {
@@ -533,6 +529,13 @@ export class InfiniteCanvasElement extends LitElement {
     isContextMenuActive() {
         return this.renderRoot.querySelector('.context-menu') !== null;
     }
+
+    // Global helper
+    private handleGlobalPointerDown = (e: PointerEvent) => {
+        if (!this.contains(e.target as Node) && !this.renderRoot.contains(e.target as Node)) {
+            this.clearContextMenu();
+        }
+    };
 }
 
 declare global {

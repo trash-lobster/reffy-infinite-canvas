@@ -96,15 +96,13 @@ export class InfiniteCanvasElement extends LitElement {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             background: rgba(255, 255, 255, 0.7);
             z-index: 1000;
-            pointer-events: none;
+            pointer-events: all;
         }
 
         .canvas-loader-spinner {
@@ -245,12 +243,15 @@ export class InfiniteCanvasElement extends LitElement {
         } catch (err) {
             console.error('Failed to restore canvas');
         }
-        // this.hideLoader();
+        this.hideLoader();
+
+        this.dispatchEvent(new Event('load'));
 
         const animate = () => {
             this.#canvas.render();
             requestAnimationFrame(animate);
         };
+        
         animate();
     }
 
@@ -437,14 +438,14 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     async importCanvas(fileList: FileList) {
-        this.#eventHub.emit('startloading');
+        this.#eventHub.emit(LoaderEvent.start, 'spinner');
         if (!this.#canvas) return;
         if (!fileList || fileList.length !== 1) return;
         const file = fileList[0];
         if (!file.type || (!file.type.includes('json') && !file.name.toLowerCase().endsWith('.json'))) return;
         const data = await readJSONFile<SerializedCanvas>(file);
         await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
-        this.#eventHub.emit('completeloading');
+        this.#eventHub.emit(LoaderEvent.done);
     }
 
     clearCanvas() {
@@ -596,15 +597,19 @@ export class InfiniteCanvasElement extends LitElement {
 
     // Loader
     showLoader(type: LoaderType, message?: string) {
-        console.log('loader called');
         const loader = new Loader({ type, message });
         loader.attachToParent(this.renderRoot as HTMLElement);
+
+        const hostRect = this.getBoundingClientRect();
+        loader.el.style.width = `${hostRect.right}px`;
+        loader.el.style.height = `${hostRect.bottom}px`;
+        loader._el.style.top = `${-hostRect.bottom}px`;
+
     }
 
     hideLoader() {
         const oldLoader = this.renderRoot.querySelector('.canvas-loader');
         if (oldLoader) {
-            console.log('loader removed');
             oldLoader.remove();
         }
     }

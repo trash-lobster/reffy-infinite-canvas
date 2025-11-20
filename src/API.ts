@@ -44,6 +44,7 @@ export class InfiniteCanvasAPI {
 	}
 
     async zoomIn() {
+		console.log('zooming');
 		this.el.zoomIn();
     }
 

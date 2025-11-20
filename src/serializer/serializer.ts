@@ -175,7 +175,7 @@ export async function deserializeCanvas(data: SerializedCanvas, canvas: Canvas, 
 		}
 
 		if (node.children) {
-			for (const child of node.children) build(child, instance);
+			for (const child of node.children) await build(child, instance);
 		}
 	}
 

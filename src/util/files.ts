@@ -28,6 +28,14 @@ function isPermissibleImageType(fileType: string): boolean {
     return PERMISSIBLE_IMAGE_TYPES.includes(fileType);
 }
 
+export async function hashStringToId(str: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 /**
  * Extract mimetype from base64 string
  */

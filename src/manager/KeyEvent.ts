@@ -1,3 +1,4 @@
+import { CanvasEvent } from "../util";
 import { Canvas } from "../Canvas";
 import { CanvasHistory } from "../history";
 
@@ -5,14 +6,16 @@ export class KeyEventManager {
     history: CanvasHistory;
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
     deleteSelected: () => void;
+    save: () => void;
 
     constructor(
         canvas: Canvas,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
-        const { history, selectionManager } = canvas;
+        const { history, selectionManager, eventHub } = canvas;
         this.history = history;
         this.deleteSelected = selectionManager.deleteSelected;
+        this.save = () => eventHub.emit(CanvasEvent.Save);
         this.assignEventListener = assignEventListener;
 
         this.onKeyPressed = this.onKeyPressed.bind(this);
@@ -40,6 +43,12 @@ export class KeyEventManager {
             this.deleteSelected();
             return;
         }
+
+        if (this.isSave(e)) {
+            e.preventDefault();
+            this.save();
+            return;
+        }
     }
 
     private isCtrlZ(e: KeyboardEvent): boolean {
@@ -54,5 +63,10 @@ export class KeyEventManager {
 
     private isDelete(e: KeyboardEvent): boolean {
         return e.key === 'Delete';
+    }
+
+    private isSave(e: KeyboardEvent): boolean {
+        const key = e.key.toLowerCase();
+        return (key === 's') && e.ctrlKey;
     }
 }

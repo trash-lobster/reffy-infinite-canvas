@@ -30,3 +30,9 @@ export const LoaderEvent = {
     start: 'startloading',
     done: 'completeloading',
 } as const;
+
+export const SaveEvent = {
+    Save: 'save',
+    SaveCompleted: 'savecompleted',
+    SaveFailed: 'savefailed',
+} as const;

@@ -4,6 +4,7 @@ import {
     ContextMenuEvent,
     copy,
     getWorldCoords,
+    LoaderEvent,
     paste,
 } from "../util";
 import { PointerEventState } from "../state";
@@ -85,6 +86,7 @@ export class PointerEventManager {
 
         window.addEventListener('paste', async (e) => {
             e.preventDefault();
+            eventHub.emit(LoaderEvent.start, 'spinner');
             if (!this.canInteract()) return;
             await paste(                
                 this.state.lastPointerPos.x,
@@ -92,6 +94,7 @@ export class PointerEventManager {
                 canvas, 
                 history,
             );
+            eventHub.emit(LoaderEvent.done);
         });
     }
 

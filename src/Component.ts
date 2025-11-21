@@ -405,7 +405,9 @@ export class InfiniteCanvasElement extends LitElement {
 
     async pasteImage(e: PointerEvent) {
         if (!this.engine) return;
+        this.#eventHub.emit(LoaderEvent.start, 'spinner');
         await paste(e.clientX, e.clientY, this.engine, this.#history, false);
+        this.#eventHub.emit(LoaderEvent.done);
     }
 
     flipVertical() {
@@ -425,9 +427,11 @@ export class InfiniteCanvasElement extends LitElement {
     
     async exportCanvas(filename = 'infinite-canvas.json') {
         if (!this.#canvas) return;
+        this.#eventHub.emit(LoaderEvent.start, 'spinner');
         const files = await this.getAllImageFileMetdata();
         const data = serializeCanvas(this.#canvas, files);
         downloadJSON(filename, data);
+        this.#eventHub.emit(LoaderEvent.done);
     }
 
     async importCanvas(fileList: FileList) {

@@ -127,3 +127,8 @@
 20251120:
 - Messed around to switch to event emitter but this didn't work very well
 - restored to original version
+
+20251121:
+- Completed default data writer to local storage and also updated data export
+- Wrote a lot of tests and more to go
+- Added loading listener

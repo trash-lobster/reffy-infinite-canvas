@@ -1,4 +1,4 @@
-import { it, expect, describe, vi, beforeEach, afterEach } from 'vitest';
+import { it, expect, describe } from 'vitest';
 import { oppositeCorner, BoundingBoxCollisionType } from '../../../src/util';
 
 describe('Handles', () => {

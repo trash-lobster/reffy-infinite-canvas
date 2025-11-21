@@ -1,5 +1,5 @@
 import { Img } from '../../../src/shapes/Img';
-import { expect, test, describe, vi, beforeEach, afterEach } from 'vitest';
+import { expect, test, describe, } from 'vitest';
 
 describe('Img', () => {
     // let originalImage: typeof window.Image;

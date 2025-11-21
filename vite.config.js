@@ -8,10 +8,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     coverage: {
-      include: ['./src/**/*.{ts,tsx}'],
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
-        './src/util/color.ts',
-        './src/util/customEventType.ts'
+        'src/util/color.ts',
+        'src/util/customEventType.ts'
       ]
     },
     include: ['./tests/unit/**/*.spec.ts']

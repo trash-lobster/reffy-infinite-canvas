@@ -16,8 +16,6 @@ export function createProgram(gl: WebGLRenderingContext, vert: string, frag: str
     
     gl.detachShader(program, vertShader);
     gl.detachShader(program, fragShader);
-    // gl.deleteShader(vertShader);
-    // gl.deleteShader(fragShader);
 
     return program;
 }

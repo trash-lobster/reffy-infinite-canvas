@@ -60,6 +60,7 @@ export class Canvas extends Renderable {
 	get camera() { return this.#camera }
 	get isGlobalClick() { return this.#isGlobalClick }
 	set isGlobalClick(val: boolean) { this.#isGlobalClick = val }
+	get basicShapeProgram() { return this.#basicShapeProgram }
 	
 	constructor(
 		canvas: HTMLCanvasElement, 
@@ -103,18 +104,10 @@ export class Canvas extends Renderable {
 		this.importState = this.importState.bind(this);
 		this.clearChildren = this.clearChildren.bind(this);
 		
-		this.#selectionManager = new SelectionManager(
-			this.#gl, 
-			this.#basicShapeProgram, 
-			this, 
-			history,
-			eventHub,
-		);
+		this.#selectionManager = new SelectionManager(this);
 
 		this.#keyPressManager = new KeyEventManager(
-			this, 
-			history,
-			this.#selectionManager.deleteSelected,
+			this,
 			this.assignEventListener
 		)
 

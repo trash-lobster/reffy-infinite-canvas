@@ -51,14 +51,11 @@ export class SelectionManager {
      * @param program Add reference to program to allow easy linking
      */
     constructor(
-        gl: WebGLRenderingContext, 
-        program: WebGLProgram, 
         canvas: Canvas, 
-        history: CanvasHistory,
-        eventHub: EventEmitter,
     ) {
+        const { gl, basicShapeProgram, history, eventHub } = canvas
         this.#gl = gl;
-        this.#rectProgram = program;
+        this.#rectProgram = basicShapeProgram;
         this.#canvas = canvas;
         this.#history = history;
         this.#eventHub = eventHub;

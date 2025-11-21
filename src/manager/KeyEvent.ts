@@ -2,20 +2,17 @@ import { Canvas } from "../Canvas";
 import { CanvasHistory } from "../history";
 
 export class KeyEventManager {
-    canvas: Canvas;
     history: CanvasHistory;
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
     deleteSelected: () => void;
 
     constructor(
-        canvas: Canvas, 
-        history: CanvasHistory,
-        deleteSelected: () => void,
+        canvas: Canvas,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
-        this.canvas = canvas;
+        const { history, selectionManager } = canvas;
         this.history = history;
-        this.deleteSelected = deleteSelected;
+        this.deleteSelected = selectionManager.deleteSelected;
         this.assignEventListener = assignEventListener;
 
         this.onKeyPressed = this.onKeyPressed.bind(this);

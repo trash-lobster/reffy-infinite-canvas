@@ -81,7 +81,6 @@ describe('clipboard', () => {
             setData: vi.fn()
         };
 
-        // Mock ClipboardEvent with clipboardData property
         const clipboardEvent = {
             clipboardData: mockClipboardData
         } as unknown as ClipboardEvent;
@@ -171,7 +170,7 @@ describe('clipboard', () => {
     });
 
     it('paste finds other type and return file reader data', async () => {
-        globalThis.FileReader = class {
+        vi.stubGlobal('FileReader', class {
             result: string | null = 'data:image/png;base64,mockdata';
             onloadend: (() => void) | null = null;
             onerror: ((e: any) => void) | null = null;
@@ -180,7 +179,7 @@ describe('clipboard', () => {
                     if (this.onloadend) this.onloadend();
                 }, 0);
             }
-        } as any;
+        });
 
         const mockAltBlock = {
             text: vi.fn().mockResolvedValue('test')
@@ -201,5 +200,6 @@ describe('clipboard', () => {
         
         await clipboard.paste(10, 20, canvas as any, {} as any, false);
         expect(canvas.addImageToCanvas).toHaveBeenCalledWith('data:image/png;base64,mockdata', 100, 100);
+        vi.unstubAllGlobals();
     })
 });

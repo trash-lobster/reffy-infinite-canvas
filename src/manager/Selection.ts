@@ -251,14 +251,14 @@ export class SelectionManager {
     flip(direction: FlipDirection) {
         if (this.#multiBoundingBox) {
             const transformArray = this.#multiBoundingBox.flip(this.#canvas, direction);
-            this.#canvas._history.push(makeMultiFlipCommand(transformArray, direction, this.#multiBoundingBox));
+            this.#history.push(makeMultiFlipCommand(transformArray, direction, this.#multiBoundingBox));
         } else {
             const transformArray  = [];
             for (const box of this.#boundingBoxes) {
                 transformArray.push(box.flip(direction));
             }
 
-            this.#canvas._history.push(makeMultiFlipCommand(transformArray, direction));
+            this.#history.push(makeMultiFlipCommand(transformArray, direction));
         }
         this.#eventHub.emit(CanvasEvent.Change);
     }

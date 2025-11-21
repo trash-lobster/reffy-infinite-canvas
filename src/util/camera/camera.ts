@@ -47,12 +47,13 @@ export function screenToWorld(clientX: number, clientY: number, w: number, h: nu
 }
 
 export function getWorldCoords(x: number, y: number, canvas: Canvas) {
+    const { gl, canvas: innerCanvas } = canvas;
     return screenToWorld(
         x, 
         y,
-        canvas.gl.canvas.width,
-        canvas.gl.canvas.height,
-        canvas.canvas,
+        gl.canvas.width,
+        gl.canvas.height,
+        innerCanvas,
         canvas.worldMatrix,
     );
 }

@@ -123,11 +123,12 @@ export function serializeNode(node: Renderable): SerializedNode {
 }
 
 export function serializeCanvas(canvas: Canvas, files?: ImageFileMetadata[]): SerializedCanvas {
+	const { gl } = canvas;
 	return {
 		version: 1,
 		canvas: {
-			width: canvas.gl.canvas.width,
-			height: canvas.gl.canvas.height,
+			width: gl.canvas.width,
+			height: gl.canvas.height,
 			dpr: window.devicePixelRatio || 1,
 		},
 		root: serializeNode(canvas),

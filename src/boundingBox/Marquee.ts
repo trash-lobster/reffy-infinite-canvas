@@ -108,7 +108,7 @@ export class MarqueeSelectionBox {
             }
         }
         
-        canvas._selectionManager.add(covered);
+        canvas.selectionManager.add(covered);
     }
 
     private addRects() {

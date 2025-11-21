@@ -52,21 +52,17 @@ export class PointerEventManager {
     constructor(
         canvas: Canvas, 
         state: PointerEventState,
-        history: CanvasHistory,
-        eventHub: EventEmitter,
-        addToCanvas: (src: string, x: number, y: number) => Promise<Img>,
-        getSelected: () => Renderable[],
-        isMenuActive: () => boolean,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
+        const { history, eventHub, addImageToCanvas, selectionManager, contextMenuManager } = canvas;
         this.canvas = canvas;
         this.state = state;
         this.history = history;
         this.eventHub = eventHub;
-        this.addToCanvas = addToCanvas;
-        this.getSelected = getSelected;
+        this.addToCanvas = addImageToCanvas;
+        this.getSelected = () => selectionManager.selected;
 
-        this.isMenuActive = isMenuActive;
+        this.isMenuActive = () => contextMenuManager.isMenuActive;
         this.assignEventListener = assignEventListener;
 
         // bind methods
@@ -117,7 +113,7 @@ export class PointerEventManager {
         this.assignEventListener('pointermove', (e) => {
             [this.state.lastPointerPos.x, this.state.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY, this.canvas);
 
-            let hit = this.canvas._selectionManager.hitTestAdjustedCorner(this.state.lastPointerPos.x, this.state.lastPointerPos.y);
+            let hit = this.canvas.selectionManager.hitTestAdjustedCorner(this.state.lastPointerPos.x, this.state.lastPointerPos.y);
 			this.canvas.canvas.style.cursor = cursorMap[hit] || 'default';
         });
     }
@@ -125,7 +121,7 @@ export class PointerEventManager {
     private addOnWheel() {
         this.assignEventListener('wheel', (e) => {
             if (!this.isMenuActive()) {
-                this.canvas._camera.onWheel(e);
+                this.canvas.camera.onWheel(e);
             }
         }, { passive: false });
     }
@@ -158,16 +154,16 @@ export class PointerEventManager {
     private handleSelectPointerDown(e: MouseEvent, wx: number, wy: number) {
         this.canvas.isGlobalClick = false;
         if (e.button === 2) {
-            if (!this.canvas._selectionManager.hitTest(wx, wy)) {
+            if (!this.canvas.selectionManager.hitTest(wx, wy)) {
                 this.state.clearSelection();
             }
 
             const child = this.checkCollidingChild(wx, wy);
-            if (child && !this.canvas._selectionManager.isRectSelected(child as Rect)) {
-                this.canvas._selectionManager.add([child as Rect]);
+            if (child && !this.canvas.selectionManager.isRectSelected(child as Rect)) {
+                this.canvas.selectionManager.add([child as Rect]);
             }
         } else {
-            const boundingBoxType = this.canvas._selectionManager.hitTest(wx, wy);
+            const boundingBoxType = this.canvas.selectionManager.hitTest(wx, wy);
             if (boundingBoxType) {
                 this.state.resizingDirection = boundingBoxType;
             } else {
@@ -176,18 +172,18 @@ export class PointerEventManager {
                     if (!e.shiftKey) {                            
                         this.state.clearSelection();
                     }
-                    this.canvas._selectionManager.add([child as Rect]);
+                    this.canvas.selectionManager.add([child as Rect]);
                 } else {
                     this.state.clearSelection();
-                    if (this.canvas._selectionManager.marqueeBox) {
-                        this.canvas._selectionManager.clearMarquee();
+                    if (this.canvas.selectionManager.marqueeBox) {
+                        this.canvas.selectionManager.clearMarquee();
                     } else {
-                        this.canvas._selectionManager.marqueeBox = {x: wx, y: wy};
+                        this.canvas.selectionManager.marqueeBox = {x: wx, y: wy};
                     }
                 }
             }
 
-            const selected = this.canvas._selectionManager.selected;
+            const selected = this.canvas.selectionManager.selected;
             if (selected.length) {
                 this.currentTransform = {
                     targets: selected.map(ref => ({
@@ -208,13 +204,13 @@ export class PointerEventManager {
         
         
         if (this.canvas.isGlobalClick) {
-            this.canvas._camera.updateCameraPos(this.state.startWorldX - wx, this.state.startWorldY - wy);
+            this.canvas.camera.updateCameraPos(this.state.startWorldX - wx, this.state.startWorldY - wy);
         } else if (this.state.resizingDirection && this.state.resizingDirection !== 'CENTER') {
-            this.canvas._selectionManager.resize(dx, dy, this.state.resizingDirection);
-        } else if (this.canvas._selectionManager.marqueeBox) {
-            this.canvas._selectionManager.marqueeBox.resize(dx, dy, this.canvas.worldMatrix);
+            this.canvas.selectionManager.resize(dx, dy, this.state.resizingDirection);
+        } else if (this.canvas.selectionManager.marqueeBox) {
+            this.canvas.selectionManager.marqueeBox.resize(dx, dy, this.canvas.worldMatrix);
         } else {
-            this.canvas._selectionManager.move(dx, dy);
+            this.canvas.selectionManager.move(dx, dy);
         }
 
         this.state.updateLastWorldCoord(wx, wy);
@@ -247,8 +243,8 @@ export class PointerEventManager {
         this.currentTransform = undefined;
         this.state.resizingDirection = null;
 
-        if (this.canvas._selectionManager.marqueeBox) {
-            this.canvas._selectionManager.clearMarquee();
+        if (this.canvas.selectionManager.marqueeBox) {
+            this.canvas.selectionManager.clearMarquee();
         }
 
         this.canvas.eventHub.emit('save');

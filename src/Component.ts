@@ -362,7 +362,7 @@ export class InfiniteCanvasElement extends LitElement {
     // Canvas API
     togglePointerMode() {
         if (!this.#canvas) return;
-        this.#canvas._pointerEventManager.changeMode();
+        this.#canvas.changeMode();
     }
 
     toggleGrid() {
@@ -372,27 +372,18 @@ export class InfiniteCanvasElement extends LitElement {
 
     zoomIn() {
         if (!this.#canvas) return;
-
-        this.#canvas._camera.updateZoom(
-            this.#canvas.canvas.width / 2, 
-            this.#canvas.canvas.height / 2,
-            Math.exp(-0.5 * 0.3),
-        )
+        this.#canvas.updateZoomByFixedAmount(-1);
     }
 
     zoomOut() {
         if (!this.#canvas) return;
-        this.#canvas._camera.updateZoom(
-            this.#canvas.canvas.width / 2, 
-            this.#canvas.canvas.height / 2,
-            Math.exp(0.5 * 0.3),
-        )
+        this.#canvas.updateZoomByFixedAmount();
     }
 
     async addImages(fileList: FileList) {
         if (!this.engine) return;
 
-		const rect = this.engine.canvas.getBoundingClientRect();
+		const rect = this.engine.getBoundingClientRect();
 		const clientX = rect.left + rect.width / 2;
 		const clientY = rect.top + rect.height / 2;
 
@@ -408,7 +399,7 @@ export class InfiniteCanvasElement extends LitElement {
     async copyImage() {
         if (!this.engine) return;
         await copy(
-            this.engine._selectionManager.selected as Img[]
+            this.engine.getSelected()
         );
     }
 

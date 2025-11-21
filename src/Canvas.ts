@@ -23,24 +23,23 @@ import EventEmitter from 'eventemitter3';
 import { ImageFileMetadata } from 'storage';
 
 export class Canvas extends Renderable {
-	canvas: HTMLCanvasElement;
-	eventHub: EventEmitter;
-	_history: CanvasHistory;
+	#canvas: HTMLCanvasElement;
+	#eventHub: EventEmitter;
+	#history: CanvasHistory;
+	#camera: Camera;
 
-	gl: WebGLRenderingContext;	
-	basicShapeProgram: WebGLProgram;
-	imageProgram: WebGLProgram;
-	gridProgram: WebGLProgram;
-	grid: Grid;
+	#gl: WebGLRenderingContext;	
+	#basicShapeProgram: WebGLProgram;
+	#imageProgram: WebGLProgram;
+	#gridProgram: WebGLProgram;
+	#grid: Grid;
 
-	isGlobalClick = true;
+	#isGlobalClick = true;
 
-	_selectionManager: SelectionManager;
-	_pointerEventManager: PointerEventManager;
-	_keyPressManager: KeyEventManager;
-	_contextMenuManager: ContextMenuManager;
-
-	_camera: Camera;
+	#selectionManager: SelectionManager;
+	#pointerEventManager: PointerEventManager;
+	#keyPressManager: KeyEventManager;
+	#contextMenuManager: ContextMenuManager;
 
 	writeToStorage: () => void;
 	saveImgFileToStorage: (data: string) => Promise<string | number | null>;
@@ -51,7 +50,16 @@ export class Canvas extends Renderable {
     // Call this whenever children/layers/z-order change
     markOrderDirty() { this.orderDirty = true; }
 
-	get selectionManager() { return this._selectionManager }
+	get gl() { return this.#gl }
+	get grid() { return this.#grid }
+	get history() { return this.#history }
+	get eventHub() { return this.#eventHub }
+	get selectionManager() { return this.#selectionManager }
+	get contextMenuManager() { return this.#contextMenuManager }
+	get canvas() { return this.#canvas }
+	get camera() { return this.#camera }
+	get isGlobalClick() { return this.#isGlobalClick }
+	set isGlobalClick(val: boolean) { this.#isGlobalClick = val }
 	
 	constructor(
 		canvas: HTMLCanvasElement, 
@@ -61,27 +69,33 @@ export class Canvas extends Renderable {
 		eventHub: EventEmitter,
 	) {
 		super();
-		this.canvas = canvas;
-		this.grid = new Grid();
-		this.gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
-		this.gl.enable(this.gl.BLEND);
-		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+		this.#canvas = canvas;
+		this.#eventHub = eventHub;
+		this.#history = history;
 
-		this.gl.getExtension("OES_standard_derivatives"); // required to enable fwidth
+		this.#grid = new Grid();
+		this.#gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
+		this.#gl.enable(this.#gl.BLEND);
+		this.#gl.blendFunc(this.#gl.SRC_ALPHA, this.#gl.ONE_MINUS_SRC_ALPHA);
+
+		this.#gl.getExtension("OES_standard_derivatives"); // required to enable fwidth
 		
-		this.basicShapeProgram = createProgram(this.gl, shapeVert, shapeFrag);
-		this.imageProgram = createProgram(this.gl, imageVert, imageFrag);
-		this.gridProgram = createProgram(this.gl, gridVert, gridFrag);
+		this.#basicShapeProgram = createProgram(this.#gl, shapeVert, shapeFrag);
+		this.#imageProgram = createProgram(this.#gl, imageVert, imageFrag);
+		this.#gridProgram = createProgram(this.#gl, gridVert, gridFrag);
 		
-		this._history = history;
 		this.writeToStorage = writeToStorage;
 		this.saveImgFileToStorage = saveImgFileToStorage;
 		
 		this.engine = this.engine.bind(this);
+		this.getBoundingClientRect = this.getBoundingClientRect.bind(this);
 		this.appendChild = this.appendChild.bind(this);
 		this.addImageToCanvas = this.addImageToCanvas.bind(this);
 
 		this.toggleGrid = this.toggleGrid.bind(this);
+		this.changeMode = this.changeMode.bind(this);
+		this.getSelected = this.getSelected.bind(this);
+		this.updateZoomByFixedAmount = this.updateZoomByFixedAmount.bind(this);
 		
 		this.assignEventListener = this.assignEventListener.bind(this);
 
@@ -89,50 +103,43 @@ export class Canvas extends Renderable {
 		this.importState = this.importState.bind(this);
 		this.clearChildren = this.clearChildren.bind(this);
 		
-		this._selectionManager = new SelectionManager(
-			this.gl, 
-			this.basicShapeProgram, 
+		this.#selectionManager = new SelectionManager(
+			this.#gl, 
+			this.#basicShapeProgram, 
 			this, 
 			history,
 			eventHub,
 		);
 
-		this._keyPressManager = new KeyEventManager(
+		this.#keyPressManager = new KeyEventManager(
 			this, 
 			history,
-			this._selectionManager.deleteSelected,
+			this.#selectionManager.deleteSelected,
 			this.assignEventListener
 		)
 
-		this._contextMenuManager = new ContextMenuManager(
-			this, 
-			eventHub, 
+		this.#contextMenuManager = new ContextMenuManager(
+			this,
 			this.assignEventListener
 		);
 
 		const pointerEventState = new PointerEventState({
 			getCanvas: this.engine,
-			clearSelection: this._selectionManager.clear,
+			clearSelection: this.#selectionManager.clear,
 		})
 
-		this._pointerEventManager = new PointerEventManager(
+		this.#pointerEventManager = new PointerEventManager(
 			this, 
 			pointerEventState,
-			history,
-			eventHub,
-			this.addImageToCanvas,
-			() => this._selectionManager.selected,
-			() => this._contextMenuManager.isMenuActive,
 			this.assignEventListener,
 		);
 
 		const cameraState = new CameraState({
 			getCanvas: this.engine
 		})
-		this._camera = new Camera(this, cameraState);
+		this.#camera = new Camera(this, cameraState);
 
-		this.eventHub = eventHub;
-		this.eventHub.on('save', this.writeToStorage);
+		this.#eventHub.on('save', this.writeToStorage);
 	}
 
 	engine() {
@@ -147,57 +154,57 @@ export class Canvas extends Renderable {
 
 	removeChild(child: Renderable): void {
 		this.state.removeChild(child);
-		if (this._selectionManager) {
-			this._selectionManager.remove([child as any]);
+		if (this.#selectionManager) {
+			this.#selectionManager.remove([child as any]);
 		}
 		child.destroy();
 		this.markOrderDirty();
 	}
 
 	updateWorldMatrix() {
-		this.grid.updateWorldMatrix(this.worldMatrix);
+		this.#grid.updateWorldMatrix(this.worldMatrix);
 		this.children.forEach(child => {
 			child.updateWorldMatrix(this.worldMatrix);
 		})
-		this._selectionManager.update();
+		this.#selectionManager.update();
 	}
 
 	render() {
 		if (this.orderDirty) this.rebuildRenderList();
 
-		this.gl.clearColor(0, 0, 0, 0);
-    	this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-		this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+		this.#gl.clearColor(0, 0, 0, 0);
+    	this.#gl.clear(this.#gl.COLOR_BUFFER_BIT);
+		this.#gl.viewport(0, 0, this.#gl.canvas.width, this.#gl.canvas.height);
 
 		let currentProgram: WebGLProgram | null = null;
 
 		// render the grid
-		currentProgram = this.gridProgram;
-		this.grid.render(this.gl, currentProgram);
+		currentProgram = this.#gridProgram;
+		this.#grid.render(this.#gl, currentProgram);
 
 		for (const renderable of this.renderList) {
 			let program: WebGLProgram;
 
 			if (renderable instanceof Img) {
-				program = this.imageProgram;
+				program = this.#imageProgram;
 			} else if (renderable instanceof Shape) {
-				program = this.basicShapeProgram;
+				program = this.#basicShapeProgram;
 			}
 			
 			if (currentProgram !== program) {
-				this.gl.useProgram(program);
+				this.#gl.useProgram(program);
 				currentProgram = program;
 			}
-			renderable.render(this.gl, currentProgram);
+			renderable.render(this.#gl, currentProgram);
 		}
 		
-		this._selectionManager.render();
+		this.#selectionManager.render();
 	}
 
 	destroy() {
         // Clean up programs
-        this.gl.deleteProgram(this.basicShapeProgram);
-        this.gl.deleteProgram(this.imageProgram);
+        this.#gl.deleteProgram(this.#basicShapeProgram);
+        this.#gl.deleteProgram(this.#imageProgram);
         
         // Clean up all renderables
         this.children.forEach(child => {
@@ -210,7 +217,7 @@ export class Canvas extends Renderable {
     }
 
 	getDOM() {
-		return this.canvas;
+		return this.#canvas;
 	}
 	
 	assignEventListener(
@@ -218,12 +225,12 @@ export class Canvas extends Renderable {
 		fn: (() => void) | ((e: any) => void), 
 		options?: boolean | AddEventListenerOptions
 	) {
-		this.canvas.addEventListener(type, fn, options);
+		this.#canvas.addEventListener(type, fn, options);
 	}
 
 	hitTest(x: number, y: number) {
-		this.isGlobalClick = true;
-		return this.isGlobalClick;
+		this.#isGlobalClick = true;
+		return this.#isGlobalClick;
 	}
 
 	async addImageToCanvas(src: string, x: number, y: number, sx: number = 1, sy: number = 1, center: boolean = false) {
@@ -246,8 +253,8 @@ export class Canvas extends Renderable {
 			};
 		}
 
-		this.eventHub.emit('save');
-		this.eventHub.emit(CanvasEvent.Change);
+		this.#eventHub.emit('save');
+		this.#eventHub.emit(CanvasEvent.Change);
 		return newImg;
 	}
 
@@ -262,15 +269,35 @@ export class Canvas extends Renderable {
 	clearChildren() {
 		this.selectionManager.clear();
 		this.state.clearChildren(); // should clear history?	
-		this._history.clear();
+		this.#history.clear();
 	}
 
 	toggleGrid() {
-		this.grid.changeGridType(
-			this.grid.gridType === GRID_TYPE.GRID ?
+		this.#grid.changeGridType(
+			this.#grid.gridType === GRID_TYPE.GRID ?
 				GRID_TYPE.NONE :
 				GRID_TYPE.GRID
 		);
+	}
+
+	getSelected() {
+		return this.#selectionManager.selected as Img[];
+	}
+
+	changeMode() {
+		this.#pointerEventManager.changeMode();
+	}
+
+	updateZoomByFixedAmount(direction: 1 | -1 = 1) {
+		this.#camera.updateZoom(
+            this.#canvas.width / 2, 
+            this.#canvas.height / 2,
+            Math.exp(0.5 * 0.3 * direction),
+        );
+	}
+
+	getBoundingClientRect() {
+		return this.#canvas.getBoundingClientRect();
 	}
 
 	private collectShapes(node: Renderable, out: Shape[]) {

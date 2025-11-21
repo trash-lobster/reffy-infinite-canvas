@@ -120,85 +120,79 @@ export async function paste(
     isWorldCoord: boolean = true,
 ) {
     // check if there is anything from your clipboard to paste from
-    try {
-        const items = await navigator.clipboard.read();
-        const types = items[0].types;
-        
-        const type = types.find(t =>
-            acceptedPasteMimeType.some(allowed =>
-                allowed.endsWith('/') // for "image/" and similar
-                ? t.startsWith(allowed)
-                : t === allowed
-            )
+    const items = await navigator.clipboard.read();
+    const types = items[0].types;
+    
+    const [wx, wy] = isWorldCoord ? [clientX, clientY] : getWorldCoords(clientX, clientY, canvas);
+
+    for (const type of types) {
+        const allowed = acceptedPasteMimeType.find(allowed =>
+            allowed.endsWith('/') ? type.startsWith(allowed) : type === allowed
         );
-        
-        if (!type) return;
-        
-        const [wx, wy] = isWorldCoord ? [clientX, clientY] : getWorldCoords(clientX, clientY, canvas);
+        if (!allowed) continue;
 
-        for (const type of types) {
-            const blob = await items[0].getType(type);
-            try {
-                if (type === 'text/plain') {
-                    const data: InfiniteCanvasClipboard = JSON.parse(await blob.text());
-                    if (data.elements.length === 0) return;
-                    const minX = data.elements.sort((a, b) => a.x - b.x)[0].x;
-                    const minY = data.elements.sort((a, b) => a.y - b.y)[0].y;
-        
-                    const images = await Promise.all(
-                        data.elements.map((element) => canvas.addImageToCanvas(
-                            element.src, 
-                            wx + element.x - minX,
-                            wy + element.y - minY, 
-                            element.sx, 
-                            element.sy
-                        ))
-                    );
-        
-                    history.push(makeMultiAddChildCommand(canvas, images));
-                    return;
-                }
-        
-                let base64: string;
+        const blob = await items[0].getType(type);
+        try {
+            if (type === 'text/plain') {
+                const data: InfiniteCanvasClipboard = JSON.parse(await blob.text());
+                if (data.elements.length === 0) return;
+
+                let minX = Infinity, minY = Infinity;
                 
-                if (type.startsWith('image/svg')) {
-                    try {
-                        const svgText = await blob.text();
-                        base64 = await convertToPNG(`data:image/svg+xml;base64,${btoa(svgText)}`);
-                    } catch (err) {
-                        console.error(err);
-                    }
-                } else {
-                    base64 = await new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result as string);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    });
+                for (const el of data.elements) {
+                    if (el.x < minX) minX = el.x;
+                    if (el.y < minY) minY = el.y;
                 }
 
-                const img = await canvas.addImageToCanvas(base64, wx, wy);
-                history.push(makeMultiAddChildCommand(canvas, [img]));
+                const images = await Promise.all(
+                    data.elements.map((element) => canvas.addImageToCanvas(
+                        element.src, 
+                        wx + element.x - minX,
+                        wy + element.y - minY, 
+                        element.sx, 
+                        element.sy
+                    ))
+                );
+    
+                history.push(makeMultiAddChildCommand(canvas, images));
                 return;
+            }
+        } catch (err) {
+             console.error('Failed to parse clipboard data', err);
+            continue;
+        }
+    
+        let base64: string | undefined;
+            
+        if (type.startsWith('image/svg')) {
+            try {
+                const svgText = await blob.text();
+                base64 = await convertToPNG(`data:image/svg+xml;base64,${btoa(svgText)}`);
             } catch (err) {
+                console.error('SVG conversion failed', err);
                 continue;
             }
-        
+        } else {
+            try {
+                base64 = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (err) {
+                console.error('Image read failed', err);
+                continue;
+            }
         }
-    } catch (err) {
-        console.error(err);
-        console.error('Failed to add images');
-    }
-}
 
-function isValidHttpUrl(s: string) {
-    let url;
-    
-    try {
-        url = new URL(s);
-    } catch (_) {
-        return false;  
+        try {
+            const img = await canvas.addImageToCanvas(base64!, wx, wy);
+            history.push(makeMultiAddChildCommand(canvas, [img]));
+            return;
+        } catch (err) {
+            console.error('Failed to add image to canvas', err);
+            continue;
+        }
     }
-
-    return url.protocol === "http:" || url.protocol === "https:";
 }

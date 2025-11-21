@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "dev": "vite dev",
+    "dev": "vite dev --config vite.examples.config.js",
     "deploy": "vite build",
     "test": "vitest --ui --coverage.enabled=true",
     "coverage": "vitest run --coverage",

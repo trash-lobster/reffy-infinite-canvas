@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { oppositeCorner, BoundingBoxCollisionType } from '../../../src/util';
+import { oppositeCorner, BoundingBoxCollisionType } from '../../../src/util/handles';
 
 describe('Handles', () => {
     it('should return opposite handle type', () => {

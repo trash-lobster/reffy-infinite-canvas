@@ -6,11 +6,10 @@ import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as inner
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
-import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
-import { Img } from './shapes';
+import { addContextMenu, clearContextMenu, ContextMenuProps, ContextMenuType, createCanvasImageMenuOptions, createMultiImageMenuOptions, createSingleImageMenuOptions, isContextMenuActive } from './contextMenu';
 import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, ImageFileMetadata } from './storage';
 import EventEmitter from 'eventemitter3';
-import { hideLoader, Loader, LoaderType, showLoader } from './loader';
+import { hideLoader, showLoader } from './loader';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -141,7 +140,19 @@ export class InfiniteCanvasElement extends LitElement {
     #saveFrequency = 300000;
 	#timeoutId: number | null;
     #intervalId: number | null;
+    
     #onChange?: () => void;
+
+    #singleImageMenuOptions: ContextMenuProps;
+    #multiImageMenuOptions: ContextMenuProps;
+    #canvasImageMenuOptions: ContextMenuProps;
+    addContextMenu: (x: number, y: number, type: ContextMenuType) => void;
+    clearContextMenu: () => void;
+    isContextMenuActive: () => boolean;
+
+    get singleImageMenuOptions() { return this.#singleImageMenuOptions; }
+    get multiImageMenuOptions() { return this.#multiImageMenuOptions; }
+    get canvasImageMenuOptions() { return this.#canvasImageMenuOptions; }
 
     get onCanvasChange() { return this.#onChange; }
     set onCanvasChange(fn: (() => void)) { this.#onChange = fn; }
@@ -192,9 +203,9 @@ export class InfiniteCanvasElement extends LitElement {
         this.exportCanvas = this.exportCanvas.bind(this);
 
         // context menu set up
-        this.addContextMenu = this.addContextMenu.bind(this);
-        this.clearContextMenu = this.clearContextMenu.bind(this);
-        this.isContextMenuActive = this.isContextMenuActive.bind(this);
+        this.addContextMenu = addContextMenu.bind(this);
+        this.clearContextMenu = clearContextMenu.bind(this);
+        this.isContextMenuActive = isContextMenuActive.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
@@ -242,7 +253,11 @@ export class InfiniteCanvasElement extends LitElement {
             console.error('Failed to restore canvas');
         }
         hideLoader.bind(this)();
-
+        
+        this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)();
+        this.#canvasImageMenuOptions = createCanvasImageMenuOptions.bind(this)();
+        this.#multiImageMenuOptions = createMultiImageMenuOptions.bind(this)(this.#singleImageMenuOptions.optionGroups);
+        
         this.dispatchEvent(new Event('load'));
 
         const animate = () => {
@@ -451,159 +466,6 @@ export class InfiniteCanvasElement extends LitElement {
         if (!this.#canvas) return;
         this.#canvas.clearChildren();
     }
-
-    // ContextMenu
-    //The default ContextMenuOptions for the infinite canvas should have all the functions
-    singleImageMenuOptions: ContextMenuProps = {
-        optionGroups: [
-            {
-                childOptions: [
-                    {
-                        text: "Cut",
-                        onClick: async () => {
-                            await this.copyImage.bind(this)();
-                            this.withContextMenuClear(this.deleteSelectedImages.bind(this))();
-                        }
-                    },
-                    {
-                        text: "Copy",
-                        onClick: this.withContextMenuClear(this.copyImage.bind(this))
-                    },
-                    {
-                        text: "Paste",
-                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
-                    },
-                    {
-                        text: "Delete",
-                        onClick: this.withContextMenuClear(this.deleteSelectedImages.bind(this))
-                    },
-                ]
-            },
-            {
-                childOptions: [
-                    {
-                        text: "Flip Horizontal",
-                        onClick: this.withContextMenuClear(this.flipHorizontal.bind(this))
-                    },
-                    {
-                        text: "Flip Vertical",
-                        onClick: this.withContextMenuClear(this.flipVertical.bind(this))
-                    },
-                ]
-            },
-        ]
-    };
-
-    multiImageMenuOptions: ContextMenuProps = {
-        optionGroups: [
-            ...this.singleImageMenuOptions.optionGroups,
-            {
-                childOptions: [
-                    {
-                        text: "Align Left",
-                        onClick: () => console.log('hey')
-                    },
-                    {
-                        text: "Align Right",
-                        onClick: () => console.log('hey')
-                    },
-                    {
-                        text: "Align Top",
-                        onClick: () => console.log('hey')
-                    },
-                    {
-                        text: "Align Bottom",
-                        onClick: () => console.log('hey')
-                    }
-                ]
-            }
-        ]
-    }
-
-    canvasImageMenuOptions: ContextMenuProps = {
-        optionGroups: [
-            {
-                childOptions: [
-                    {
-                        text: 'Change mode',
-                        onClick: () => this.withContextMenuClear(this.togglePointerMode.bind(this))()
-                    },
-                    {
-                        text: "Toggle Grid",
-                        onClick: () => this.withContextMenuClear(this.toggleGrid.bind(this))()
-                    },
-                ]
-            },
-            {
-                childOptions: [
-                    {
-                        text: 'Save',
-                        onClick: () => this.withContextMenuClear(this.saveToCanvasStorage.bind(this))()
-                    },
-                    {
-                        text: "Paste",
-                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
-                    },
-                ]
-            }
-        ]
-    }
-
-    // wrap to close context menu after selecting an option
-    private withContextMenuClear<T extends (...args: any[]) => any>(fn: T): T {
-        const self = this;
-        return function(this: any, ...args: Parameters<T>): ReturnType<T> {
-            const result = fn.apply(self, args);
-            self.clearContextMenu();
-            return result;
-        } as T;
-    }
-
-    addContextMenu(x: number, y: number, type: ContextMenuType = 'single') {
-        // Create new menu
-        const menu = new ContextMenu(
-            type === 'single' ? this.singleImageMenuOptions :
-                type === 'multi' ? this.multiImageMenuOptions :
-                    this.canvasImageMenuOptions
-        );
-        menu.attachToParent(this.renderRoot as HTMLElement);
-        
-        // Position the menu
-        const hostRect = this.getBoundingClientRect();
-        const relX = x - hostRect.left;
-        const relY = y - hostRect.top;
-
-        // determine the width and height of the bound rect
-        const hostWidth = hostRect.right;
-        const hostHeight = hostRect.bottom;
-        
-        // place the menu according to the four quarters so it is always in view
-        const menuRect = menu.el.getBoundingClientRect();
-        
-        // only flip the position of the menu if leaving it where it would have been, would lead to the menu being out of view
-        const direction: number[] = [
-            relX + menuRect.width > hostWidth ? 1 : 0,
-            relY + menuRect.bottom > hostHeight ? 1 : 0,
-        ]
-
-        const menuHeight = menuRect.height * direction[1];
-        const menuWidth = menuRect.width * direction[0];
-
-        menu._el.style.left = `${relX - menuWidth}px`;
-        menu._el.style.top = `${relY - menuHeight}px`;
-    }
-
-    clearContextMenu() {
-        const oldMenu = this.renderRoot.querySelector('.context-menu');
-        if (this.isContextMenuActive()) oldMenu.remove();
-    }
-
-    isContextMenuActive() {
-        return this.renderRoot.querySelector('.context-menu') !== null;
-    }
-
-    // Save
-
 
     // Global helper
     private handleGlobalPointerDown = (e: PointerEvent) => {

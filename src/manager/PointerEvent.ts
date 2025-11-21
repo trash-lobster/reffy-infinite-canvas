@@ -42,8 +42,7 @@ export class PointerEventManager {
 
     addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
     getSelected: () => Renderable[];
-
-    isMenuActive: () => boolean;
+    isContextMenuActive: boolean;
     
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
@@ -62,15 +61,14 @@ export class PointerEventManager {
         this.eventHub = eventHub;
         this.addToCanvas = addImageToCanvas;
         this.getSelected = () => selectionManager.selected;
+        this.isContextMenuActive = contextMenuManager.isActive;
 
-        this.isMenuActive = () => contextMenuManager.isMenuActive;
         this.assignEventListener = assignEventListener;
 
         // bind methods
         this.onPointerDown = this.onPointerDown.bind(this);
         this.onPointerMoveWhileDown = this.onPointerMoveWhileDown.bind(this);
         this.onPointerUp = this.onPointerUp.bind(this);
-        this.canInteract = this.canInteract.bind(this);
 
         // register event listeners
         this.addOnPointerMove();
@@ -79,7 +77,7 @@ export class PointerEventManager {
 
         window.addEventListener('copy', async (e) => {
             e.preventDefault();
-            if (!this.canInteract()) return;
+            if (!this.isContextMenuActive) return;
 
             await copy(this.getSelected() as Img[]);
         });
@@ -87,7 +85,7 @@ export class PointerEventManager {
         window.addEventListener('paste', async (e) => {
             e.preventDefault();
             eventHub.emit(LoaderEvent.start, 'spinner');
-            if (!this.canInteract()) return;
+            if (this.isContextMenuActive) return;
             await paste(                
                 this.state.lastPointerPos.x,
                 this.state.lastPointerPos.y,
@@ -100,10 +98,6 @@ export class PointerEventManager {
 
     changeMode() {
         this.state.toggleMode();
-    }
-
-    private canInteract() {
-        return !this.isMenuActive();
     }
     
     // Add events
@@ -123,7 +117,7 @@ export class PointerEventManager {
     
     private addOnWheel() {
         this.assignEventListener('wheel', (e) => {
-            if (!this.isMenuActive()) {
+            if (!this.isContextMenuActive) {
                 this.canvas.camera.onWheel(e);
             }
         }, { passive: false });

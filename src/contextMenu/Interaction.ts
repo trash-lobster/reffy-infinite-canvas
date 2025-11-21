@@ -1,3 +1,4 @@
+import { ContextMenuEvent } from "../util";
 import { ContextMenu, ContextMenuGroupProps, ContextMenuType } from "./ContextMenu";
 
 function withContextMenuClear<T extends (...args: any[]) => any>(fn: T): T {
@@ -45,7 +46,10 @@ export function addContextMenu(x: number, y: number, type: ContextMenuType = 'si
 
 export function clearContextMenu() {
     const oldMenu = this.renderRoot.querySelector('.context-menu');
-    if (this.isContextMenuActive()) oldMenu.remove();
+    if (this.isContextMenuActive()) {
+        oldMenu.remove();
+        this.eventHub.emit(ContextMenuEvent.Close);
+    }
 }
 
 export function isContextMenuActive() {

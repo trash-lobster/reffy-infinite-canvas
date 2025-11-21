@@ -6,15 +6,15 @@ export class ContextMenuManager {
     copy: (e: ClipboardEvent) => Promise<void>;
     paste: (e: ClipboardEvent) => Promise<void>;
     customContextMenu: (e: PointerEvent) => void;
-    isMenuActive: boolean;
+    #isMenuActive: boolean = false;
+
+    get isActive() { return this.#isMenuActive; }
 
     constructor(
         canvas: Canvas,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
         const { selectionManager, eventHub } = canvas;
-
-        this.isMenuActive = false;
 
         this.customContextMenu = (e: PointerEvent) => {
             e.preventDefault();
@@ -34,11 +34,11 @@ export class ContextMenuManager {
         }
 
         eventHub.on(ContextMenuEvent.Open, () => {
-            this.isMenuActive = true;
+            this.#isMenuActive = true;
         });
 
         eventHub.on(ContextMenuEvent.Close, () => {
-            this.isMenuActive = false;
+            this.#isMenuActive = false;
         });
 
         assignEventListener('contextmenu', this.customContextMenu);

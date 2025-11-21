@@ -156,7 +156,8 @@ export class InfiniteCanvasElement extends LitElement {
 
     get onCanvasChange() { return this.#onChange; }
     set onCanvasChange(fn: (() => void)) { this.#onChange = fn; }
-    get engine(): Canvas { return this.#canvas }
+    get engine(): Canvas { return this.#canvas; }
+    get eventHub() { return this.#eventHub; }
 
     // Lifecycle
     connectedCallback() {
@@ -278,6 +279,8 @@ export class InfiniteCanvasElement extends LitElement {
             if (this.#onChange) this.#onChange();
         });
         this.#eventHub.on(SaveEvent.Save, () => console.log('saving'));
+        this.#eventHub.on(SaveEvent.SaveCompleted, () => console.log('Done Saving!'));
+        this.#eventHub.on(SaveEvent.SaveFailed, () => console.log('Failed to Save!'));
     }
 
     // Storage & Persistence
@@ -364,7 +367,9 @@ export class InfiniteCanvasElement extends LitElement {
 		if (!this.#canvasStorage) {
             this.#canvasStorage = new DefaultLocalStorage();
         }
-        await this.#canvasStorage.write(serializeCanvas(this.engine));
+        this.#canvasStorage.write(serializeCanvas(this.engine))
+            .then(() => this.#eventHub.emit(SaveEvent.SaveCompleted))
+            .catch(() => this.#eventHub.emit(SaveEvent.SaveFailed));
     }
 
     async restoreStateFromCanvasStorage() {

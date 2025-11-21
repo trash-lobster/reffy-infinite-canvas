@@ -126,23 +126,25 @@ export class Canvas extends Renderable {
 			clearSelection: this.#selectionManager.clear,
 		})
 
-		this.#pointerEventManager = new PointerEventManager(
+		const pointerManagerDeps = {
 			history,
 			eventHub,
-			pointerEventState,
-			this.#selectionManager,
-			this.#contextMenuManager,
-			() => this.children,
-			() => this.worldMatrix,
-			() => this.isGlobalClick,
-			(val: boolean) => this.isGlobalClick = val,
-			(x: number, y: number) => getWorldCoords(x, y, this),
-			this.camera.updateCameraPos,
-			this.camera.onWheel,
-			(val: string) => canvas.style.cursor = val,
-			(x: number, y: number) => paste(x, y, this, history),
-			this.assignEventListener,
-		);
+			state: pointerEventState,
+			selectionManager: this.#selectionManager,
+			contextMenuManager: this.#contextMenuManager,
+			getChildren: () => this.children,
+			getWorldMatrix: () => this.worldMatrix,
+			getCanvasGlobalClick: () => this.isGlobalClick,
+			setCanvasGlobalClick: (val: boolean) => this.isGlobalClick = val,
+			getWorldCoordsFromCanvas: (x: number, y: number) => getWorldCoords(x, y, this),
+			updateCameraPos: this.camera.updateCameraPos,
+			onWheel: this.camera.onWheel,
+			setCursorStyle: (val: string) => canvas.style.cursor = val,
+			paste: (x: number, y: number) => paste(x, y, this, history),
+			assignEventListener: this.assignEventListener,
+		}
+
+		this.#pointerEventManager = new PointerEventManager(pointerManagerDeps);
 
 		this.#eventHub.on('save', this.writeToStorage);
 	}

@@ -3,7 +3,6 @@ import {
     ContextMenuEvent,
     copy,
     LoaderEvent,
-    paste,
 } from "../util";
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
@@ -34,12 +33,29 @@ const cursorMap: Record<string, string> = {
 	CENTER: 'grab',
 };
 
+interface PointerEventManagerDeps {
+    history: CanvasHistory,
+    eventHub: EventEmitter,
+    state: PointerEventState,
+    selectionManager: SelectionManager,
+    contextMenuManager: ContextMenuManager,
+    getChildren: () => Renderable[],
+    getWorldMatrix: () => number[],
+    getCanvasGlobalClick: () => boolean,
+    setCanvasGlobalClick:(val: boolean) => void,
+    getWorldCoordsFromCanvas: (x: number, y: number) => number[],
+    updateCameraPos: (x: number, y: number) => void,
+    onWheel: (e: WheelEvent) => void,
+    setCursorStyle: (val: string) => void,
+    paste: (x: number, y: number) => Promise<void>,
+    assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
+}
+
 export class PointerEventManager {
     state: PointerEventState;
     history: CanvasHistory;
     eventHub: EventEmitter;
 
-    // addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
     getSelected: () => Renderable[];
     isContextMenuActive: boolean;
 
@@ -52,68 +68,52 @@ export class PointerEventManager {
     private currentTransform?:
       { targets: Array<{ ref: Rect; start: TransformSnapshot }> };
 
-    constructor(
-        history: CanvasHistory,
-        eventHub: EventEmitter,
-        state: PointerEventState,
-        selectionManager: SelectionManager,
-        contextMenuManager: ContextMenuManager,
-        getChildren: () => Renderable[],
-        getWorldMatrix: () => number[],
-        getCanvasGlobalClick: () => boolean,
-        setCanvasGlobalClick:(val: boolean) => void,
-        getWorldCoordsFromCanvas: (x: number, y: number) => number[],
-        updateCameraPos: (x: number, y: number) => void,
-        onWheel: (e: WheelEvent) => void,
-        setCursorStyle: (val: string) => void,
-        paste: (x: number, y: number) => Promise<void>,
-        assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
-    ) {
-        this.state = state;
-        this.history = history;
-        this.eventHub = eventHub;
-        this.getSelected = () => selectionManager.selected;
-        this.isContextMenuActive = contextMenuManager.isActive;
+    constructor(deps: PointerEventManagerDeps) {
+        this.state = deps.state;
+        this.history = deps.history;
+        this.eventHub = deps.eventHub;
+        this.getSelected = () => deps.selectionManager.selected;
+        this.isContextMenuActive = deps.contextMenuManager.isActive;
 
-        this.assignEventListener = assignEventListener;
+        this.assignEventListener = deps.assignEventListener;
 
         // bind methods
         this.onPointerDown = (e: PointerEvent) => this.setupOnPointerDown.bind(this)(
             e,
-            selectionManager,
-            getChildren,
-            setCanvasGlobalClick,
-            getWorldCoordsFromCanvas,
+            deps.selectionManager,
+            deps.getChildren,
+            deps.setCanvasGlobalClick,
+            deps.getWorldCoordsFromCanvas,
         );
 
         this.onPointerMoveWhileDown = (e: PointerEvent) => this.setupOnPointerMoveWhileDown.bind(this)(
             e,
-            selectionManager,
-            getCanvasGlobalClick,
-            getWorldCoordsFromCanvas,
-            getWorldMatrix,
-            setCursorStyle,
-            updateCameraPos,
+            deps.selectionManager,
+            deps.getCanvasGlobalClick,
+            deps.getWorldCoordsFromCanvas,
+            deps.getWorldMatrix,
+            deps.setCursorStyle,
+            deps.updateCameraPos,
         )
 
         this.onPointerUp = () => this.setupOnPointerUp.bind(this)(
-            selectionManager,
-            setCanvasGlobalClick,
-            setCursorStyle,
+            deps.selectionManager,
+            deps.setCanvasGlobalClick,
+            deps.setCursorStyle,
         );
 
         // register event listeners
         this.addOnPointerMove(
-            selectionManager,
-            getWorldCoordsFromCanvas,
-            setCursorStyle,
+            deps.selectionManager,
+            deps.getWorldCoordsFromCanvas,
+            deps.setCursorStyle,
         );
-        this.addOnWheel(onWheel);
+        this.addOnWheel(deps.onWheel);
         this.addOnPointerDown(
-            selectionManager,
-            getChildren,
-            setCanvasGlobalClick,
-            getWorldCoordsFromCanvas,
+            deps.selectionManager,
+            deps.getChildren,
+            deps.setCanvasGlobalClick,
+            deps.getWorldCoordsFromCanvas,
         );
 
         window.addEventListener('copy', async (e) => {
@@ -125,13 +125,13 @@ export class PointerEventManager {
 
         window.addEventListener('paste', async (e) => {
             e.preventDefault();
-            eventHub.emit(LoaderEvent.start, 'spinner');
+            deps.eventHub.emit(LoaderEvent.start, 'spinner');
             if (this.isContextMenuActive) return;
-            await paste(                
+            await deps.paste(                
                 this.state.lastPointerPos.x,
                 this.state.lastPointerPos.y,
             );
-            eventHub.emit(LoaderEvent.done);
+            deps.eventHub.emit(LoaderEvent.done);
         });
     }
 

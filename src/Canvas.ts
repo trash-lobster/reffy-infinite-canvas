@@ -122,8 +122,7 @@ export class Canvas extends Renderable {
 		);
 
 		const pointerEventState = new PointerEventState({
-			getCanvas: this.engine,
-			clearSelection: this.#selectionManager.clear,
+			getCanvas: this.engine
 		})
 
 		const pointerManagerDeps = {
@@ -293,6 +292,7 @@ export class Canvas extends Renderable {
 
 	changeMode() {
 		this.#pointerEventManager.changeMode();
+		this.#selectionManager.clear();
 	}
 
 	updateZoomByFixedAmount(direction: 1 | -1 = 1) {

@@ -195,7 +195,7 @@ export class PointerEventManager {
         this.currentTransform = undefined;
 
         if (this.state.mode === PointerMode.PAN) {
-            this.handlePanPointerDown(setCanvasGlobalClick);
+            this.handlePanPointerDown(setCanvasGlobalClick, selectionManager);
         } else if (this.state.mode === PointerMode.SELECT) {
             this.handleSelectPointerDown(e, wx, wy, selectionManager, setCanvasGlobalClick, getChildren);
         }
@@ -206,9 +206,10 @@ export class PointerEventManager {
 
     private handlePanPointerDown(
         setCanvasGlobalClick: (val: boolean) => void,
+        selectionManager: SelectionManager,
     ) {
         setCanvasGlobalClick(true);
-        this.state.clearSelection();
+        selectionManager.clear();
     }
 
     private handleSelectPointerDown(
@@ -222,7 +223,7 @@ export class PointerEventManager {
         setCanvasGlobalClick(false);
         if (e.button === 2) {
             if (!selectionManager.hitTest(wx, wy)) {
-                this.state.clearSelection();
+                selectionManager.clear();
             }
 
             const child = this.checkCollidingChild(wx, wy, getChildren);
@@ -237,11 +238,11 @@ export class PointerEventManager {
                 const child = this.checkCollidingChild(wx, wy, getChildren);
                 if (child) {
                     if (!e.shiftKey) {                            
-                        this.state.clearSelection();
+                        selectionManager.clear();
                     }
                     selectionManager.add([child as Rect]);
                 } else {
-                    this.state.clearSelection();
+                    selectionManager.clear();
                     if (selectionManager.marqueeBox) {
                         selectionManager.clearMarquee();
                     } else {

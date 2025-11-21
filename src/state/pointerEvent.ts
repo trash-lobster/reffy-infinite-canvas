@@ -4,12 +4,10 @@ import { Point, PointerMode } from "../manager";
 
 interface PointerEventStateOption {
     getCanvas: () => Canvas;
-    clearSelection: () => void;
     mode: PointerMode;
 }
 
 export class PointerEventState {
-    clearSelection: () => void;
 
     lastPointerPos: Point = { x: 0, y: 0 };
     startWorldX: number = 0;
@@ -24,10 +22,8 @@ export class PointerEventState {
     constructor(option: Partial<PointerEventStateOption>) {
         const {
             mode = PointerMode.SELECT,
-            clearSelection = () => { throw new Error("clearSelection not implemented"); },
         } = option;
 
-        this.clearSelection = clearSelection;
         this.mode = mode;
     }
 
@@ -51,8 +47,6 @@ export class PointerEventState {
 
     toggleMode() {
         this.mode = this.mode === PointerMode.PAN ? PointerMode.SELECT : PointerMode.PAN;
-        // Clear selection when switching mode to avoid mixed interactions
-        this.clearSelection();
     }
 
     setResizingDirection(dir: BoundingBoxCollisionType | null) {

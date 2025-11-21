@@ -41,4 +41,6 @@ InfiniteCanvasAPI.forElement(el).then(api => {
         await api.importCanvas(hiddenImportCanvasInput.files);
         hiddenInput.value = '';
     };
+
+    el.onCanvasChange = () => console.log('data changed');
 })

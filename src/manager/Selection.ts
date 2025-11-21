@@ -1,5 +1,6 @@
 import { 
     BoundingBoxCollisionType,
+    CanvasEvent,
     oppositeCorner,
 } from "../util";
 import { Rect } from "../shapes";
@@ -13,6 +14,7 @@ import {
 import { CanvasHistory } from "../history";
 import { makeMultiRemoveChildCommand } from "./SceneCommand";
 import { FlipDirection, makeMultiFlipCommand } from "./FlipCommand";
+import EventEmitter from "eventemitter3";
 
 export class SelectionManager {
     private canvas: Canvas;
@@ -20,6 +22,8 @@ export class SelectionManager {
     private _boundingBoxes: Set<BoundingBox> = new Set();
     private _multiBoundingBox : MultiBoundingBox;
     private _marqueeSelectionBox : MarqueeSelectionBox;
+    #eventHub: EventEmitter;
+
     renderDirtyFlag = true;
 
     private gl: WebGLRenderingContext;
@@ -45,16 +49,22 @@ export class SelectionManager {
      * @param gl 
      * @param program Add reference to program to allow easy linking
      */
-    constructor(gl: WebGLRenderingContext, program: WebGLProgram, canvas: Canvas, history: CanvasHistory) {
+    constructor(
+        gl: WebGLRenderingContext, 
+        program: WebGLProgram, 
+        canvas: Canvas, 
+        history: CanvasHistory,
+        eventHub: EventEmitter,
+    ) {
         this.gl = gl;
         this.rectProgram = program;
         this.canvas = canvas;
+        this.history = history;
+        this.#eventHub = eventHub;
+    
         this.clear = this.clear.bind(this);
         this.deleteSelected = this.deleteSelected.bind(this);
-
         this.flip = this.flip.bind(this);
-
-        this.history = history;
     }
 
     // add, remove selected
@@ -208,6 +218,7 @@ export class SelectionManager {
                 box.move(dx, dy);
             }
         }
+        this.#eventHub.emit(CanvasEvent.Change);
     }
 
     /**
@@ -233,6 +244,7 @@ export class SelectionManager {
                 box.resize(dx, dy, direction);
             }
         }
+        this.#eventHub.emit(CanvasEvent.Change);
     }
 
     flip(direction: FlipDirection) {
@@ -247,6 +259,7 @@ export class SelectionManager {
 
             this.canvas._history.push(makeMultiFlipCommand(transformArray, direction));
         }
+        this.#eventHub.emit(CanvasEvent.Change);
     }
 
     // keep this for exporting as image in the future

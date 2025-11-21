@@ -17,6 +17,7 @@ export const CanvasEvent = {
     PointerMove: 'pointermove',
     ImageAdded: 'imageadded',
     ImageRemoved: 'imageremoved',
+    Change: 'statechange'
 } as const;
 
 export const CustomClipboardEvent = {

@@ -2,7 +2,7 @@ import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
-import { ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste } from './util';
+import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste } from './util';
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
@@ -28,7 +28,6 @@ export class InfiniteCanvasElement extends LitElement {
             min-width: 180px;
             background: var(--menu-bg, #fff);
             border-radius: 6px;
-            /* box-shadow: 0 4px 24px rgba(0,0,0,0.16), 0 1.5px 4px rgba(0,0,0,0.08); */
             border: 1px solid var(--menu-border, #9f9f9fff);
             box-sizing: border-box;
             padding: 6px 0;
@@ -144,8 +143,8 @@ export class InfiniteCanvasElement extends LitElement {
     #intervalId: number | null;
     #onChange?: () => void;
 
-    get onChange() { return this.#onChange; }
-    set onChange(fn: (() => void) | undefined) { this.#onChange = fn; }
+    get onCanvasChange() { return this.#onChange; }
+    set onCanvasChange(fn: (() => void)) { this.#onChange = fn; }
     get engine(): Canvas { return this.#canvas }
 
     // Lifecycle
@@ -259,6 +258,9 @@ export class InfiniteCanvasElement extends LitElement {
         this.#eventHub.on(LoaderEvent.done, this.hideLoader);
         this.#eventHub.on(ContextMenuEvent.Open, this.addContextMenu);
         this.#eventHub.on(ContextMenuEvent.Close, this.clearContextMenu);
+        this.#eventHub.on(CanvasEvent.Change, () => {
+            if (this.#onChange) this.#onChange();
+        });
     }
 
     // Storage & Persistence

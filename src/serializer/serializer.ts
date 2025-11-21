@@ -78,7 +78,6 @@ function serializeChildren(node: Renderable): SerializedNode[] {
 
 export function serializeNode(node: Renderable): SerializedNode {
 	if (node instanceof Img) {
-		console.log('writing images');
 		const base: SerializedImg = {
 			type: "Img",
 			id: (node as Img).seq,

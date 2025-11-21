@@ -93,6 +93,7 @@ export class Canvas extends Renderable {
 			this.basicShapeProgram, 
 			this, 
 			history,
+			eventHub,
 		);
 
 		this._keyPressManager = new KeyEventManager(

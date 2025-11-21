@@ -9,7 +9,6 @@ interface PointerEventStateOption {
 }
 
 export class PointerEventState {
-    getCanvas: () => Canvas;
     clearSelection: () => void;
 
     lastPointerPos: Point = { x: 0, y: 0 };
@@ -25,11 +24,9 @@ export class PointerEventState {
     constructor(option: Partial<PointerEventStateOption>) {
         const {
             mode = PointerMode.SELECT,
-            getCanvas = () => { throw new Error("getCanvas not implemented"); },
             clearSelection = () => { throw new Error("clearSelection not implemented"); },
         } = option;
 
-        this.getCanvas = getCanvas;
         this.clearSelection = clearSelection;
         this.mode = mode;
     }

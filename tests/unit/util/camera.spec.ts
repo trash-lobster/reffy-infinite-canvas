@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, } from 'vitest';
+import { describe, it, expect, } from 'vitest';
 import { applyMatrixToPoint, clipToCSS, getClipSpaceMousePosition, getScalesFromMatrix, getScaleXFromMatrix, getScaleYFromMatrix, isScalePositive, screenToWorld, worldToCamera } from '../../../src/util';
 
 describe('getClipSpaceMousePosition', () => {

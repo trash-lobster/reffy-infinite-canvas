@@ -199,9 +199,9 @@ export class InfiniteCanvasElement extends LitElement {
         this.#canvas = new Canvas(
             canvas, 
             this.#history,
+            this.#eventHub,
             this.debounceSaveToCanvasStorage,
             this.saveImageFileMetadata,
-            this.#eventHub
         );
 
         if (!this.renderRoot.contains(canvas)) {

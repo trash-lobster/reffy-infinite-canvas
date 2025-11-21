@@ -65,9 +65,9 @@ export class Canvas extends Renderable {
 	constructor(
 		canvas: HTMLCanvasElement, 
 		history: CanvasHistory,
+		eventHub: EventEmitter,
 		writeToStorage: () => void,
 		saveImgFileToStorage: (data: string) => Promise<string | number | null>,
-		eventHub: EventEmitter,
 	) {
 		super();
 		this.#canvas = canvas;

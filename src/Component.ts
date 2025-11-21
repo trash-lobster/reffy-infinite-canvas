@@ -400,7 +400,7 @@ export class InfiniteCanvasElement extends LitElement {
 
         const newImages = await innerAddImages(
             fileList, 
-            (src: string) => this.engine.addToCanvas(src, wx, wy, 1, 1, true),
+            (src: string) => this.engine.addImageToCanvas(src, wx, wy, 1, 1, true),
         );
         this.#history.push(makeMultiAddChildCommand(this.engine, newImages));
     }

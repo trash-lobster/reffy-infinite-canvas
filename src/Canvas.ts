@@ -1,4 +1,4 @@
-import { convertToPNG, createProgram } from './util';
+import { CanvasEvent, convertToPNG, createProgram } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -24,6 +24,9 @@ import { ImageFileMetadata } from 'storage';
 
 export class Canvas extends Renderable {
 	canvas: HTMLCanvasElement;
+	eventHub: EventEmitter;
+	_history: CanvasHistory;
+
 	gl: WebGLRenderingContext;	
 	basicShapeProgram: WebGLProgram;
 	imageProgram: WebGLProgram;
@@ -39,7 +42,6 @@ export class Canvas extends Renderable {
 
 	_camera: Camera;
 
-	_history: CanvasHistory;
 	writeToStorage: () => void;
 	saveImgFileToStorage: (data: string) => Promise<string | number | null>;
 
@@ -48,7 +50,6 @@ export class Canvas extends Renderable {
 
     // Call this whenever children/layers/z-order change
     markOrderDirty() { this.orderDirty = true; }
-	eventEmitter: EventEmitter;
 
 	get selectionManager() { return this._selectionManager }
 	
@@ -78,7 +79,7 @@ export class Canvas extends Renderable {
 		
 		this.engine = this.engine.bind(this);
 		this.appendChild = this.appendChild.bind(this);
-		this.addToCanvas = this.addToCanvas.bind(this);
+		this.addImageToCanvas = this.addImageToCanvas.bind(this);
 
 		this.toggleGrid = this.toggleGrid.bind(this);
 		
@@ -119,7 +120,7 @@ export class Canvas extends Renderable {
 			pointerEventState,
 			history,
 			eventHub,
-			this.addToCanvas,
+			this.addImageToCanvas,
 			() => this._selectionManager.selected,
 			() => this._contextMenuManager.isMenuActive,
 			this.assignEventListener,
@@ -130,8 +131,8 @@ export class Canvas extends Renderable {
 		})
 		this._camera = new Camera(this, cameraState);
 
-		this.eventEmitter = eventHub;
-		this.eventEmitter.on('save', this.writeToStorage);
+		this.eventHub = eventHub;
+		this.eventHub.on('save', this.writeToStorage);
 	}
 
 	engine() {
@@ -225,7 +226,7 @@ export class Canvas extends Renderable {
 		return this.isGlobalClick;
 	}
 
-	async addToCanvas(src: string, x: number, y: number, sx: number = 1, sy: number = 1, center: boolean = false) {
+	async addImageToCanvas(src: string, x: number, y: number, sx: number = 1, sy: number = 1, center: boolean = false) {
 		const newImg = new Img({ x: x, y: y, src, sx, sy });
 		newImg.fileId = await this.saveImgFileToStorage(src);
 		
@@ -245,7 +246,8 @@ export class Canvas extends Renderable {
 			};
 		}
 
-		this.eventEmitter.emit('save');
+		this.eventHub.emit('save');
+		this.eventHub.emit(CanvasEvent.Change);
 		return newImg;
 	}
 

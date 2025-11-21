@@ -251,7 +251,7 @@ export class PointerEventManager {
             this.canvas._selectionManager.clearMarquee();
         }
 
-        this.canvas.eventEmitter.emit('save');
+        this.canvas.eventHub.emit('save');
     }
 
     private checkCollidingChild(wx: number, wy: number) {

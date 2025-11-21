@@ -147,7 +147,7 @@ export async function paste(
             const minY = data.elements.sort((a, b) => a.y - b.y)[0].y;
 
             const images = await Promise.all(
-                data.elements.map((element) => canvas.addToCanvas(
+                data.elements.map((element) => canvas.addImageToCanvas(
                     element.src, 
                     wx + element.x - minX,
                     wy + element.y - minY, 
@@ -179,7 +179,7 @@ export async function paste(
             });
         }
         
-        const img = await canvas.addToCanvas(base64, wx, wy);
+        const img = await canvas.addImageToCanvas(base64, wx, wy);
         history.push(makeMultiAddChildCommand(canvas, [img]));
     } catch (err) {
         console.error(err);

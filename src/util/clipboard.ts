@@ -1,4 +1,4 @@
-import { convertToPNG, getMimeType, getWorldCoords } from ".";
+import { convertToPNG, getWorldCoords } from ".";
 import { Img } from "../shapes";
 import { Canvas } from "Canvas";
 import { CanvasHistory } from "history";
@@ -23,8 +23,9 @@ const acceptedPasteMimeType = [
     "text/plain"
 ];
 
-export const probablySupportsClipboardWriteText =
-  "clipboard" in navigator && "writeText" in navigator.clipboard;
+export const probablySupportsClipboardWriteText = () => {
+    return "clipboard" in navigator && "writeText" in navigator.clipboard;
+}
 
 // the original copying method involved writing to clipboard API which can take a long time when writing multiple images
 // opted for in canvas only copying, which is faster
@@ -49,8 +50,8 @@ export async function copy(
 
     const json = JSON.stringify(dataStored);
     const clipboardItem = new ClipboardItem({ 'text/plain': new Blob([json], { type: "text/plain" }) });
-
-    if (probablySupportsClipboardWriteText) {
+    
+    if (probablySupportsClipboardWriteText()) {
         try {
             await navigator.clipboard.write([clipboardItem]);
             return;
@@ -62,8 +63,8 @@ export async function copy(
     try {
         if (clipboardEvent) {
             clipboardEvent.clipboardData?.setData('text/plain', json);
+            return;
         }
-        return;
     } catch (err) {
         console.error(err);
     }
@@ -125,21 +126,21 @@ export async function paste(
     try {
         const items = await navigator.clipboard.read();
         const types = items[0].types;
-
+        
         const type = types.find(t =>
             acceptedPasteMimeType.some(allowed =>
                 allowed.endsWith('/') // for "image/" and similar
-                    ? t.startsWith(allowed)
-                    : t === allowed
+                ? t.startsWith(allowed)
+                : t === allowed
             )
         );
-
+        
         if (!type) return;
         
         const [wx, wy] = isWorldCoord ? [clientX, clientY] : getWorldCoords(clientX, clientY, canvas);
 
         const blob = await items[0].getType(type);
-
+        
         if (type === 'text/plain') {
             const data: InfiniteCanvasClipboard = JSON.parse(await blob.text());
             if (data.elements.length === 0) return;

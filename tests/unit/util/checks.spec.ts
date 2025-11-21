@@ -7,7 +7,6 @@ import {
     isUndefined,
     isNil,
 } from '../../../src/util/checks';
-
 import { describe, it, expect } from 'vitest';
 
 describe('checks utility functions', () => {

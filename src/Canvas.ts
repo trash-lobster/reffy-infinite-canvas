@@ -20,7 +20,7 @@ import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
 import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
 import EventEmitter from 'eventemitter3';
-import { ImageFileMetadata } from 'storage';
+import { ImageFileMetadata } from './storage';
 
 export class Canvas extends Renderable {
 	#canvas: HTMLCanvasElement;

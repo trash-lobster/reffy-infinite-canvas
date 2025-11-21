@@ -1,4 +1,4 @@
-import { SerializedCanvas } from "serializer";
+import { SerializedCanvas } from "../serializer";
 import { Img } from "../shapes";
 
 export async function previewImage(file: File) {

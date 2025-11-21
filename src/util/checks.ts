@@ -1,4 +1,5 @@
-export function arraysEqual(a : any[], b : any[]) {
+export function arraysEqual(a, b) {
+    if (a == undefined || b == undefined) return false;
     if (a === b) return true;
     if (a == null || b == null) return false;
     if (a.length !== b.length) return false;

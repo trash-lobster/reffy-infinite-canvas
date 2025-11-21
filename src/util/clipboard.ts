@@ -19,7 +19,6 @@ interface InfiniteCanvasClipboard {
 
 const acceptedPasteMimeType = [
     "image/",
-    "text/html",
     "text/plain"
 ];
 
@@ -33,8 +32,6 @@ export async function copy(
     selected: Img[],
     clipboardEvent?: ClipboardEvent
 ) {
-    // does not copy to the actual clipboard
-    // copy images as they are but also attach the information relevant to them
     const dataStored: InfiniteCanvasClipboard = {
         type: 'infinite_canvas',
         elements: selected.map(img => (
@@ -139,50 +136,69 @@ export async function paste(
         
         const [wx, wy] = isWorldCoord ? [clientX, clientY] : getWorldCoords(clientX, clientY, canvas);
 
-        const blob = await items[0].getType(type);
+        for (const type of types) {
+            const blob = await items[0].getType(type);
+            try {
+                if (type === 'text/plain') {
+                    const data: InfiniteCanvasClipboard = JSON.parse(await blob.text());
+                    if (data.elements.length === 0) return;
+                    const minX = data.elements.sort((a, b) => a.x - b.x)[0].x;
+                    const minY = data.elements.sort((a, b) => a.y - b.y)[0].y;
         
-        if (type === 'text/plain') {
-            const data: InfiniteCanvasClipboard = JSON.parse(await blob.text());
-            if (data.elements.length === 0) return;
-            const minX = data.elements.sort((a, b) => a.x - b.x)[0].x;
-            const minY = data.elements.sort((a, b) => a.y - b.y)[0].y;
-
-            const images = await Promise.all(
-                data.elements.map((element) => canvas.addImageToCanvas(
-                    element.src, 
-                    wx + element.x - minX,
-                    wy + element.y - minY, 
-                    element.sx, 
-                    element.sy
-                ))
-            );
-
-            history.push(makeMultiAddChildCommand(canvas, images));
-            return;
-        }
-
-        let base64: string;
-
-        if (type.startsWith('text/html')) {
-            const el = document.createElement('html');
-            el.innerHTML = await blob.text();
-            const image = el.getElementsByTagName('img')[0];
-            base64 = image.src;
-        } else if (type.startsWith('image/svg')) {
-            const svgText = await blob.text();
-            base64 = await convertToPNG(`data:image/svg+xml;base64,${btoa(svgText)}`);
-        } else {
-            base64 = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
-        }
+                    const images = await Promise.all(
+                        data.elements.map((element) => canvas.addImageToCanvas(
+                            element.src, 
+                            wx + element.x - minX,
+                            wy + element.y - minY, 
+                            element.sx, 
+                            element.sy
+                        ))
+                    );
         
-        const img = await canvas.addImageToCanvas(base64, wx, wy);
-        history.push(makeMultiAddChildCommand(canvas, [img]));
+                    history.push(makeMultiAddChildCommand(canvas, images));
+                    return;
+                }
+        
+                let base64: string;
+                
+                if (type.startsWith('image/svg')) {
+                    try {
+                        const svgText = await blob.text();
+                        base64 = await convertToPNG(`data:image/svg+xml;base64,${btoa(svgText)}`);
+                    } catch (err) {
+                        console.error(err);
+                    }
+                } else {
+                    base64 = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                }
+
+                const img = await canvas.addImageToCanvas(base64, wx, wy);
+                history.push(makeMultiAddChildCommand(canvas, [img]));
+                return;
+            } catch (err) {
+                continue;
+            }
+        
+        }
     } catch (err) {
         console.error(err);
+        console.error('Failed to add images');
     }
+}
+
+function isValidHttpUrl(s: string) {
+    let url;
+    
+    try {
+        url = new URL(s);
+    } catch (_) {
+        return false;  
+    }
+
+    return url.protocol === "http:" || url.protocol === "https:";
 }

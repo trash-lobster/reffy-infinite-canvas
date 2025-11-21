@@ -136,7 +136,11 @@ export function serializeCanvas(canvas: Canvas, files?: ImageFileMetadata[]): Se
 	};
 }
 
-export async function deserializeCanvas(data: SerializedCanvas, canvas: Canvas, getFile: (id: string | number) => Promise<ImageFileMetadata>) {
+export async function deserializeCanvas(
+	data: SerializedCanvas, 
+	canvas: Canvas, 
+	getFile: (id: string | number) => Promise<ImageFileMetadata>
+) {
   	canvas.children.length = 0;
 	const promises = [];
 
@@ -154,18 +158,25 @@ export async function deserializeCanvas(data: SerializedCanvas, canvas: Canvas, 
 				canvas.appendChild(instance);
 				break;
 			case 'Img':
-				const src = (await getFile((node as SerializedImg).fileId)).dataURL;
-				instance = new Img({
-					x: node.transform.x,
-					y: node.transform.y,
-					src,
-					width: (node as SerializedImg).width,
-					height: (node as SerializedImg).height,
-				});
-				(instance as Img).fileId = await hashStringToId(src);
-				instance.setScale(node.transform.sx, node.transform.sy);
-				canvas.appendChild(instance);
-				break;
+				let src: string;
+				try {
+					src = (await getFile((node as SerializedImg).fileId)).dataURL;
+					instance = new Img({
+						x: node.transform.x,
+						y: node.transform.y,
+						src,
+						width: (node as SerializedImg).width,
+						height: (node as SerializedImg).height,
+					});
+					(instance as Img).fileId = await hashStringToId(src);
+					instance.setScale(node.transform.sx, node.transform.sy);
+					canvas.appendChild(instance);
+				} catch (err) {
+					// delete node from storage? It won't be saved in the next instance, so perhaps it's fine?
+					console.error(`Failed to match image to restore with source: ${src}`);
+				} finally {
+					break;
+				}
 			case 'Grid':
 				if (parent instanceof Canvas) {
 					parent.grid.gridType = (node as SerializedGrid).style;

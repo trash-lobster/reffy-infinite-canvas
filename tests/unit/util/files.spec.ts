@@ -1,27 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, afterEach, } from 'vitest';
 import * as Files from '../../../src/util/files';
 import { Img } from '../../../src/shapes';
-
-// describe('previewImage', () => {
-//     it('should resolve with data URL from FileReader', async () => {
-//         const file = new File(['foo'], 'foo.png', { type: 'image/png' });
-//         const mockResult = 'data:image/png;base64,abc';
-//         const addEventListener = vi.fn((event, cb) => {
-//             if (event === 'load') setTimeout(() => cb({ target: { result: mockResult } }), 0);
-//         });
-//         const readAsDataURL = vi.fn();
-//         vi.stubGlobal('FileReader', class {
-//             onload = null;
-//             onerror = null;
-//             addEventListener = addEventListener;
-//             readAsDataURL = readAsDataURL;
-//         });
-//         const promise = Files.previewImage(file);
-//         readAsDataURL.mock.calls[0][0] === file;
-//         expect(await promise).toBe(mockResult);
-//         vi.unstubAllGlobals();
-//     });
-// });
 
 afterEach(() => {
     vi.restoreAllMocks();

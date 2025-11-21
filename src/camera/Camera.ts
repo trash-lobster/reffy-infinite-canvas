@@ -3,8 +3,8 @@ import { getWorldCoords } from "../util";
 import { CameraState } from "../state";
 import { reaction } from "mobx";
 
-export const ZOOM_MIN = 0.1;
-export const ZOOM_MAX = 8;
+export const ZOOM_MIN = 0.5;
+export const ZOOM_MAX = 20;
 
 export class Camera {
     canvas : Canvas;

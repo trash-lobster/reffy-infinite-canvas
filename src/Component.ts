@@ -2,7 +2,7 @@ import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
-import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste } from './util';
+import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste, SaveEvent } from './util';
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
@@ -10,7 +10,7 @@ import { ContextMenu, ContextMenuProps, ContextMenuType } from './contextMenu';
 import { Img } from './shapes';
 import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, ImageFileMetadata } from './storage';
 import EventEmitter from 'eventemitter3';
-import { Loader, LoaderType } from './loader';
+import { hideLoader, Loader, LoaderType, showLoader } from './loader';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -162,7 +162,12 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     render() {
-        this.initCanvas();
+        try {
+            this.initCanvas();
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
     }
 
     private async initCanvas() {
@@ -190,10 +195,6 @@ export class InfiniteCanvasElement extends LitElement {
         this.addContextMenu = this.addContextMenu.bind(this);
         this.clearContextMenu = this.clearContextMenu.bind(this);
         this.isContextMenuActive = this.isContextMenuActive.bind(this);
-        
-        // loader set up
-        this.showLoader = this.showLoader.bind(this);
-        this.hideLoader = this.hideLoader.bind(this);
 
         this.#canvas = new Canvas(
             canvas, 
@@ -234,13 +235,13 @@ export class InfiniteCanvasElement extends LitElement {
         this.#resizeObserver = new ResizeObserver(() => resizeCanvas());
         this.#resizeObserver.observe(canvas);
 
-        this.showLoader('spinner');
+        showLoader.bind(this)('spinner');
         try {
             await this.restoreStateFromCanvasStorage();
         } catch (err) {
             console.error('Failed to restore canvas');
         }
-        this.hideLoader();
+        hideLoader.bind(this)();
 
         this.dispatchEvent(new Event('load'));
 
@@ -254,13 +255,14 @@ export class InfiniteCanvasElement extends LitElement {
 
     // Register signal
     private registerSignal() {
-        this.#eventHub.on(LoaderEvent.start, this.showLoader, 'spinner');
-        this.#eventHub.on(LoaderEvent.done, this.hideLoader);
+        this.#eventHub.on(LoaderEvent.start, showLoader.bind(this), 'spinner');
+        this.#eventHub.on(LoaderEvent.done, hideLoader.bind(this));
         this.#eventHub.on(ContextMenuEvent.Open, this.addContextMenu);
         this.#eventHub.on(ContextMenuEvent.Close, this.clearContextMenu);
         this.#eventHub.on(CanvasEvent.Change, () => {
             if (this.#onChange) this.#onChange();
         });
+        this.#eventHub.on(SaveEvent.Save, () => console.log('saving'));
     }
 
     // Storage & Persistence
@@ -523,19 +525,27 @@ export class InfiniteCanvasElement extends LitElement {
             {
                 childOptions: [
                     {
-                        text: "Paste",
-                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
+                        text: 'Change mode',
+                        onClick: () => this.withContextMenuClear(this.togglePointerMode.bind(this))()
                     },
                     {
                         text: "Toggle Grid",
                         onClick: () => this.withContextMenuClear(this.toggleGrid.bind(this))()
                     },
-                    {
-                        text: 'Change mode',
-                        onClick: () => this.withContextMenuClear(this.togglePointerMode.bind(this))()
-                    }
                 ]
             },
+            {
+                childOptions: [
+                    {
+                        text: 'Save',
+                        onClick: () => this.withContextMenuClear(this.saveToCanvasStorage.bind(this))()
+                    },
+                    {
+                        text: "Paste",
+                        onClick: (e: PointerEvent) => this.withContextMenuClear(this.pasteImage.bind(this))(e)
+                    },
+                ]
+            }
         ]
     }
 
@@ -592,24 +602,8 @@ export class InfiniteCanvasElement extends LitElement {
         return this.renderRoot.querySelector('.context-menu') !== null;
     }
 
-    // Loader
-    showLoader(type: LoaderType, message?: string) {
-        const loader = new Loader({ type, message });
-        loader.attachToParent(this.renderRoot as HTMLElement);
+    // Save
 
-        const hostRect = this.getBoundingClientRect();
-        loader.el.style.width = `${hostRect.right}px`;
-        loader.el.style.height = `${hostRect.bottom}px`;
-        loader._el.style.top = `${-hostRect.bottom}px`;
-
-    }
-
-    hideLoader() {
-        const oldLoader = this.renderRoot.querySelector('.canvas-loader');
-        if (oldLoader) {
-            oldLoader.remove();
-        }
-    }
 
     // Global helper
     private handleGlobalPointerDown = (e: PointerEvent) => {

@@ -1,4 +1,4 @@
-import { CanvasEvent, convertToPNG, createProgram } from './util';
+import { CanvasEvent, convertToPNG, createProgram, getWorldCoords, paste } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -103,8 +103,13 @@ export class Canvas extends Renderable {
 		this.exportState = this.exportState.bind(this);
 		this.importState = this.importState.bind(this);
 		this.clearChildren = this.clearChildren.bind(this);
-		
+
 		this.#selectionManager = new SelectionManager(this);
+
+		const cameraState = new CameraState({
+			getCanvas: this.engine
+		})
+		this.#camera = new Camera(this, cameraState);
 
 		this.#keyPressManager = new KeyEventManager(
 			this,
@@ -122,15 +127,22 @@ export class Canvas extends Renderable {
 		})
 
 		this.#pointerEventManager = new PointerEventManager(
-			this, 
+			history,
+			eventHub,
 			pointerEventState,
+			this.#selectionManager,
+			this.#contextMenuManager,
+			() => this.children,
+			() => this.worldMatrix,
+			() => this.isGlobalClick,
+			(val: boolean) => this.isGlobalClick = val,
+			(x: number, y: number) => getWorldCoords(x, y, this),
+			this.camera.updateCameraPos,
+			this.camera.onWheel,
+			(val: string) => canvas.style.cursor = val,
+			(x: number, y: number) => paste(x, y, this, history),
 			this.assignEventListener,
 		);
-
-		const cameraState = new CameraState({
-			getCanvas: this.engine
-		})
-		this.#camera = new Camera(this, cameraState);
 
 		this.#eventHub.on('save', this.writeToStorage);
 	}

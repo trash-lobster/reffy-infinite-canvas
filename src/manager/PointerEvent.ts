@@ -1,9 +1,7 @@
-import { Canvas } from "Canvas";
 import { Img, Rect, Renderable, Shape } from "../shapes";
 import {
     ContextMenuEvent,
     copy,
-    getWorldCoords,
     LoaderEvent,
     paste,
 } from "../util";
@@ -11,6 +9,8 @@ import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
 import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
 import EventEmitter from "eventemitter3";
+import { SelectionManager } from "./Selection";
+import { ContextMenuManager } from "./ContextMenu";
 
 export interface Point {
     x: number,
@@ -36,13 +36,16 @@ const cursorMap: Record<string, string> = {
 
 export class PointerEventManager {
     state: PointerEventState;
-    canvas: Canvas;
     history: CanvasHistory;
     eventHub: EventEmitter;
 
-    addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
+    // addToCanvas: (src: string, x: number, y: number) => Promise<Img>;
     getSelected: () => Renderable[];
     isContextMenuActive: boolean;
+
+    onPointerDown: (e: PointerEvent) => void;
+    onPointerMoveWhileDown: (e: PointerEvent) => void;
+    onPointerUp: (e: PointerEvent) => void;
     
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
@@ -50,30 +53,68 @@ export class PointerEventManager {
       { targets: Array<{ ref: Rect; start: TransformSnapshot }> };
 
     constructor(
-        canvas: Canvas, 
+        history: CanvasHistory,
+        eventHub: EventEmitter,
         state: PointerEventState,
+        selectionManager: SelectionManager,
+        contextMenuManager: ContextMenuManager,
+        getChildren: () => Renderable[],
+        getWorldMatrix: () => number[],
+        getCanvasGlobalClick: () => boolean,
+        setCanvasGlobalClick:(val: boolean) => void,
+        getWorldCoordsFromCanvas: (x: number, y: number) => number[],
+        updateCameraPos: (x: number, y: number) => void,
+        onWheel: (e: WheelEvent) => void,
+        setCursorStyle: (val: string) => void,
+        paste: (x: number, y: number) => Promise<void>,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
-        const { history, eventHub, addImageToCanvas, selectionManager, contextMenuManager } = canvas;
-        this.canvas = canvas;
         this.state = state;
         this.history = history;
         this.eventHub = eventHub;
-        this.addToCanvas = addImageToCanvas;
         this.getSelected = () => selectionManager.selected;
         this.isContextMenuActive = contextMenuManager.isActive;
 
         this.assignEventListener = assignEventListener;
 
         // bind methods
-        this.onPointerDown = this.onPointerDown.bind(this);
-        this.onPointerMoveWhileDown = this.onPointerMoveWhileDown.bind(this);
-        this.onPointerUp = this.onPointerUp.bind(this);
+        this.onPointerDown = (e: PointerEvent) => this.setupOnPointerDown.bind(this)(
+            e,
+            selectionManager,
+            getChildren,
+            setCanvasGlobalClick,
+            getWorldCoordsFromCanvas,
+        );
+
+        this.onPointerMoveWhileDown = (e: PointerEvent) => this.setupOnPointerMoveWhileDown.bind(this)(
+            e,
+            selectionManager,
+            getCanvasGlobalClick,
+            getWorldCoordsFromCanvas,
+            getWorldMatrix,
+            setCursorStyle,
+            updateCameraPos,
+        )
+
+        this.onPointerUp = () => this.setupOnPointerUp.bind(this)(
+            selectionManager,
+            setCanvasGlobalClick,
+            setCursorStyle,
+        );
 
         // register event listeners
-        this.addOnPointerMove();
-        this.addOnWheel();
-        this.addOnPointerDown();
+        this.addOnPointerMove(
+            selectionManager,
+            getWorldCoordsFromCanvas,
+            setCursorStyle,
+        );
+        this.addOnWheel(onWheel);
+        this.addOnPointerDown(
+            selectionManager,
+            getChildren,
+            setCanvasGlobalClick,
+            getWorldCoordsFromCanvas,
+        );
 
         window.addEventListener('copy', async (e) => {
             e.preventDefault();
@@ -89,8 +130,6 @@ export class PointerEventManager {
             await paste(                
                 this.state.lastPointerPos.x,
                 this.state.lastPointerPos.y,
-                canvas, 
-                history,
             );
             eventHub.emit(LoaderEvent.done);
         });
@@ -101,86 +140,117 @@ export class PointerEventManager {
     }
     
     // Add events
-    private addOnPointerDown() {
-        this.assignEventListener('pointerdown', this.onPointerDown);
+    private addOnPointerDown(
+        selectionManager: SelectionManager,
+        getChildren: () => Renderable[],
+        setCanvasGlobalClick: (val: boolean) => void,
+        getWorldCoords: (x: number, y: number) => number[],
+    ) {
+        this.assignEventListener('pointerdown', 
+            (e: PointerEvent) => this.setupOnPointerDown(
+                e, 
+                selectionManager,
+                getChildren,
+                setCanvasGlobalClick,
+                getWorldCoords,
+            )
+        );
     }
     
-    // always on
-    private addOnPointerMove() {
+    private addOnPointerMove(
+        selectionManager: SelectionManager,
+        getWorldCoords: (x: number, y: number) => number[],
+        setCursorStyle: (val: string) => void,
+    ) {
         this.assignEventListener('pointermove', (e) => {
-            [this.state.lastPointerPos.x, this.state.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY, this.canvas);
+            [this.state.lastPointerPos.x, this.state.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY);
 
-            let hit = this.canvas.selectionManager.hitTestAdjustedCorner(this.state.lastPointerPos.x, this.state.lastPointerPos.y);
-			this.canvas.canvas.style.cursor = cursorMap[hit] || 'default';
+            let hit = selectionManager.hitTestAdjustedCorner(this.state.lastPointerPos.x, this.state.lastPointerPos.y);
+			setCursorStyle(cursorMap[hit] || 'default');
         });
     }
     
-    private addOnWheel() {
+    private addOnWheel(onWheel: (e: WheelEvent) => void) {
         this.assignEventListener('wheel', (e) => {
             if (!this.isContextMenuActive) {
-                this.canvas.camera.onWheel(e);
+                onWheel(e);
             }
         }, { passive: false });
     }
 
-    private onPointerDown(e: PointerEvent) {
+    private setupOnPointerDown(
+        e: PointerEvent, 
+        selectionManager: SelectionManager,
+        getChildren: () => Renderable[],
+        setCanvasGlobalClick: (val: boolean) => void,
+        getWorldCoords: (x: number, y: number) => number[],
+    ) {
         e.stopPropagation();
         e.preventDefault();
         this.eventHub.emit(ContextMenuEvent.Close);
 
-        const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
+        const [wx, wy] = getWorldCoords(e.clientX, e.clientY);
         this.state.initialize(wx, wy);
 
         this.currentTransform = undefined;
 
         if (this.state.mode === PointerMode.PAN) {
-            this.handlePanPointerDown();
+            this.handlePanPointerDown(setCanvasGlobalClick);
         } else if (this.state.mode === PointerMode.SELECT) {
-            this.handleSelectPointerDown(e, wx, wy);
+            this.handleSelectPointerDown(e, wx, wy, selectionManager, setCanvasGlobalClick, getChildren);
         }
 
         document.addEventListener('pointermove', this.onPointerMoveWhileDown);
         document.addEventListener('pointerup', this.onPointerUp);
     }
 
-    private handlePanPointerDown() {
+    private handlePanPointerDown(
+        setCanvasGlobalClick: (val: boolean) => void,
+    ) {
+        setCanvasGlobalClick(true);
         this.state.clearSelection();
-        this.canvas.isGlobalClick = true;
     }
 
-    private handleSelectPointerDown(e: MouseEvent, wx: number, wy: number) {
-        this.canvas.isGlobalClick = false;
+    private handleSelectPointerDown(
+        e: MouseEvent, 
+        wx: number, 
+        wy: number, 
+        selectionManager: SelectionManager,
+        setCanvasGlobalClick: (val: boolean) => void,
+        getChildren: () => Renderable[],
+    ) {
+        setCanvasGlobalClick(false);
         if (e.button === 2) {
-            if (!this.canvas.selectionManager.hitTest(wx, wy)) {
+            if (!selectionManager.hitTest(wx, wy)) {
                 this.state.clearSelection();
             }
 
-            const child = this.checkCollidingChild(wx, wy);
-            if (child && !this.canvas.selectionManager.isRectSelected(child as Rect)) {
-                this.canvas.selectionManager.add([child as Rect]);
+            const child = this.checkCollidingChild(wx, wy, getChildren);
+            if (child && !selectionManager.isRectSelected(child as Rect)) {
+                selectionManager.add([child as Rect]);
             }
         } else {
-            const boundingBoxType = this.canvas.selectionManager.hitTest(wx, wy);
+            const boundingBoxType = selectionManager.hitTest(wx, wy);
             if (boundingBoxType) {
                 this.state.resizingDirection = boundingBoxType;
             } else {
-                const child = this.checkCollidingChild(wx, wy);
+                const child = this.checkCollidingChild(wx, wy, getChildren);
                 if (child) {
                     if (!e.shiftKey) {                            
                         this.state.clearSelection();
                     }
-                    this.canvas.selectionManager.add([child as Rect]);
+                    selectionManager.add([child as Rect]);
                 } else {
                     this.state.clearSelection();
-                    if (this.canvas.selectionManager.marqueeBox) {
-                        this.canvas.selectionManager.clearMarquee();
+                    if (selectionManager.marqueeBox) {
+                        selectionManager.clearMarquee();
                     } else {
-                        this.canvas.selectionManager.marqueeBox = {x: wx, y: wy};
+                        selectionManager.marqueeBox = {x: wx, y: wy};
                     }
                 }
             }
 
-            const selected = this.canvas.selectionManager.selected;
+            const selected = selectionManager.selected;
             if (selected.length) {
                 this.currentTransform = {
                     targets: selected.map(ref => ({
@@ -192,33 +262,45 @@ export class PointerEventManager {
         }
     }
 
-    private onPointerMoveWhileDown(e: PointerEvent) {
+    private setupOnPointerMoveWhileDown(
+        e: PointerEvent,
+        selectionManager: SelectionManager,
+        getGlobalClick: () => boolean,
+        getWorldCoords: (x: number, y: number) => number[],
+        getWorldMatrix: () => number[],
+        setCursorStyle: (val: string) => void,
+        updateCameraPos: (x: number, y: number) => void,
+    ) {
         // in move, the buttons property is checked
         if (e.buttons === 2) return;
-        const [wx, wy] = getWorldCoords(e.clientX, e.clientY, this.canvas);
+        const [wx, wy] = getWorldCoords(e.clientX, e.clientY);
         const dx = wx - this.state.lastWorldX;
         const dy = wy - this.state.lastWorldY;
         
         
-        if (this.canvas.isGlobalClick) {
-            this.canvas.camera.updateCameraPos(this.state.startWorldX - wx, this.state.startWorldY - wy);
+        if (getGlobalClick()) {
+            updateCameraPos(this.state.startWorldX - wx, this.state.startWorldY - wy);
         } else if (this.state.resizingDirection && this.state.resizingDirection !== 'CENTER') {
-            this.canvas.selectionManager.resize(dx, dy, this.state.resizingDirection);
-        } else if (this.canvas.selectionManager.marqueeBox) {
-            this.canvas.selectionManager.marqueeBox.resize(dx, dy, this.canvas.worldMatrix);
+            selectionManager.resize(dx, dy, this.state.resizingDirection);
+        } else if (selectionManager.marqueeBox) {
+            selectionManager.marqueeBox.resize(dx, dy, getWorldMatrix());
         } else {
-            this.canvas.selectionManager.move(dx, dy);
+            selectionManager.move(dx, dy);
         }
 
         this.state.updateLastWorldCoord(wx, wy);
-        this.canvas.canvas.style.cursor = 'grabbing'; 
+        setCursorStyle('grabbing'); 
     }
 
-    private onPointerUp() {
+    private setupOnPointerUp(
+        selectionManager: SelectionManager,
+        setCanvasGlobalClick: (val: boolean) => void,
+        setCursorStyle: (val: string) => void,
+    ) {
         document.removeEventListener('pointermove', this.onPointerMoveWhileDown);
         document.removeEventListener('pointerup', this.onPointerUp);
-        this.canvas.isGlobalClick = true;
-        this.canvas.canvas.style.cursor = 'default';
+        setCanvasGlobalClick(true);
+        setCursorStyle('default');
 
         if (this.currentTransform) {
             const entries = this.currentTransform.targets
@@ -240,16 +322,17 @@ export class PointerEventManager {
         this.currentTransform = undefined;
         this.state.resizingDirection = null;
 
-        if (this.canvas.selectionManager.marqueeBox) {
-            this.canvas.selectionManager.clearMarquee();
+        if (selectionManager.marqueeBox) {
+            selectionManager.clearMarquee();
         }
 
-        this.canvas.eventHub.emit('save');
+        this.eventHub.emit('save');
     }
 
-    private checkCollidingChild(wx: number, wy: number) {
-        for (let i = this.canvas.children.length - 1; i >= 0; i--) {
-            const child = this.canvas.children[i];
+    private checkCollidingChild(wx: number, wy: number, getChildren: () => Renderable[]) {
+        const children = getChildren();
+        for (let i = children.length - 1; i >= 0; i--) {
+            const child = children[i];
             if (child instanceof Shape) {
                 if (child.hitTest && child.hitTest(wx, wy)) {
                     return child;

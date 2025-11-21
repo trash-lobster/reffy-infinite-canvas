@@ -15,6 +15,8 @@ export class Camera {
         this.canvas = canvas;
         this.state = state;
 
+        this.updateCameraPos = this.updateCameraPos.bind(this);
+
         this.updateReaction = reaction(
             () => this.state.stateVector,
             () => this.updateViewMatrix()

@@ -1,5 +1,3 @@
-import { Canvas } from "Canvas";
-import { getWorldCoords } from "../util";
 import { CameraState } from "../state";
 import { reaction } from "mobx";
 
@@ -7,15 +5,24 @@ export const ZOOM_MIN = 0.02;
 export const ZOOM_MAX = 20;
 
 export class Camera {
-    canvas : Canvas;
     state: CameraState;
     private updateReaction: () => void;
+    getWorldCoords: (x: number, y: number) => number[];
+    setWorldMatrix: (matrix: number[]) => void;
+    updateWorldMatrix: () => void;
 
-    constructor(canvas: Canvas, state: CameraState) {
-        this.canvas = canvas;
+    constructor(
+        state: CameraState,
+        setWorldMatrix: (matrix: number[]) => void,
+        updateWorldMatrix: () => void,
+        getWorldCoords: (x: number, y: number) => number[]
+    ) {
         this.state = state;
 
         this.updateCameraPos = this.updateCameraPos.bind(this);
+        this.getWorldCoords = getWorldCoords;
+        this.setWorldMatrix = setWorldMatrix;
+        this.updateWorldMatrix = updateWorldMatrix
 
         this.updateReaction = reaction(
             () => this.state.stateVector,
@@ -30,8 +37,8 @@ export class Camera {
      * Called once to update the `worldMatrix` of the attached canvas, which is the view matrix.
      */
     private updateViewMatrix() {
-        this.canvas.setWorldMatrix(this.state.canvasMatrix);
-        this.canvas.updateWorldMatrix();
+        this.setWorldMatrix(this.state.canvasMatrix);
+        this.updateWorldMatrix();
     }
 
     onWheel = (e: WheelEvent) => {
@@ -47,10 +54,10 @@ export class Camera {
     }
 
     updateZoom(x: number, y: number, scale: number) {
-        const [wx0, wy0] = getWorldCoords(x, y, this.canvas);
+        const [wx0, wy0] = this.getWorldCoords(x, y);
         this.state.setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, this.state.zoom * scale)));
 
-        const [wx1, wy1] = getWorldCoords(x, y, this.canvas);
+        const [wx1, wy1] = this.getWorldCoords(x, y);
 
         this.state.incrementPosition(wx0 - wx1, wy0 - wy1);
     }

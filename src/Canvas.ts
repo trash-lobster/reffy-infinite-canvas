@@ -93,13 +93,14 @@ export class Canvas extends Renderable {
 		this.getBoundingClientRect = this.getBoundingClientRect.bind(this);
 		this.appendChild = this.appendChild.bind(this);
 		this.addImageToCanvas = this.addImageToCanvas.bind(this);
-
+		
 		this.toggleGrid = this.toggleGrid.bind(this);
 		this.changeMode = this.changeMode.bind(this);
 		this.getSelected = this.getSelected.bind(this);
 		this.updateZoomByFixedAmount = this.updateZoomByFixedAmount.bind(this);
 		
 		this.assignEventListener = this.assignEventListener.bind(this);
+		const getWorldsCoordsFromCanvas = (x: number, y: number) => getWorldCoords(x, y, this);
 
 		this.exportState = this.exportState.bind(this);
 		this.importState = this.importState.bind(this);
@@ -107,10 +108,13 @@ export class Canvas extends Renderable {
 
 		this.#selectionManager = new SelectionManager(this);
 
-		const cameraState = new CameraState({
-			getCanvas: this.engine
-		})
-		this.#camera = new Camera(this, cameraState);
+		const cameraState = new CameraState({});
+		this.#camera = new Camera(
+			cameraState,
+			this.setWorldMatrix,
+			this.updateWorldMatrix,
+			getWorldsCoordsFromCanvas
+		);
 
 		this.#keyPressManager = new KeyEventManager(
 			history,
@@ -118,8 +122,6 @@ export class Canvas extends Renderable {
 			this.selectionManager.deleteSelected,
 			this.assignEventListener
 		)
-
-		const getWorldsCoordsFromCanvas = (x: number, y: number) => getWorldCoords(x, y, this);
 
 		this.#contextMenuManager = new ContextMenuManager(
 			eventHub,

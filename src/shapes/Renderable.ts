@@ -37,6 +37,9 @@ export abstract class Renderable {
     
     constructor() {
         this.state = new RenderableState();
+
+        this.setWorldMatrix = this.setWorldMatrix.bind(this);
+        this.updateWorldMatrix = this.updateWorldMatrix.bind(this);
     }
 
     appendChild<T extends Renderable>(child: T): T {

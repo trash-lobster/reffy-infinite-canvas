@@ -1,4 +1,3 @@
-import { Canvas } from "Canvas";
 import { makeObservable, observable, computed, action } from "mobx";
 import { m3 } from "../util";
 
@@ -9,7 +8,6 @@ interface CameraStateOption {
     height: number;
     rotation: number;
     zoom: number;
-    getCanvas: () => Canvas;
 }
 
 export class CameraState {
@@ -19,7 +17,6 @@ export class CameraState {
     height: number;
     rotation: number;
     zoom: number;
-    getCanvas: () => Canvas;
 
     constructor(option: Partial<CameraStateOption> = {}) {
         const {
@@ -29,7 +26,6 @@ export class CameraState {
             height = 0,
             rotation = 0,
             zoom = 1,
-            getCanvas = () => { throw new Error("getCanvas not implemented"); },
         } = option;
 
         this.x = x;
@@ -38,7 +34,6 @@ export class CameraState {
         this.height = height;
         this.rotation = rotation;
         this.zoom = zoom;
-        this.getCanvas = getCanvas;
 
         makeObservable(this, {
             x: observable,

@@ -9,12 +9,6 @@ import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
 import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
 import EventEmitter from "eventemitter3";
-import { ContextMenuManager } from "./ContextMenu";
-
-export interface Point {
-    x: number,
-    y: number,
-}
 
 export enum PointerMode {
     SELECT,
@@ -37,18 +31,18 @@ interface PointerEventManagerDeps {
     history: CanvasHistory,
     eventHub: EventEmitter,
     state: PointerEventState,
-    isContextMenuActive: boolean;
+    isContextMenuActive: () => boolean;
     getSelected: () => Renderable[],
     getChildren: () => Renderable[],
     getWorldMatrix: () => number[],
     getCanvasGlobalClick: () => boolean,
     setCanvasGlobalClick:(val: boolean) => void,
-    getWorldCoordsFromCanvas: (x: number, y: number) => number[],
+    getWorldCoords: (x: number, y: number) => number[],
     updateCameraPos: (x: number, y: number) => void,
     onWheel: (e: WheelEvent) => void,
     setCursorStyle: (val: string) => void,
     paste: (x: number, y: number) => Promise<void>,
-    clearMarquee: () => void,
+    closeMarquee: () => void,
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     selectionPointerMove: (
         x: number,
@@ -69,9 +63,9 @@ export class PointerEventManager {
     state: PointerEventState;
     history: CanvasHistory;
     eventHub: EventEmitter;
-
-    isContextMenuActive: boolean;
     
+    isContextMenuActive: () => boolean;
+
     getSelected: () => Renderable[];
     onSelectionPointerDown: (isShiftKey: boolean, child: Shape, wx : number, wy: number) => void;
     selectionPointerMove: (x: number, y: number, dx: number, dy: number, resizingDirection: BoundingBoxCollisionType) => void;
@@ -79,39 +73,25 @@ export class PointerEventManager {
     addSelection: (rects: Rect[]) => void;
     clearSelection: () => void;
     isSelection: (rect: Rect) => boolean;
-    setCursorStyle: (s: string) => void;
-    getWorldCoords: (x: number, y: number) => number[];
+
     getChildren: () => Renderable[];
+
+    setCursorStyle: (s: string) => void;
     setCanvasGlobalClick: (val: boolean) => void;
+    getWorldCoords: (x: number, y: number) => number[];
     closeMarquee: () => void;
     hitTestAdjustedCorner: (x: number, y: number) => BoundingBoxCollisionType;
-
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
     private currentTransform?:
       { targets: Array<{ ref: Rect; start: TransformSnapshot }> };
 
-    constructor(deps: PointerEventManagerDeps) {
-        Object.assign(this, {
-            state: deps.state,
-            history: deps.history,
-            eventHub: deps.eventHub,
-            getSelected: deps.getSelected,
-            getChildren: deps.getChildren,
-            checkIfSelectionHit: deps.checkIfSelectionHit,
-            addSelection: deps.addSelection,
-            clearSelection: deps.clearSelection,
-            isSelection: deps.isSelection,
-            onSelectionPointerDown: deps.onSelectionPointerDown,
-            selectionPointerMove: deps.selectionPointerMove,
-            assignEventListener: deps.assignEventListener,
-            getWorldCoords: deps.getWorldCoordsFromCanvas,
-            setCursorStyle: deps.setCursorStyle,
-            isContextMenuActive: deps.isContextMenuActive,
-            setCanvasGlobalClick: deps.setCanvasGlobalClick,
-            closeMarquee: deps.clearMarquee,
-            hitTestAdjustedCorner: deps.hitTestAdjustedCorner,
-        });
+    constructor(deps: Partial<PointerEventManagerDeps>) {
+        for (const key in deps) {
+            if (key in deps && deps[key] !== undefined) {
+                this[key] = deps[key];
+            }
+        }
 
         // bind methods
         this.onPointerDown = this.onPointerDown.bind(this);
@@ -119,17 +99,13 @@ export class PointerEventManager {
         this.onPointerUp = this.onPointerUp.bind(this);
 
         // register event listeners
-        this.addOnPointerMove(
-            deps.getWorldCoordsFromCanvas,
-            deps.setCursorStyle,
-        );
-
+        this.addOnPointerMove();
         this.addOnWheel(deps.onWheel);
         this.addOnPointerDown();
 
         window.addEventListener('copy', async (e) => {
             e.preventDefault();
-            if (!this.isContextMenuActive) return;
+            if (!this.isContextMenuActive()) return;
 
             await copy(this.getSelected() as Img[]);
         });
@@ -137,7 +113,7 @@ export class PointerEventManager {
         window.addEventListener('paste', async (e) => {
             e.preventDefault();
             deps.eventHub.emit(LoaderEvent.start, 'spinner');
-            if (this.isContextMenuActive) return;
+            if (this.isContextMenuActive()) return;
             await deps.paste(                
                 this.state.lastPointerPos.x,
                 this.state.lastPointerPos.y,
@@ -155,21 +131,18 @@ export class PointerEventManager {
         this.assignEventListener('pointerdown', this.onPointerDown);
     }
     
-    private addOnPointerMove(
-        getWorldCoords: (x: number, y: number) => number[],
-        setCursorStyle: (val: string) => void,
-    ) {
+    private addOnPointerMove() {
         this.assignEventListener('pointermove', (e) => {
-            [this.state.lastPointerPos.x, this.state.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY);
+            [this.state.lastPointerPos.x, this.state.lastPointerPos.y] = this.getWorldCoords(e.clientX, e.clientY);
 
             let hit = this.hitTestAdjustedCorner(this.state.lastPointerPos.x, this.state.lastPointerPos.y);
-			setCursorStyle(cursorMap[hit] || 'default');
+			this.setCursorStyle(cursorMap[hit] || 'default');
         });
     }
     
     private addOnWheel(onWheel: (e: WheelEvent) => void) {
         this.assignEventListener('wheel', (e) => {
-            if (!this.isContextMenuActive) {
+            if (!this.isContextMenuActive()) {
                 onWheel(e);
             }
         }, { passive: false });

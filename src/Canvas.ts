@@ -113,7 +113,9 @@ export class Canvas extends Renderable {
 		this.#camera = new Camera(this, cameraState);
 
 		this.#keyPressManager = new KeyEventManager(
-			this,
+			history,
+			eventHub,
+			this.selectionManager.deleteSelected,
 			this.assignEventListener
 		)
 

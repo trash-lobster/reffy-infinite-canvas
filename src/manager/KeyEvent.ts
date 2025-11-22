@@ -1,6 +1,6 @@
 import { CanvasEvent } from "../util";
-import { Canvas } from "../Canvas";
 import { CanvasHistory } from "../history";
+import EventEmitter from "eventemitter3";
 
 export class KeyEventManager {
     history: CanvasHistory;
@@ -9,12 +9,13 @@ export class KeyEventManager {
     save: () => void;
 
     constructor(
-        canvas: Canvas,
+        history: CanvasHistory,
+        eventHub: EventEmitter,
+        deleteSelected: () => void,
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
-        const { history, selectionManager, eventHub } = canvas;
         this.history = history;
-        this.deleteSelected = selectionManager.deleteSelected;
+        this.deleteSelected = deleteSelected;
         this.save = () => eventHub.emit(CanvasEvent.Save);
         this.assignEventListener = assignEventListener;
 

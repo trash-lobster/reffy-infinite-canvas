@@ -63,6 +63,8 @@ export class SelectionManager {
         this.clear = this.clear.bind(this);
         this.deleteSelected = this.deleteSelected.bind(this);
         this.flip = this.flip.bind(this);
+        this.clearMarquee = this.clearMarquee.bind(this);
+        this.onPointerMove = this.onPointerMove.bind(this);
     }
 
     // add, remove selected
@@ -204,8 +206,10 @@ export class SelectionManager {
     }
 
     clearMarquee() {
-        this.#marqueeSelectionBox.hitTest(this.#canvas);
-        this.#marqueeSelectionBox = null;
+        if (this.#marqueeSelectionBox) {
+            this.#marqueeSelectionBox.hitTest(this.#canvas);
+            this.#marqueeSelectionBox = null;
+        }
     }
 
     move(dx: number, dy: number) {
@@ -258,6 +262,27 @@ export class SelectionManager {
             this.#history.push(makeMultiFlipCommand(transformArray, direction));
         }
         this.#eventHub.emit(CanvasEvent.Change);
+    }
+
+    onPointerMove(
+        x: number,
+        y: number,
+        dx: number,
+        dy: number,
+        resizeDirection: BoundingBoxCollisionType,
+        getGlobalClick: () => boolean,
+        updateCameraPos: (x: number, y: number) => void,
+        getWorldMatrix: () => number[],
+    ) {
+        if (getGlobalClick()) {
+            updateCameraPos(x, y);
+        } else if (resizeDirection && resizeDirection !== 'CENTER') {
+            this.resize(dx, dy, resizeDirection);
+        } else if (this.marqueeBox) {
+            this.marqueeBox.resize(dx, dy, getWorldMatrix());
+        } else {
+            this.move(dx, dy);
+        }
     }
 
     // keep this for exporting as image in the future

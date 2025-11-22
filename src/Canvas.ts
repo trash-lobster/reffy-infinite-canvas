@@ -1,4 +1,4 @@
-import { CanvasEvent, convertToPNG, createProgram, getWorldCoords, paste } from './util';
+import { BoundingBoxCollisionType, CanvasEvent, convertToPNG, createProgram, getWorldCoords, paste } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -125,6 +125,8 @@ export class Canvas extends Renderable {
 			getCanvas: this.engine
 		})
 
+		const getCanvasGlobalClick = () => this.isGlobalClick;
+
 		const pointerManagerDeps = {
 			history,
 			eventHub,
@@ -133,7 +135,7 @@ export class Canvas extends Renderable {
 			contextMenuManager: this.#contextMenuManager,
 			getChildren: () => this.children,
 			getWorldMatrix: () => this.worldMatrix,
-			getCanvasGlobalClick: () => this.isGlobalClick,
+			getCanvasGlobalClick,
 			setCanvasGlobalClick: (val: boolean) => this.isGlobalClick = val,
 			getWorldCoordsFromCanvas: (x: number, y: number) => getWorldCoords(x, y, this),
 			updateCameraPos: this.camera.updateCameraPos,
@@ -141,6 +143,9 @@ export class Canvas extends Renderable {
 			setCursorStyle: (val: string) => canvas.style.cursor = val,
 			paste: (x: number, y: number) => paste(x, y, this, history),
 			assignEventListener: this.assignEventListener,
+			clearMarquee: this.#selectionManager.clearMarquee,
+			selectionPointerMove: (x: number, y: number, dx: number, dy: number, resizeDirection: BoundingBoxCollisionType) => 
+				this.#selectionManager.onPointerMove(x, y, dx, dy, resizeDirection, getCanvasGlobalClick, this.camera.updateCameraPos, () => this.worldMatrix),
 		}
 
 		this.#pointerEventManager = new PointerEventManager(pointerManagerDeps);

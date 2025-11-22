@@ -1,5 +1,6 @@
 import { Img, Rect, Renderable, Shape } from "../shapes";
 import {
+    BoundingBoxCollisionType,
     ContextMenuEvent,
     copy,
     LoaderEvent,
@@ -48,7 +49,15 @@ interface PointerEventManagerDeps {
     onWheel: (e: WheelEvent) => void,
     setCursorStyle: (val: string) => void,
     paste: (x: number, y: number) => Promise<void>,
+    clearMarquee: () => void,
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
+    selectionPointerMove: (
+        x: number,
+        y: number,
+        dx: number,
+        dy: number,
+        resizeDirection: BoundingBoxCollisionType
+    ) => void,
 }
 
 export class PointerEventManager {
@@ -88,18 +97,15 @@ export class PointerEventManager {
 
         this.onPointerMoveWhileDown = (e: PointerEvent) => this.setupOnPointerMoveWhileDown.bind(this)(
             e,
-            deps.selectionManager,
-            deps.getCanvasGlobalClick,
             deps.getWorldCoordsFromCanvas,
-            deps.getWorldMatrix,
             deps.setCursorStyle,
-            deps.updateCameraPos,
+            deps.selectionPointerMove,
         )
 
         this.onPointerUp = () => this.setupOnPointerUp.bind(this)(
-            deps.selectionManager,
             deps.setCanvasGlobalClick,
             deps.setCursorStyle,
+            deps.clearMarquee,
         );
 
         // register event listeners
@@ -265,12 +271,9 @@ export class PointerEventManager {
 
     private setupOnPointerMoveWhileDown(
         e: PointerEvent,
-        selectionManager: SelectionManager,
-        getGlobalClick: () => boolean,
         getWorldCoords: (x: number, y: number) => number[],
-        getWorldMatrix: () => number[],
         setCursorStyle: (val: string) => void,
-        updateCameraPos: (x: number, y: number) => void,
+        selectionPointerMove: (x: number, y: number, dx: number, dy: number, resizeDirection: BoundingBoxCollisionType) => void,
     ) {
         // in move, the buttons property is checked
         if (e.buttons === 2) return;
@@ -278,25 +281,16 @@ export class PointerEventManager {
         const dx = wx - this.state.lastWorldX;
         const dy = wy - this.state.lastWorldY;
         
-        
-        if (getGlobalClick()) {
-            updateCameraPos(this.state.startWorldX - wx, this.state.startWorldY - wy);
-        } else if (this.state.resizingDirection && this.state.resizingDirection !== 'CENTER') {
-            selectionManager.resize(dx, dy, this.state.resizingDirection);
-        } else if (selectionManager.marqueeBox) {
-            selectionManager.marqueeBox.resize(dx, dy, getWorldMatrix());
-        } else {
-            selectionManager.move(dx, dy);
-        }
+        selectionPointerMove(this.state.startWorldX - wx, this.state.startWorldY - wy, dx, dy, this.state.resizingDirection);
 
         this.state.updateLastWorldCoord(wx, wy);
         setCursorStyle('grabbing'); 
     }
 
     private setupOnPointerUp(
-        selectionManager: SelectionManager,
         setCanvasGlobalClick: (val: boolean) => void,
         setCursorStyle: (val: string) => void,
+        closeMarquee: () => void,
     ) {
         document.removeEventListener('pointermove', this.onPointerMoveWhileDown);
         document.removeEventListener('pointerup', this.onPointerUp);
@@ -323,9 +317,7 @@ export class PointerEventManager {
         this.currentTransform = undefined;
         this.state.resizingDirection = null;
 
-        if (selectionManager.marqueeBox) {
-            selectionManager.clearMarquee();
-        }
+        closeMarquee();
 
         this.eventHub.emit('save');
     }

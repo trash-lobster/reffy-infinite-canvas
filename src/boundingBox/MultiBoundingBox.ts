@@ -202,12 +202,16 @@ export class MultiBoundingBox {
         this.scale[1] = this.scale[1] * mulSY < 0 ? -1 : 1;
     }
 
-    flip(canvas: Canvas, direction: FlipDirection) {
-        const [worldScaleX, worldScaleY] = getScalesFromMatrix(canvas.worldMatrix);
+    flip(
+        worldMatrix: number[], 
+        direction: FlipDirection, 
+        getWorldCoords: (x: number, y: number) => number[],
+    ) {
+        const [worldScaleX, worldScaleY] = getScalesFromMatrix(worldMatrix);
 
         const transformArray: FlipSnapshotItem[] = [];
 
-        const [wtx, wty] = getWorldCoords(this.x, this.y, canvas);
+        const [wtx, wty] = getWorldCoords(this.x, this.y);
         const bboxCenterX = wtx + this.width / worldScaleX / 2;
         const bboxCenterY = wty + this.height / worldScaleY / 2;
 

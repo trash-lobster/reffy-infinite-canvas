@@ -82,7 +82,7 @@ export class MarqueeSelectionBox {
         this.height += dy * scaleY;
     }
 
-    hitTest(canvas: Canvas) {
+    hitTest(worldMatrix: number[], children: Renderable[], addToSelection: (rect: Rect[]) => void) {
         const covered = [];
         
         const mx1 = Math.min(this.x, this.x + this.width);
@@ -90,10 +90,10 @@ export class MarqueeSelectionBox {
         const my1 = Math.min(this.y, this.y + this.height);
         const my2 = Math.max(this.y, this.y + this.height);
         
-        for (const child of canvas.children as Rect[]) {            
-            const [wx1, wy1] = applyMatrixToPoint(canvas.worldMatrix, child.x, child.y);
+        for (const child of children as Rect[]) {            
+            const [wx1, wy1] = applyMatrixToPoint(worldMatrix, child.x, child.y);
             const [wx2, wy2] = applyMatrixToPoint(
-                canvas.worldMatrix,
+                worldMatrix,
                 child.x + child.width * child.sx,
                 child.y + child.height * child.sy
             );
@@ -108,7 +108,7 @@ export class MarqueeSelectionBox {
             }
         }
         
-        canvas.selectionManager.add(covered);
+        addToSelection(covered);
     }
 
     private addRects() {

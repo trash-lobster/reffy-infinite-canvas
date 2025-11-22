@@ -106,7 +106,15 @@ export class Canvas extends Renderable {
 		this.importState = this.importState.bind(this);
 		this.clearChildren = this.clearChildren.bind(this);
 
-		this.#selectionManager = new SelectionManager(this);
+		this.#selectionManager = new SelectionManager(
+			history,
+			eventHub,
+			this.gl,
+			this.#basicShapeProgram,
+			() => this.worldMatrix,
+			() => this.children,
+			getWorldsCoordsFromCanvas,
+		);
 
 		const cameraState = new CameraState({});
 		this.#camera = new Camera(
@@ -119,7 +127,7 @@ export class Canvas extends Renderable {
 		this.#keyPressManager = new KeyEventManager(
 			history,
 			eventHub,
-			this.selectionManager.deleteSelected,
+			() => this.selectionManager.deleteSelected(this),
 			this.assignEventListener
 		)
 

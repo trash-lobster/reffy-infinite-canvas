@@ -444,7 +444,7 @@ export class InfiniteCanvasElement extends LitElement {
 
     deleteSelectedImages() {
         if (!this.engine) return;
-        this.engine.selectionManager.deleteSelected();
+        this.engine.selectionManager.deleteSelected(this.engine);
     }
     
     async exportCanvas(filename = 'infinite-canvas.json') {

@@ -3,7 +3,7 @@ import {
     CanvasEvent,
     oppositeCorner,
 } from "../util";
-import { Rect, Shape } from "../shapes";
+import { Rect, Renderable, Shape } from "../shapes";
 import { Canvas } from "Canvas";
 import { Point } from "boundingBox/type";
 import { 
@@ -17,7 +17,7 @@ import { FlipDirection, makeMultiFlipCommand } from "./FlipCommand";
 import EventEmitter from "eventemitter3";
 
 export class SelectionManager {
-    #canvas: Canvas;
+    // #canvas: Canvas;
     #history: CanvasHistory;
 
     #selected: Set<Rect> = new Set();
@@ -31,6 +31,10 @@ export class SelectionManager {
     #gl: WebGLRenderingContext;
     #rectProgram: WebGLProgram;
 
+    getWorldMatrix: () => number[];
+    getCanavsChildren: () => Renderable[];
+    getWorldCoords: (x: number, y: number) => number[];
+
     get selected(): Rect[] { return Array.from(this.#selected); }
     set selected(shapes: Rect[]) {
         this.#selected.clear();
@@ -43,7 +47,7 @@ export class SelectionManager {
 
     get marqueeBox(): MarqueeSelectionBox { return this.#marqueeSelectionBox };
     set marqueeBox(startingPoint: Point) {
-        this.#marqueeSelectionBox = new MarqueeSelectionBox(startingPoint.x, startingPoint.y, this.#canvas.worldMatrix);
+        this.#marqueeSelectionBox = new MarqueeSelectionBox(startingPoint.x, startingPoint.y, this.getWorldMatrix());
     }
 
     /**
@@ -51,14 +55,22 @@ export class SelectionManager {
      * @param program Add reference to program to allow easy linking
      */
     constructor(
-        canvas: Canvas, 
+        history: CanvasHistory,
+        eventHub: EventEmitter,
+        gl: WebGLRenderingContext,
+        basicShapeProgram: WebGLProgram,
+        getWorldMatrix: () => number[],
+        getCanvasChildren: () => Renderable[],
+        getWorldCoords: (x: number, y: number) => number[],
     ) {
-        const { gl, basicShapeProgram, history, eventHub } = canvas
         this.#gl = gl;
         this.#rectProgram = basicShapeProgram;
-        this.#canvas = canvas;
+        // this.#canvas = canvas;
         this.#history = history;
         this.#eventHub = eventHub;
+        this.getWorldMatrix = getWorldMatrix;
+        this.getCanavsChildren = getCanvasChildren;
+        this.getWorldCoords = getWorldCoords;
     
         const proto = Object.getPrototypeOf(this);
         for (const key of Object.getOwnPropertyNames(proto)) {
@@ -111,14 +123,14 @@ export class SelectionManager {
         }
     }
 
-    deleteSelected() {
+    deleteSelected(canvas: Canvas) {
         const toBeDeleted = [...this.#selected];
         this.remove(toBeDeleted);
         for (const selected of toBeDeleted) {
             selected.destroy();
         }
 
-        this.#history.push(makeMultiRemoveChildCommand(this.#canvas, toBeDeleted));
+        this.#history.push(makeMultiRemoveChildCommand(canvas, toBeDeleted));
     }
 
     /**
@@ -126,12 +138,12 @@ export class SelectionManager {
      */
     hitTest(wx: number, wy: number): (BoundingBoxCollisionType | null) {        
         if (this.#multiBoundingBox) {
-            const ans = this.#multiBoundingBox.hitTest(wx, wy, this.#canvas.worldMatrix);
+            const ans = this.#multiBoundingBox.hitTest(wx, wy, this.getWorldMatrix());
             if (ans) return ans;
         }
 
         for (const box of this.#boundingBoxes.values()) {
-            const ans = box.hitTest(wx, wy, this.#canvas.worldMatrix);
+            const ans = box.hitTest(wx, wy, this.getWorldMatrix());
             if (ans) return ans;
         }
 
@@ -139,19 +151,19 @@ export class SelectionManager {
     }
 
     isMultiBoundingBoxHit(wx: number, wy: number) {
-        return this.#multiBoundingBox && this.#multiBoundingBox.hitTest(wx, wy, this.#canvas.worldMatrix);
+        return this.#multiBoundingBox && this.#multiBoundingBox.hitTest(wx, wy, this.getWorldMatrix());
     }
 
     isBoundingBoxHit(wx: number, wy: number) {
         return (
             this.#boundingBoxes.size === 1 && 
-            Array.from(this.#boundingBoxes)[0].hitTest(wx, wy, this.#canvas.worldMatrix)
+            Array.from(this.#boundingBoxes)[0].hitTest(wx, wy, this.getWorldMatrix())
         );
     }
 
     hitTestAdjustedCorner(wx: number, wy: number) {
         if (this.#multiBoundingBox) {
-            const ans = this.#multiBoundingBox.hitTest(wx, wy, this.#canvas.worldMatrix);
+            const ans = this.#multiBoundingBox.hitTest(wx, wy, this.getWorldMatrix());
             if (ans) {
                 if (this.#multiBoundingBox.scale[0] * this.#multiBoundingBox.scale[1] < 0) {
                     return oppositeCorner(ans);
@@ -161,7 +173,7 @@ export class SelectionManager {
         }
 
         for (const box of this.#boundingBoxes.values()) {
-            const ans = box.hitTest(wx, wy, this.#canvas.worldMatrix);
+            const ans = box.hitTest(wx, wy, this.getWorldMatrix());
             if (ans) {
                 if (box.target.sx * box.target.sy < 0) {
                     return oppositeCorner(ans);
@@ -209,7 +221,7 @@ export class SelectionManager {
 
     clearMarquee() {
         if (this.#marqueeSelectionBox) {
-            this.#marqueeSelectionBox.hitTest(this.#canvas);
+            this.#marqueeSelectionBox.hitTest(this.getWorldMatrix(), this.getCanavsChildren(), this.add);
             this.#marqueeSelectionBox = null;
         }
     }
@@ -238,7 +250,7 @@ export class SelectionManager {
      */
     resize(dx: number, dy: number, direction: BoundingBoxCollisionType) {
         if (this.#multiBoundingBox) {
-            this.#multiBoundingBox.resize(dx, dy, direction, this.#canvas.worldMatrix);
+            this.#multiBoundingBox.resize(dx, dy, direction, this.getWorldMatrix());
         }
 
         for (const box of this.#boundingBoxes) {
@@ -253,7 +265,7 @@ export class SelectionManager {
 
     flip(direction: FlipDirection) {
         if (this.#multiBoundingBox) {
-            const transformArray = this.#multiBoundingBox.flip(this.#canvas, direction);
+            const transformArray = this.#multiBoundingBox.flip(this.getWorldMatrix(), direction, this.getWorldCoords);
             this.#history.push(makeMultiFlipCommand(transformArray, direction, this.#multiBoundingBox));
         } else {
             const transformArray  = [];

@@ -1,6 +1,6 @@
-import { getWorldCoords } from "../util";
-import { Canvas } from "Canvas";
+import { BoundingBoxCollisionType } from "../util";
 import { ContextMenuEvent } from "../util/customEventType";
+import EventEmitter from "eventemitter3";
 
 export class ContextMenuManager {
     copy: (e: ClipboardEvent) => Promise<void>;
@@ -11,22 +11,23 @@ export class ContextMenuManager {
     get isActive() { return this.#isMenuActive; }
 
     constructor(
-        canvas: Canvas,
+        eventHub: EventEmitter,
+        isMultiBoundingBoxHit: (x: number, y: number) => BoundingBoxCollisionType | '',
+        isBoundingBoxHit: (x: number, y: number) => BoundingBoxCollisionType | '',
+        getWorldCoords: (x: number, y: number) => number[],
         assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void,
     ) {
-        const { selectionManager, eventHub } = canvas;
-
         this.customContextMenu = (e: PointerEvent) => {
             e.preventDefault();
             e.stopPropagation();
 
             // only show context menu when there is collision with a child object, otherwise clear it
-            const [wx, wy] = getWorldCoords(e.clientX, e.clientY, canvas);
+            const [wx, wy] = getWorldCoords(e.clientX, e.clientY);
 
             // show different context menu depending on what is being selected
-            if (selectionManager.isMultiBoundingBoxHit(wx, wy)) {
+            if (isMultiBoundingBoxHit(wx, wy)) {
                 eventHub.emit(ContextMenuEvent.Open, e.clientX, e.clientY, 'multi');
-            } else if (selectionManager.isBoundingBoxHit(wx, wy)) {
+            } else if (isBoundingBoxHit(wx, wy)) {
                 eventHub.emit(ContextMenuEvent.Open, e.clientX, e.clientY);
             } else {
                 eventHub.emit(ContextMenuEvent.Open, e.clientX, e.clientY, 'canvas');

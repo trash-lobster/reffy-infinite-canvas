@@ -117,16 +117,17 @@ export class Canvas extends Renderable {
 			this.assignEventListener
 		)
 
+		const getWorldsCoordsFromCanvas = (x: number, y: number) => getWorldCoords(x, y, this);
+
 		this.#contextMenuManager = new ContextMenuManager(
-			this,
+			eventHub,
+			this.selectionManager.isMultiBoundingBoxHit,
+			this.selectionManager.isBoundingBoxHit,
+			getWorldsCoordsFromCanvas,
 			this.assignEventListener
 		);
 
-		const pointerEventState = new PointerEventState({
-			getCanvas: this.engine
-		})
-
-		const getCanvasGlobalClick = () => this.isGlobalClick;
+		const pointerEventState = new PointerEventState();
 
 		const pointerManagerDeps = {
 			history,
@@ -136,9 +137,9 @@ export class Canvas extends Renderable {
 			getSelected: () => this.#selectionManager.selected,
 			getChildren: () => this.children,
 			getWorldMatrix: () => this.worldMatrix,
-			getCanvasGlobalClick,
+			getCanvasGlobalClick: () => this.isGlobalClick,
 			setCanvasGlobalClick: (val: boolean) => this.isGlobalClick = val,
-			getWorldCoords: (x: number, y: number) => getWorldCoords(x, y, this),
+			getWorldCoords: getWorldsCoordsFromCanvas,
 			updateCameraPos: this.camera.updateCameraPos,
 			onWheel: this.camera.onWheel,
 			setCursorStyle: (val: string) => canvas.style.cursor = val,
@@ -146,7 +147,7 @@ export class Canvas extends Renderable {
 			assignEventListener: this.assignEventListener,
 			closeMarquee: this.#selectionManager.clearMarquee,
 			selectionPointerMove: (x: number, y: number, dx: number, dy: number, resizeDirection: BoundingBoxCollisionType) => 
-				this.#selectionManager.onPointerMove(x, y, dx, dy, resizeDirection, getCanvasGlobalClick, this.camera.updateCameraPos, () => this.worldMatrix),
+				this.#selectionManager.onPointerMove(x, y, dx, dy, resizeDirection, () => this.isGlobalClick, this.camera.updateCameraPos, () => this.worldMatrix),
 			onSelectionPointerDown: this.selectionManager.onSelectionPointerDown,
 			checkIfSelectionHit: this.selectionManager.hitTest,
 			addSelection: this.selectionManager.add,

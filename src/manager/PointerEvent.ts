@@ -40,6 +40,7 @@ interface PointerEventManagerDeps {
     state: PointerEventState,
     selectionManager: SelectionManager,
     contextMenuManager: ContextMenuManager,
+    getSelected: () => Renderable[],
     getChildren: () => Renderable[],
     getWorldMatrix: () => number[],
     getCanvasGlobalClick: () => boolean,
@@ -58,6 +59,11 @@ interface PointerEventManagerDeps {
         dy: number,
         resizeDirection: BoundingBoxCollisionType
     ) => void,
+    onSelectionPointerDown: (isShiftKey: boolean, child: Shape, wx : number, wy: number) => void,
+    checkIfSelectionHit: (x: number, y: number) => BoundingBoxCollisionType | null,
+    addSelection: (rects: Rect[]) => void,
+    clearSelection: () => void,
+    isSelection: (rect: Rect) => boolean,
 }
 
 export class PointerEventManager {
@@ -65,13 +71,19 @@ export class PointerEventManager {
     history: CanvasHistory;
     eventHub: EventEmitter;
 
-    getSelected: () => Renderable[];
     isContextMenuActive: boolean;
-
+    
     onPointerDown: (e: PointerEvent) => void;
     onPointerMoveWhileDown: (e: PointerEvent) => void;
     onPointerUp: (e: PointerEvent) => void;
     
+    getSelected: () => Renderable[];
+    onSelectionPointerDown: (isShiftKey: boolean, child: Shape, wx : number, wy: number) => void;
+    checkIfSelectionHit: (x: number, y: number) => BoundingBoxCollisionType | null;
+    addSelection: (rects: Rect[]) => void;
+    clearSelection: () => void;
+    isSelection: (rect: Rect) => boolean;
+
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
     private currentTransform?:
@@ -81,8 +93,13 @@ export class PointerEventManager {
         this.state = deps.state;
         this.history = deps.history;
         this.eventHub = deps.eventHub;
-        this.getSelected = () => deps.selectionManager.selected;
         this.isContextMenuActive = deps.contextMenuManager.isActive;
+        this.getSelected = deps.getSelected;
+        this.checkIfSelectionHit = deps.checkIfSelectionHit;
+        this.addSelection = deps.addSelection;
+        this.clearSelection = deps.clearSelection;
+        this.isSelection = deps.isSelection;
+        this.onSelectionPointerDown = deps.onSelectionPointerDown;
 
         this.assignEventListener = deps.assignEventListener;
 
@@ -203,7 +220,7 @@ export class PointerEventManager {
         if (this.state.mode === PointerMode.PAN) {
             this.handlePanPointerDown(setCanvasGlobalClick, selectionManager);
         } else if (this.state.mode === PointerMode.SELECT) {
-            this.handleSelectPointerDown(e, wx, wy, selectionManager, setCanvasGlobalClick, getChildren);
+            this.handleSelectPointerDown(e, wx, wy, setCanvasGlobalClick, getChildren);
         }
 
         document.addEventListener('pointermove', this.onPointerMoveWhileDown);
@@ -222,42 +239,29 @@ export class PointerEventManager {
         e: MouseEvent, 
         wx: number, 
         wy: number, 
-        selectionManager: SelectionManager,
         setCanvasGlobalClick: (val: boolean) => void,
         getChildren: () => Renderable[],
     ) {
         setCanvasGlobalClick(false);
-        if (e.button === 2) {
-            if (!selectionManager.hitTest(wx, wy)) {
-                selectionManager.clear();
-            }
+        const child = this.checkCollidingChild(wx, wy, getChildren);
+        const boundingBoxType = this.checkIfSelectionHit(wx, wy);
 
-            const child = this.checkCollidingChild(wx, wy, getChildren);
-            if (child && !selectionManager.isRectSelected(child as Rect)) {
-                selectionManager.add([child as Rect]);
+        if (e.button === 2) {
+            if (!boundingBoxType) {
+                this.clearSelection();
+            }
+            
+            if (child && !this.isSelection(child as Rect)) {
+                this.addSelection([child as Rect]);
             }
         } else {
-            const boundingBoxType = selectionManager.hitTest(wx, wy);
             if (boundingBoxType) {
                 this.state.resizingDirection = boundingBoxType;
             } else {
-                const child = this.checkCollidingChild(wx, wy, getChildren);
-                if (child) {
-                    if (!e.shiftKey) {                            
-                        selectionManager.clear();
-                    }
-                    selectionManager.add([child as Rect]);
-                } else {
-                    selectionManager.clear();
-                    if (selectionManager.marqueeBox) {
-                        selectionManager.clearMarquee();
-                    } else {
-                        selectionManager.marqueeBox = {x: wx, y: wy};
-                    }
-                }
+                this.onSelectionPointerDown(e.shiftKey, child, wx, wy);
             }
 
-            const selected = selectionManager.selected;
+            const selected = this.getSelected() as Rect[];
             if (selected.length) {
                 this.currentTransform = {
                     targets: selected.map(ref => ({

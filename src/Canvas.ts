@@ -133,6 +133,7 @@ export class Canvas extends Renderable {
 			state: pointerEventState,
 			selectionManager: this.#selectionManager,
 			contextMenuManager: this.#contextMenuManager,
+			getSelected: () => this.#selectionManager.selected,
 			getChildren: () => this.children,
 			getWorldMatrix: () => this.worldMatrix,
 			getCanvasGlobalClick,
@@ -146,6 +147,11 @@ export class Canvas extends Renderable {
 			clearMarquee: this.#selectionManager.clearMarquee,
 			selectionPointerMove: (x: number, y: number, dx: number, dy: number, resizeDirection: BoundingBoxCollisionType) => 
 				this.#selectionManager.onPointerMove(x, y, dx, dy, resizeDirection, getCanvasGlobalClick, this.camera.updateCameraPos, () => this.worldMatrix),
+			onSelectionPointerDown: this.selectionManager.onSelectionPointerDown,
+			checkIfSelectionHit: this.selectionManager.hitTest,
+			addSelection: this.selectionManager.add,
+			clearSelection: this.selectionManager.clear,
+			isSelection: this.selectionManager.isRectSelected,
 		}
 
 		this.#pointerEventManager = new PointerEventManager(pointerManagerDeps);

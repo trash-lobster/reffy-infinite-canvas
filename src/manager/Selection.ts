@@ -3,7 +3,7 @@ import {
     CanvasEvent,
     oppositeCorner,
 } from "../util";
-import { Rect } from "../shapes";
+import { Rect, Shape } from "../shapes";
 import { Canvas } from "Canvas";
 import { Point } from "boundingBox/type";
 import { 
@@ -60,11 +60,13 @@ export class SelectionManager {
         this.#history = history;
         this.#eventHub = eventHub;
     
-        this.clear = this.clear.bind(this);
-        this.deleteSelected = this.deleteSelected.bind(this);
-        this.flip = this.flip.bind(this);
-        this.clearMarquee = this.clearMarquee.bind(this);
-        this.onPointerMove = this.onPointerMove.bind(this);
+        const proto = Object.getPrototypeOf(this);
+        for (const key of Object.getOwnPropertyNames(proto)) {
+            const val = this[key];
+            if (typeof val === 'function' && key !== 'constructor') {
+                this[key] = val.bind(this);
+            }
+        }
     }
 
     // add, remove selected
@@ -282,6 +284,22 @@ export class SelectionManager {
             this.marqueeBox.resize(dx, dy, getWorldMatrix());
         } else {
             this.move(dx, dy);
+        }
+    }
+
+    onSelectionPointerDown(isShiftKey: boolean, child: Shape, wx : number, wy: number) {
+        if (child) {
+            if (!isShiftKey) {                            
+                this.clear();
+            }
+            this.add([child as Rect]);
+        } else {
+            this.clear();
+            if (this.marqueeBox) {
+                this.clearMarquee();
+            } else {
+                this.marqueeBox = {x: wx, y: wy};
+            }
         }
     }
 

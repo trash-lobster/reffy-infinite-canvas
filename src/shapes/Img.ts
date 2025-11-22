@@ -1,5 +1,4 @@
 import { Rect } from "./Rect";
-import { v4 as uuid} from 'uuid';
 
 export class Img extends Rect {
     private texcoordBuffer?: WebGLBuffer;

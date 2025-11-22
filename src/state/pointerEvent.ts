@@ -1,11 +1,6 @@
-import { Canvas } from "Canvas";
 import { BoundingBoxCollisionType } from "../util";
-import { Point, PointerMode } from "../manager";
-
-interface PointerEventStateOption {
-    getCanvas: () => Canvas;
-    mode: PointerMode;
-}
+import { PointerMode } from "../manager";
+import { Point } from "../boundingBox";
 
 export class PointerEventState {
 
@@ -19,11 +14,7 @@ export class PointerEventState {
 
     resizingDirection: BoundingBoxCollisionType | null = null;
 
-    constructor(option: Partial<PointerEventStateOption>) {
-        const {
-            mode = PointerMode.SELECT,
-        } = option;
-
+    constructor(mode: PointerMode = PointerMode.SELECT) {
         this.mode = mode;
     }
 

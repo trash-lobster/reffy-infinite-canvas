@@ -21,6 +21,7 @@ import { CanvasHistory } from './history';
 import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
 import EventEmitter from 'eventemitter3';
 import { ImageFileMetadata } from './storage';
+import { isContextMenuActive } from 'contextMenu';
 
 export class Canvas extends Renderable {
 	#canvas: HTMLCanvasElement;
@@ -131,8 +132,7 @@ export class Canvas extends Renderable {
 			history,
 			eventHub,
 			state: pointerEventState,
-			selectionManager: this.#selectionManager,
-			contextMenuManager: this.#contextMenuManager,
+			isContextMenuActive: this.#contextMenuManager.isActive,
 			getSelected: () => this.#selectionManager.selected,
 			getChildren: () => this.children,
 			getWorldMatrix: () => this.worldMatrix,
@@ -152,6 +152,7 @@ export class Canvas extends Renderable {
 			addSelection: this.selectionManager.add,
 			clearSelection: this.selectionManager.clear,
 			isSelection: this.selectionManager.isRectSelected,
+			hitTestAdjustedCorner: this.selectionManager.hitTestAdjustedCorner,
 		}
 
 		this.#pointerEventManager = new PointerEventManager(pointerManagerDeps);

@@ -9,7 +9,6 @@ import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
 import { makeMultiTransformCommand, TransformSnapshot } from "./TransformCommand";
 import EventEmitter from "eventemitter3";
-import { SelectionManager } from "./Selection";
 import { ContextMenuManager } from "./ContextMenu";
 
 export interface Point {
@@ -38,8 +37,7 @@ interface PointerEventManagerDeps {
     history: CanvasHistory,
     eventHub: EventEmitter,
     state: PointerEventState,
-    selectionManager: SelectionManager,
-    contextMenuManager: ContextMenuManager,
+    isContextMenuActive: boolean;
     getSelected: () => Renderable[],
     getChildren: () => Renderable[],
     getWorldMatrix: () => number[],
@@ -64,6 +62,7 @@ interface PointerEventManagerDeps {
     addSelection: (rects: Rect[]) => void,
     clearSelection: () => void,
     isSelection: (rect: Rect) => boolean,
+    hitTestAdjustedCorner: (x: number, y: number) => BoundingBoxCollisionType,
 }
 
 export class PointerEventManager {
@@ -73,16 +72,19 @@ export class PointerEventManager {
 
     isContextMenuActive: boolean;
     
-    onPointerDown: (e: PointerEvent) => void;
-    onPointerMoveWhileDown: (e: PointerEvent) => void;
-    onPointerUp: (e: PointerEvent) => void;
-    
     getSelected: () => Renderable[];
     onSelectionPointerDown: (isShiftKey: boolean, child: Shape, wx : number, wy: number) => void;
+    selectionPointerMove: (x: number, y: number, dx: number, dy: number, resizingDirection: BoundingBoxCollisionType) => void;
     checkIfSelectionHit: (x: number, y: number) => BoundingBoxCollisionType | null;
     addSelection: (rects: Rect[]) => void;
     clearSelection: () => void;
     isSelection: (rect: Rect) => boolean;
+    setCursorStyle: (s: string) => void;
+    getWorldCoords: (x: number, y: number) => number[];
+    getChildren: () => Renderable[];
+    setCanvasGlobalClick: (val: boolean) => void;
+    closeMarquee: () => void;
+    hitTestAdjustedCorner: (x: number, y: number) => BoundingBoxCollisionType;
 
     assignEventListener: (type: string, fn: (() => void) | ((e: any) => void), options?: boolean | AddEventListenerOptions) => void;
 
@@ -90,54 +92,40 @@ export class PointerEventManager {
       { targets: Array<{ ref: Rect; start: TransformSnapshot }> };
 
     constructor(deps: PointerEventManagerDeps) {
-        this.state = deps.state;
-        this.history = deps.history;
-        this.eventHub = deps.eventHub;
-        this.isContextMenuActive = deps.contextMenuManager.isActive;
-        this.getSelected = deps.getSelected;
-        this.checkIfSelectionHit = deps.checkIfSelectionHit;
-        this.addSelection = deps.addSelection;
-        this.clearSelection = deps.clearSelection;
-        this.isSelection = deps.isSelection;
-        this.onSelectionPointerDown = deps.onSelectionPointerDown;
-
-        this.assignEventListener = deps.assignEventListener;
+        Object.assign(this, {
+            state: deps.state,
+            history: deps.history,
+            eventHub: deps.eventHub,
+            getSelected: deps.getSelected,
+            getChildren: deps.getChildren,
+            checkIfSelectionHit: deps.checkIfSelectionHit,
+            addSelection: deps.addSelection,
+            clearSelection: deps.clearSelection,
+            isSelection: deps.isSelection,
+            onSelectionPointerDown: deps.onSelectionPointerDown,
+            selectionPointerMove: deps.selectionPointerMove,
+            assignEventListener: deps.assignEventListener,
+            getWorldCoords: deps.getWorldCoordsFromCanvas,
+            setCursorStyle: deps.setCursorStyle,
+            isContextMenuActive: deps.isContextMenuActive,
+            setCanvasGlobalClick: deps.setCanvasGlobalClick,
+            closeMarquee: deps.clearMarquee,
+            hitTestAdjustedCorner: deps.hitTestAdjustedCorner,
+        });
 
         // bind methods
-        this.onPointerDown = (e: PointerEvent) => this.setupOnPointerDown.bind(this)(
-            e,
-            deps.selectionManager,
-            deps.getChildren,
-            deps.setCanvasGlobalClick,
-            deps.getWorldCoordsFromCanvas,
-        );
-
-        this.onPointerMoveWhileDown = (e: PointerEvent) => this.setupOnPointerMoveWhileDown.bind(this)(
-            e,
-            deps.getWorldCoordsFromCanvas,
-            deps.setCursorStyle,
-            deps.selectionPointerMove,
-        )
-
-        this.onPointerUp = () => this.setupOnPointerUp.bind(this)(
-            deps.setCanvasGlobalClick,
-            deps.setCursorStyle,
-            deps.clearMarquee,
-        );
+        this.onPointerDown = this.onPointerDown.bind(this);
+        this.onPointerMoveWhileDown = this.onPointerMoveWhileDown.bind(this);
+        this.onPointerUp = this.onPointerUp.bind(this);
 
         // register event listeners
         this.addOnPointerMove(
-            deps.selectionManager,
             deps.getWorldCoordsFromCanvas,
             deps.setCursorStyle,
         );
+
         this.addOnWheel(deps.onWheel);
-        this.addOnPointerDown(
-            deps.selectionManager,
-            deps.getChildren,
-            deps.setCanvasGlobalClick,
-            deps.getWorldCoordsFromCanvas,
-        );
+        this.addOnPointerDown();
 
         window.addEventListener('copy', async (e) => {
             e.preventDefault();
@@ -163,32 +151,18 @@ export class PointerEventManager {
     }
     
     // Add events
-    private addOnPointerDown(
-        selectionManager: SelectionManager,
-        getChildren: () => Renderable[],
-        setCanvasGlobalClick: (val: boolean) => void,
-        getWorldCoords: (x: number, y: number) => number[],
-    ) {
-        this.assignEventListener('pointerdown', 
-            (e: PointerEvent) => this.setupOnPointerDown(
-                e, 
-                selectionManager,
-                getChildren,
-                setCanvasGlobalClick,
-                getWorldCoords,
-            )
-        );
+    private addOnPointerDown() {
+        this.assignEventListener('pointerdown', this.onPointerDown);
     }
     
     private addOnPointerMove(
-        selectionManager: SelectionManager,
         getWorldCoords: (x: number, y: number) => number[],
         setCursorStyle: (val: string) => void,
     ) {
         this.assignEventListener('pointermove', (e) => {
             [this.state.lastPointerPos.x, this.state.lastPointerPos.y] = getWorldCoords(e.clientX, e.clientY);
 
-            let hit = selectionManager.hitTestAdjustedCorner(this.state.lastPointerPos.x, this.state.lastPointerPos.y);
+            let hit = this.hitTestAdjustedCorner(this.state.lastPointerPos.x, this.state.lastPointerPos.y);
 			setCursorStyle(cursorMap[hit] || 'default');
         });
     }
@@ -201,26 +175,20 @@ export class PointerEventManager {
         }, { passive: false });
     }
 
-    private setupOnPointerDown(
-        e: PointerEvent, 
-        selectionManager: SelectionManager,
-        getChildren: () => Renderable[],
-        setCanvasGlobalClick: (val: boolean) => void,
-        getWorldCoords: (x: number, y: number) => number[],
-    ) {
+    private onPointerDown(e: PointerEvent) {
         e.stopPropagation();
         e.preventDefault();
         this.eventHub.emit(ContextMenuEvent.Close);
 
-        const [wx, wy] = getWorldCoords(e.clientX, e.clientY);
+        const [wx, wy] = this.getWorldCoords(e.clientX, e.clientY);
         this.state.initialize(wx, wy);
 
         this.currentTransform = undefined;
 
         if (this.state.mode === PointerMode.PAN) {
-            this.handlePanPointerDown(setCanvasGlobalClick, selectionManager);
+            this.handlePanPointerDown();
         } else if (this.state.mode === PointerMode.SELECT) {
-            this.handleSelectPointerDown(e, wx, wy, setCanvasGlobalClick, getChildren);
+            this.handleSelectPointerDown(e, wx, wy);
         }
 
         document.addEventListener('pointermove', this.onPointerMoveWhileDown);
@@ -228,22 +196,18 @@ export class PointerEventManager {
     }
 
     private handlePanPointerDown(
-        setCanvasGlobalClick: (val: boolean) => void,
-        selectionManager: SelectionManager,
     ) {
-        setCanvasGlobalClick(true);
-        selectionManager.clear();
+        this.setCanvasGlobalClick(true);
+        this.clearSelection();
     }
 
     private handleSelectPointerDown(
         e: MouseEvent, 
         wx: number, 
         wy: number, 
-        setCanvasGlobalClick: (val: boolean) => void,
-        getChildren: () => Renderable[],
     ) {
-        setCanvasGlobalClick(false);
-        const child = this.checkCollidingChild(wx, wy, getChildren);
+        this.setCanvasGlobalClick(false);
+        const child = this.checkCollidingChild(wx, wy);
         const boundingBoxType = this.checkIfSelectionHit(wx, wy);
 
         if (e.button === 2) {
@@ -273,33 +237,24 @@ export class PointerEventManager {
         }
     }
 
-    private setupOnPointerMoveWhileDown(
-        e: PointerEvent,
-        getWorldCoords: (x: number, y: number) => number[],
-        setCursorStyle: (val: string) => void,
-        selectionPointerMove: (x: number, y: number, dx: number, dy: number, resizeDirection: BoundingBoxCollisionType) => void,
-    ) {
+    private onPointerMoveWhileDown(e: PointerEvent) {
         // in move, the buttons property is checked
         if (e.buttons === 2) return;
-        const [wx, wy] = getWorldCoords(e.clientX, e.clientY);
+        const [wx, wy] = this.getWorldCoords(e.clientX, e.clientY);
         const dx = wx - this.state.lastWorldX;
         const dy = wy - this.state.lastWorldY;
         
-        selectionPointerMove(this.state.startWorldX - wx, this.state.startWorldY - wy, dx, dy, this.state.resizingDirection);
+        this.selectionPointerMove(this.state.startWorldX - wx, this.state.startWorldY - wy, dx, dy, this.state.resizingDirection);
 
         this.state.updateLastWorldCoord(wx, wy);
-        setCursorStyle('grabbing'); 
+        this.setCursorStyle('grabbing'); 
     }
 
-    private setupOnPointerUp(
-        setCanvasGlobalClick: (val: boolean) => void,
-        setCursorStyle: (val: string) => void,
-        closeMarquee: () => void,
-    ) {
+    private onPointerUp() {
         document.removeEventListener('pointermove', this.onPointerMoveWhileDown);
         document.removeEventListener('pointerup', this.onPointerUp);
-        setCanvasGlobalClick(true);
-        setCursorStyle('default');
+        this.setCanvasGlobalClick(true);
+        this.setCursorStyle('default');
 
         if (this.currentTransform) {
             const entries = this.currentTransform.targets
@@ -321,13 +276,13 @@ export class PointerEventManager {
         this.currentTransform = undefined;
         this.state.resizingDirection = null;
 
-        closeMarquee();
+        this.closeMarquee();
 
         this.eventHub.emit('save');
     }
 
-    private checkCollidingChild(wx: number, wy: number, getChildren: () => Renderable[]) {
-        const children = getChildren();
+    private checkCollidingChild(wx: number, wy: number) {
+        const children = this.getChildren();
         for (let i = children.length - 1; i >= 0; i--) {
             const child = children[i];
             if (child instanceof Shape) {

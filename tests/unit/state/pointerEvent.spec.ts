@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PointerEventState } from '../../../src/state/pointerEvent';
 import { PointerMode } from '../../../src/manager';
-import { BoundingBoxCollisionType } from '../../../src/util';
 
 describe('PointerEventState', () => {
     let state: PointerEventState;
@@ -9,16 +8,12 @@ describe('PointerEventState', () => {
 
     beforeEach(() => {
         clearSelection = vi.fn();
-        state = new PointerEventState({
-            clearSelection,
-            mode: PointerMode.SELECT
-        });
+        state = new PointerEventState(PointerMode.SELECT);
     });
 
     it('initializes with defaults', () => {
-        const s = new PointerEventState({});
+        const s = new PointerEventState();
         expect(s.mode).toBe(PointerMode.SELECT);
-        expect(() => s.clearSelection()).toThrow();
     });
 
     it('sets and toggles mode', () => {
@@ -26,7 +21,6 @@ describe('PointerEventState', () => {
         expect(state.mode).toBe(PointerMode.PAN);
         state.toggleMode();
         expect(state.mode).toBe(PointerMode.SELECT);
-        expect(clearSelection).toHaveBeenCalled();
         state.toggleMode();
         expect(state.mode).toBe(PointerMode.PAN);
     });

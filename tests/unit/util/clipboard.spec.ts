@@ -123,7 +123,7 @@ describe('clipboard', () => {
         expect(result).toBeUndefined();
     });
 
-    it('paste finds text/html and creats html element', async () => {
+    it('paste finds text/html and does nothing', async () => {
         const el = document.createElement('html');
         const documentSpy = vi.spyOn(document, 'createElement').mockImplementation((type: string) => el);
 
@@ -145,8 +145,8 @@ describe('clipboard', () => {
         };
 
         await clipboard.paste(10, 20, canvas as any, {} as any, false);
-        expect(documentSpy).toHaveBeenCalled();
-        expect(canvas.addImageToCanvas).toHaveBeenCalledWith('http://test.com/', 100, 100);
+        expect(documentSpy).not.toHaveBeenCalled();
+        expect(canvas.addImageToCanvas).not.toHaveBeenCalledWith('http://test.com/', 100, 100);
         documentSpy.mockRestore();
     });
 

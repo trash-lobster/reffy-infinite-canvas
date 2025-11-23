@@ -104,9 +104,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
                 return this.cache.get(id) as ImageFileMetadata;
             }
 
-            const startNow = performance.now();
             const entry = await db.files.get(id);
-            console.log(`Getting file took ${performance.now() - startNow}`);
 
             if (!entry) return null;
             this.dbQueue.add(async () => {

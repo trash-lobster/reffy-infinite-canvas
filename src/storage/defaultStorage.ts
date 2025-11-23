@@ -3,7 +3,7 @@ import Dexie, { DexieConstructor, EntityTable } from "dexie";
 import { ImageFileMetadata, FileStorage, CanvasStorage, CanvasStorageEntry } from "./storage";
 
 const dbVersion1 = {
-    files: '$$id, dataURL, mimetype, created, lastRetrieved',
+    files: '$$id, mimetype, created, lastRetrieved',
 }
 
 const DB_LIMITS = {
@@ -20,29 +20,28 @@ interface IndexDb extends Dexie {
 
 export class DefaultIndexedDbStorage extends FileStorage {
     private dbQueue  = new DatabaseQueue();
+    private dbPromise: Promise<IndexDb>;
+    private cache = new Map<string | number, ImageFileMetadata>();
+    private CACHE_LIMIT = 100;
 
     constructor() {
         super();
         this.dbQueue = new DatabaseQueue();
+        this.dbPromise = this.initDb();
+    }
+
+    private async initDb(): Promise<IndexDb> {
+        return handleQuotaError(async (): Promise<IndexDb> => {
+            let db = new Dexie('InfiniteCanvas') as IndexDb;
+            (Dexie as DexieConstructorWithUUID).UUIDPrimaryKey(db);
+            db.version(1).stores(dbVersion1);
+            await db.open();
+            return db;
+        });
     }
 
     private async getIndexDb(): Promise<IndexDb> {
-        return handleQuotaError(async (): Promise<IndexDb> => {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    let db = new Dexie('InfiniteCanvas') as IndexDb;
-    
-                    (Dexie as DexieConstructorWithUUID).UUIDPrimaryKey(db);
-    
-                    db.version(1).stores(dbVersion1);
-    
-                    await db.open();
-                    resolve(db);
-                } catch (error) {
-                    reject(error);
-                }
-            });
-        });
+        return this.dbPromise;
     }
 
     /**
@@ -53,6 +52,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
      */
     async write(data: string): Promise<string | number> {
         const file: ImageFileMetadata = await ImageFileMetadata.create(data);
+        const blob = dataUrlToBlob(file.dataURL);
 
         return this.dbQueue.add(() =>
             handleQuotaError(async (): Promise<string | number> => {
@@ -64,11 +64,12 @@ export class DefaultIndexedDbStorage extends FileStorage {
 
                         return await db.files.add({
                             id: file.id,
+                            blob,
                             dataURL: file.dataURL,
                             mimetype: file.mimetype,
                             created: file.created,
                             lastRetrieved: file.lastRetrieved,
-                        });
+                        } as any);
                     })
                     .catch((error) => {
                         console.error(
@@ -98,13 +99,31 @@ export class DefaultIndexedDbStorage extends FileStorage {
     async read(id: string | number): Promise<ImageFileMetadata> {
         return handleQuotaError(async (): Promise<ImageFileMetadata> => {
             const db: IndexDb = await this.getIndexDb();
-            await db.transaction('rw', db.files, async () => {
-                await db.files.update(id, {
-                    lastRetrieved: Date.now(),
-                });
-            });
+            
+            if (this.cache.has(id)) {
+                return this.cache.get(id) as ImageFileMetadata;
+            }
 
-            return await db.files.where('id').equals(id).first();
+            const startNow = performance.now();
+            const entry = await db.files.get(id);
+            console.log(`Getting file took ${performance.now() - startNow}`);
+
+            if (!entry) return null;
+            this.dbQueue.add(async () => {
+                try {
+                    await db.files.update(id, { lastRetrieved: Date.now() });
+                } catch (e) {
+                    console.error('Failed to update lastRetrieved', e);
+                }
+            }).catch(() => {});
+
+            this.cache.set(id, entry);
+            if (this.cache.size > this.CACHE_LIMIT) {
+                const firstKey = this.cache.keys().next().value;
+                this.cache.delete(firstKey);
+            }
+
+            return entry;
         });
     }
 
@@ -249,4 +268,19 @@ async function checkImageLimit(db: IndexDb): Promise<void> {
             `Cannot save image: limit of ${DB_LIMITS.MAX_IMAGE_ENTRIES} reached`,
         );
     }
+}
+
+export function dataUrlToBlob(dataUrl: string): Blob {
+    const parts = dataUrl.split(',');
+    const meta = parts[0];
+    const base64 = parts[1];
+    const mimeMatch = meta.match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+    const binary = atob(base64);
+    const len = binary.length;
+    const u8 = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        u8[i] = binary.charCodeAt(i);
+    }
+    return new Blob([u8], { type: mime });
 }

@@ -289,7 +289,7 @@ export class InfiniteCanvasElement extends LitElement {
         this.#eventHub.on(CanvasEvent.Change, () => {
             if (this.#onChange) this.#onChange();
         });
-        this.#eventHub.on(SaveEvent.Save, () => console.log('saving'));
+        this.#eventHub.on(SaveEvent.Save, this.saveToCanvasStorage);
         this.#eventHub.on(SaveEvent.SaveCompleted, () => console.log('Done Saving!'));
         this.#eventHub.on(SaveEvent.SaveFailed, () => console.log('Failed to Save!'));
     }
@@ -389,7 +389,9 @@ export class InfiniteCanvasElement extends LitElement {
         }
         const dataAsString = await this.#canvasStorage.read();
         const data = JSON.parse(dataAsString) as SerializedCanvas;
-        if (data) await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
+        if (data) {
+            await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
+        }
     }
 
     // Canvas API
@@ -474,7 +476,8 @@ export class InfiniteCanvasElement extends LitElement {
         const file = fileList[0];
         if (!file.type || (!file.type.includes('json') && !file.name.toLowerCase().endsWith('.json'))) return;
         const data = await readJSONFile<SerializedCanvas>(file);
-        await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
+        await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata, this.saveImageFileMetadata);
+        this.#eventHub.emit(SaveEvent.Save);
         this.#eventHub.emit(LoaderEvent.done);
     }
 

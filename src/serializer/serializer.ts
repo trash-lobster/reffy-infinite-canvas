@@ -139,7 +139,8 @@ export function serializeCanvas(canvas: Canvas, files?: ImageFileMetadata[]): Se
 export async function deserializeCanvas(
 	data: SerializedCanvas, 
 	canvas: Canvas, 
-	getFile: (id: string | number) => Promise<ImageFileMetadata>
+	getFile: (id: string | number) => Promise<ImageFileMetadata>,
+	writeFileToDatabase?: (data: string) => void,
 ) {
   	canvas.children.length = 0;
 	const promises = [];
@@ -160,7 +161,12 @@ export async function deserializeCanvas(
 			case 'Img':
 				let src: string;
 				try {
-					src = (await getFile((node as SerializedImg).fileId)).dataURL;
+					src = (data.files ? data.files.find(e => e.id === (node as SerializedImg).fileId) : await getFile((node as SerializedImg).fileId)).dataURL;
+					
+					if (writeFileToDatabase) {
+						writeFileToDatabase(src);
+					}
+
 					instance = new Img({
 						x: node.transform.x,
 						y: node.transform.y,
@@ -168,7 +174,8 @@ export async function deserializeCanvas(
 						width: (node as SerializedImg).width,
 						height: (node as SerializedImg).height,
 					});
-					(instance as Img).fileId = await hashStringToId(src);
+					//  skip hashing if it already has a file ID
+					(instance as Img).fileId = (node as SerializedImg).fileId ?? await hashStringToId(src);
 					instance.setScale(node.transform.sx, node.transform.sy);
 					canvas.appendChild(instance);
 				} catch (err) {

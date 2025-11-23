@@ -5,6 +5,7 @@ export class Img extends Rect {
     private texcoordLocation?: number;
     private samplerLocation?: WebGLUniformLocation;
     private texture?: WebGLTexture;
+    private lowResTexture? : WebGLTexture;
     private gl?: WebGLRenderingContext;
     private program?: WebGLProgram;
 
@@ -21,6 +22,9 @@ export class Img extends Rect {
     private _fileId: string | number;
     private _src: string;
     private _image: HTMLImageElement;
+    private useLowRes: boolean = false;
+    private bitmap: ImageBitmap;
+    private lowResBitmap: ImageBitmap;
 
     constructor(config: Partial<{
         x: number, 
@@ -33,14 +37,8 @@ export class Img extends Rect {
     }>) {
         super(config);
         this._src = config.src;
-        // add lazy texture loading
         // this.culled = true;
         this.loadImage(config.src, config.width, config.height);
-    }
-
-    private loadImage(src: string, width?: number, height?: number) {
-        if (this.culled) return;
-        this.updateImageTexture(src, width, height);
     }
 
     get src() { return this._src; }
@@ -51,22 +49,47 @@ export class Img extends Rect {
             this.markDirty();
         }
     }
-
+    
     get fileId() { return this._fileId; }
     set fileId(val: string | number) {
         this._fileId = val;
     }
 
+    async setUseLowRes(useLowRes: boolean, gl?: WebGLRenderingContext) {
+        if (this.useLowRes === useLowRes) return;
+        this.useLowRes = useLowRes;
+        if (useLowRes && gl) {
+            await this.ensureLowResUploaded(gl);
+        }
+        this.markDirty();
+    }
+
+    private loadImage(src: string, width?: number, height?: number) {
+        if (this.culled) return;
+        this.updateImageTexture(src, width, height);
+    }
+
     private updateImageTexture(src: string, width?: number, height?: number) {
         this._image = new Image();
         this._image.crossOrigin = 'anonymous';
-        this._image.onload = () => {
+        this._image.onload = async () => {
             this.width = width ?? this._image.naturalWidth;
             this.height = height ?? this._image.naturalHeight;
-            this.markDirty();
+
+            try {
+                if (this.bitmap) {
+                    try { this.bitmap.close(); } catch (e) {}
+                    this.bitmap = undefined;
+                }
+                if (typeof createImageBitmap === 'function') {
+                    this.bitmap = await createImageBitmap(this._image);
+                }
+            } catch (err) {
+                console.warn('createImageBitmap failed, falling back to HTMLImageElement', err);
+                this.bitmap = undefined;
+            }
 
             if (this.gl && this.program) {
-                // prefer createImageBitmap if available and source is a Blob/URL you control
                 try {
                     if (this.texture && this.gl) {
                         this.gl.deleteTexture(this.texture);
@@ -86,6 +109,67 @@ export class Img extends Rect {
         this._image.src = src;
     }
 
+        private async ensureLowResUploaded(gl: WebGLRenderingContext) {
+        if (this.lowResTexture) return;
+        if (!this._image || !this._image.complete) return;
+
+        try {
+            const targetMaxSide = 256;
+            const naturalW = this._image.naturalWidth;
+            const naturalH = this._image.naturalHeight;
+            const scale = Math.min(1, targetMaxSide / Math.max(1, Math.max(naturalW, naturalH)));
+            const w = Math.max(1, Math.round(naturalW * scale));
+            const h = Math.max(1, Math.round(naturalH * scale));
+
+            let canvas: HTMLCanvasElement | OffscreenCanvas;
+            if (typeof OffscreenCanvas !== 'undefined') {
+                canvas = new OffscreenCanvas(w, h);
+            } else {
+                canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+            }
+
+            const ctx = (canvas as HTMLCanvasElement).getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+            ctx.clearRect(0, 0, w, h);
+
+            const ratio = Math.min(w / naturalW, h / naturalH);
+            const dw = Math.round(naturalW * ratio);
+            const dh = Math.round(naturalH * ratio);
+            const dx = Math.round((w - dw) / 2);
+            const dy = Math.round((h - dh) / 2);
+
+            ctx.drawImage(this._image, 0, 0, naturalW, naturalH, dx, dy, dw, dh);
+
+            this.lowResBitmap = await createImageBitmap(canvas as any);
+            this.setLowResTextureFromBitmap(gl, this.lowResBitmap);
+
+        } catch (err) {
+            console.error('Failed to create/upload low-res image', err);
+        }
+    }
+
+    private setLowResTextureFromBitmap(gl: WebGLRenderingContext, bitmap: ImageBitmap) {
+        if (this.lowResTexture) {
+            try { gl.deleteTexture(this.lowResTexture); } catch (e) {}
+            this.lowResTexture = undefined;
+        }
+
+        this.lowResTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.lowResTexture);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+
+        this.markDirty();
+    }
+
+    // data upload
     private initialiseTexture() {
         if (!this.gl || !this.program) return;
         if (!this._image || !this._image.complete || this._image.naturalWidth === 0) return;
@@ -95,8 +179,54 @@ export class Img extends Rect {
         this.setTexture(this.gl);
             
         super.setUpUniforms(this.gl, this.program);
-        this.samplerLocation = this.gl.getUniformLocation(this.program, "u_image"); // match your shader name
-        if (this.samplerLocation) this.gl.uniform1i(this.samplerLocation, 0); // texture unit 0
+        this.samplerLocation = this.gl.getUniformLocation(this.program, "u_image");
+        if (this.samplerLocation) this.gl.uniform1i(this.samplerLocation, 0);
+    }
+    
+    private setUpTexData(gl: WebGLRenderingContext, program: WebGLProgram) {
+        if (!this.texcoordBuffer) {
+            this.texcoordBuffer = gl.createBuffer();
+        }
+        this.texcoordLocation = gl.getAttribLocation(program, "a_texCoord");
+    }
+
+    private setTexture(gl: WebGLRenderingContext) {
+        if (this.texture) {
+            try {
+                try { gl.deleteTexture(this.texture); } catch (e) {}
+            } catch (e) {}
+            this.texture = undefined;
+        }
+
+        this.texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        
+        // Set the parameters so we can render any size image.
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        
+        // Upload the image into the texture.
+        const srcForTex = (this.bitmap && typeof createImageBitmap === 'function') ? this.bitmap : this._image;
+        if (srcForTex) {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, srcForTex as any);
+        }
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+
+    updateVertexData(gl: WebGLRenderingContext) {
+        super.updateVertexData(gl);
+
+        // Upload texture coordinates
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, this.texCoordArray, gl.STATIC_DRAW);
+    }
+
+    getVertexCount(): number {
+        return 6;
     }
     
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
@@ -123,49 +253,7 @@ export class Img extends Rect {
         super.updateUniforms(gl);
         this.draw(gl);
     }
-    
-    getVertexCount(): number {
-        return 6;
-    }
 
-    updateVertexData(gl: WebGLRenderingContext) {
-        super.updateVertexData(gl);
-
-        // Upload texture coordinates
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, this.texCoordArray, gl.STATIC_DRAW);
-    }
-
-    private setUpTexData(gl: WebGLRenderingContext, program: WebGLProgram) {
-        if (!this.texcoordBuffer) {
-            this.texcoordBuffer = gl.createBuffer();
-        }
-        this.texcoordLocation = gl.getAttribLocation(program, "a_texCoord");
-    }
-
-    private setTexture(gl: WebGLRenderingContext) {
-        if (this.texture) {
-            try {
-                gl.deleteTexture(this.texture);
-            } catch (e) {}
-            this.texture = undefined;
-        }
-
-        this.texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        
-        // Set the parameters so we can render any size image.
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        
-        // Upload the image into the texture.
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._image);
-    }
-    
     protected draw(gl: WebGLRenderingContext) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         
@@ -175,21 +263,23 @@ export class Img extends Rect {
         const stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
         const offset = 0;        // start at the beginning of the buffer
         
-        gl.vertexAttribPointer(
-            this.attributeLocation, size, type, normalize, stride, offset);
+        gl.vertexAttribPointer(this.attributeLocation, size, type, normalize, stride, offset);
         gl.enableVertexAttribArray(this.attributeLocation);
             
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffer);
-        
         gl.vertexAttribPointer(
             this.texcoordLocation, size, type, normalize, stride, offset);
         gl.enableVertexAttribArray(this.texcoordLocation);
             
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
-        gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
+        try {
+            const tex = (this.useLowRes && this.lowResTexture) ? this.lowResTexture : this.texture;
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     destroy() {
@@ -202,6 +292,19 @@ export class Img extends Rect {
                 try { this.gl.deleteTexture(this.texture); } catch (e) {}
                 this.texture = undefined;
             }
+            if (this.lowResTexture) {
+                try { this.gl.deleteTexture(this.lowResTexture); } catch (e) {}
+                this.lowResTexture = undefined;
+            }
+        }
+
+        if (this.bitmap) {
+            try { this.bitmap.close(); } catch (e) {}
+            this.bitmap = undefined;
+        }
+        if (this.lowResBitmap) {
+            try { this.lowResBitmap.close(); } catch (e) {}
+            this.lowResBitmap = undefined;
         }
 
         this.texcoordLocation = undefined;

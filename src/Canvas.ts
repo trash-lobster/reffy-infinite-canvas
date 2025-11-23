@@ -209,9 +209,17 @@ export class Canvas extends Renderable {
 
 		let currentProgram: WebGLProgram | null = null;
 
-		// render the grid
 		currentProgram = this.#gridProgram;
 		this.#grid.render(this.#gl, currentProgram);
+
+		const currentZoom = this.camera.state.zoom;
+		const lowResThreshold = 5;
+
+		this.children.forEach((child) => {
+			if (child instanceof Img) {
+				(child as Img).setUseLowRes(currentZoom > lowResThreshold, this.gl);
+			}
+		})
 
 		for (const renderable of this.renderList) {
 			let program: WebGLProgram;

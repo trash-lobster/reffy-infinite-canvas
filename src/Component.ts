@@ -2,7 +2,7 @@ import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
 import {LitElement, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
-import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste, SaveEvent } from './util';
+import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste, performanceTest, SaveEvent } from './util';
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { makeMultiAddChildCommand } from './manager';
@@ -184,6 +184,7 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     private async initCanvas() {
+        await this.warmUpStorage();
         this.#history = new CanvasHistory();
         this.#eventHub = new EventEmitter();
 
@@ -248,13 +249,11 @@ export class InfiniteCanvasElement extends LitElement {
         this.#resizeObserver = new ResizeObserver(() => resizeCanvas());
         this.#resizeObserver.observe(canvas);
 
-        showLoader.bind(this)('spinner');
         try {
             await this.restoreStateFromCanvasStorage();
         } catch (err) {
             console.error('Failed to restore canvas');
         }
-        hideLoader.bind(this)();
         
         this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)();
         this.#canvasImageMenuOptions = createCanvasImageMenuOptions.bind(this)();
@@ -292,6 +291,19 @@ export class InfiniteCanvasElement extends LitElement {
         this.#eventHub.on(SaveEvent.Save, this.saveToCanvasStorage);
         this.#eventHub.on(SaveEvent.SaveCompleted, () => console.log('Done Saving!'));
         this.#eventHub.on(SaveEvent.SaveFailed, () => console.log('Failed to Save!'));
+    }
+
+    // need to check if this is good practice
+    private async warmUpStorage() {
+        if (!this.#fileStorage) {
+            this.#fileStorage = new DefaultIndexedDbStorage();
+        }
+        try {
+            await this.#fileStorage.readAll();
+            console.log('Storage warmed up');
+        } catch (err) {
+            console.error('Storage warm-up failed', err);
+        }
     }
 
     // Storage & Persistence

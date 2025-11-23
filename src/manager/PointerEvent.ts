@@ -105,7 +105,6 @@ export class PointerEventManager {
 
         window.addEventListener('copy', async (e) => {
             e.preventDefault();
-            console.log('copying');
             if (this.isContextMenuActive()) return;
 
             await copy(this.getSelected() as Img[]);

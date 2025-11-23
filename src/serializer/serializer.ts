@@ -15,7 +15,8 @@ import { hashStringToId, performanceTest } from "../util";
  * is there anyway to force a save when the app closes? In what circumstances will that not work? An ungraceful shutdown?
  */
 
-export const PLACEHOLDER_IMAGE_SRC = "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='128'%20height='128'%20viewBox='0%200%20128%20128'%3E%3Crect%20fill='%23efefef'%20width='128'%20height='128'/%3E%3Cpath%20d='M16%20112%20L112%2016%20M16%2016%20L112%20112'%20stroke='%23999'%20stroke-width='8'%20stroke-linecap='round'/%3E%3C/svg%3E";
+const PLACEHOLDER_IMAGE_SRC = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSIjYjNiM2IzIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xLjUgNmEyLjI1IDIuMjUgMCAwIDEgMi4yNS0yLjI1aDE2LjVBMi4yNSAyLjI1IDAgMCAxIDIyLjUgNnYxMmEyLjI1IDIuMjUgMCAwIDEtMi4yNSAyLjI1SDMuNzVBMi4yNSAyLjI1IDAgMCAxIDEuNSAxOHpNMyAxNi4wNlYxOGMwIC40MTQuMzM2Ljc1Ljc1Ljc1aDE2LjVBLjc1Ljc1IDAgMCAwIDIxIDE4di0xLjk0bC0yLjY5LTIuNjg5YTEuNSAxLjUgMCAwIDAtMi4xMiAwbC0uODguODc5bC45Ny45N2EuNzUuNzUgMCAxIDEtMS4wNiAxLjA2bC01LjE2LTUuMTU5YTEuNSAxLjUgMCAwIDAtMi4xMiAwem0xMC4xMjUtNy44MWExLjEyNSAxLjEyNSAwIDEgMSAyLjI1IDBhMS4xMjUgMS4xMjUgMCAwIDEtMi4yNSAwIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=";
+const PLACEHOLDER_IMAGE_SIZE = 240;
 
 export type SerializedTransform = {
 	x: number;
@@ -145,7 +146,6 @@ export async function deserializeCanvas(
 	writeFileToDatabase?: (data: string) => void,
 ) {
 	canvas.children.length = 0;
-	const promises = [];
 	
 	async function build(node: SerializedNode, parent: Canvas | Renderable) {
 		let instance: Renderable;
@@ -174,13 +174,17 @@ export async function deserializeCanvas(
 						writeFileToDatabase(src);
 					}
 					
-					instance = new Img({
-						x: node.transform.x,
-						y: node.transform.y,
-						src,
-						width: (node as SerializedImg).width,
-						height: (node as SerializedImg).height,
-					});
+                    const width = (node as SerializedImg).width;
+                    const height = (node as SerializedImg).height;
+                    const framedPlaceholder = await framePlaceholder(src, width * node.transform.sx, height * node.transform.sy);
+
+                    instance = new Img({
+                        x: node.transform.x,
+                        y: node.transform.y,
+                        src: framedPlaceholder,
+                        width,
+                        height,
+                    });
 
 					getFile((node as SerializedImg).fileId)
 						.then(file => { (instance as Img).src = file.dataURL; })
@@ -211,6 +215,59 @@ export async function deserializeCanvas(
 	}
 
 	await build(data.root, canvas);
-	// await Promise.all(promises);
   	return canvas;
+}
+
+async function loadImageElement(src: string): Promise<HTMLImageElement> {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    return new Promise((resolve, reject) => {
+        img.onload = () => resolve(img);
+        img.onerror = (err) => reject(err);
+        img.src = src;
+    });
+}
+
+async function framePlaceholder(
+    srcOrBlob: string | Blob,
+    tw?: number,
+    th?: number,
+    bg: string = '#d6d6d6ff'
+): Promise<string> {
+    let objectUrl: string | null = null;
+    let src: string;
+
+    if (srcOrBlob instanceof Blob) {
+        objectUrl = URL.createObjectURL(srcOrBlob);
+        src = objectUrl;
+    } else {
+        src = srcOrBlob;
+    }
+
+    try {
+        const img = await loadImageElement(src);
+        const targetW = tw && tw > 0 ? tw : img.naturalWidth;
+        const targetH = th && th > 0 ? th : img.naturalHeight;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d')!;
+
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, targetW, targetH);
+
+        const dw = PLACEHOLDER_IMAGE_SIZE;
+        const dh = PLACEHOLDER_IMAGE_SIZE;
+        const dx = Math.round((targetW - dw) / 2);
+        const dy = Math.round((targetH - dh) / 2);
+
+        ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, dw, dh);
+
+        return canvas.toDataURL('image/png');
+    } finally {
+        if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+        }
+    }
 }

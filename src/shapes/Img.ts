@@ -5,6 +5,8 @@ export class Img extends Rect {
     private texcoordLocation?: number;
     private samplerLocation?: WebGLUniformLocation;
     private texture?: WebGLTexture;
+    private gl?: WebGLRenderingContext;
+    private program?: WebGLProgram;
 
     private texCoordArray: Float32Array = new Float32Array([
         0, 0,  // top-left
@@ -31,27 +33,21 @@ export class Img extends Rect {
     }>) {
         super(config);
         this._src = config.src;
+        // add lazy texture loading
+        // this.culled = true;
         this.loadImage(config.src, config.width, config.height);
     }
 
     private loadImage(src: string, width?: number, height?: number) {
-        this._image = new Image();
-        this._image.crossOrigin = 'anonymous';
-        this._image.src = src;
-        this._image.onload = () => {
-            this.markDirty();
-            this.width = width ?? this._image.naturalWidth;
-            this.height = height ?? this._image.naturalHeight;
-        };
-        this._image.onerror = (error) => {
-            console.error('Failed to load image:', src, error);
-        };
+        if (this.culled) return;
+        this.updateImageTexture(src, width, height);
     }
 
     get src() { return this._src; }
     set src(val: string) {
         if (this._src !== val) {
             this._src = val;
+            this.updateImageTexture(val);
             this.markDirty();
         }
     }
@@ -60,20 +56,57 @@ export class Img extends Rect {
     set fileId(val: string | number) {
         this._fileId = val;
     }
+
+    private updateImageTexture(src: string, width?: number, height?: number) {
+        this._image = new Image();
+        this._image.crossOrigin = 'anonymous';
+        this._image.onload = () => {
+            this.width = width ?? this._image.naturalWidth;
+            this.height = height ?? this._image.naturalHeight;
+            this.markDirty();
+
+            if (this.gl && this.program) {
+                // prefer createImageBitmap if available and source is a Blob/URL you control
+                try {
+                    if (this.texture && this.gl) {
+                        this.gl.deleteTexture(this.texture);
+                        this.texture = undefined;
+                    }
+                    this.initialiseTexture();
+                    this.initialized = true;
+                    this.markDirty();
+                } catch (err) {
+                    console.error('Failed to initialise texture on image load', err);
+                }
+            }
+        };
+        this._image.onerror = (error) => {
+            console.error('Failed to load image:', src, error);
+        };
+        this._image.src = src;
+    }
+
+    private initialiseTexture() {
+        if (!this.gl || !this.program) return;
+        if (!this._image || !this._image.complete || this._image.naturalWidth === 0) return;
+
+        this.setUpVertexData(this.gl, this.program);
+        this.setUpTexData(this.gl, this.program);
+        this.setTexture(this.gl);
+            
+        super.setUpUniforms(this.gl, this.program);
+        this.samplerLocation = this.gl.getUniformLocation(this.program, "u_image"); // match your shader name
+        if (this.samplerLocation) this.gl.uniform1i(this.samplerLocation, 0); // texture unit 0
+    }
     
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
-        this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
-
-        if (this.dirty) {
+        if (this.dirty && !this.culled) {
+            this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
 
             if (!this.initialized) {
-                this.setUpVertexData(gl, program);
-                this.setUpTexData(gl, program);
-                this.setTexture(gl);
-                
-                super.setUpUniforms(gl, program);
-                this.samplerLocation = gl.getUniformLocation(program, "u_image"); // match your shader name
-                if (this.samplerLocation) gl.uniform1i(this.samplerLocation, 0); // texture unit 0
+                this.gl = gl;
+                this.program = program;
+                this.initialiseTexture();
                 
                 // Only create texture if image is loaded
                 if (this._image.complete && this._image.naturalWidth > 0) {
@@ -111,6 +144,13 @@ export class Img extends Rect {
     }
 
     private setTexture(gl: WebGLRenderingContext) {
+        if (this.texture) {
+            try {
+                gl.deleteTexture(this.texture);
+            } catch (e) {}
+            this.texture = undefined;
+        }
+
         this.texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         
@@ -153,14 +193,19 @@ export class Img extends Rect {
     }
 
     destroy() {
-        super.destroy();
-        if (this.texcoordBuffer) {
-            this.texcoordBuffer = undefined;
+        if (this.gl) {
+            if (this.texcoordBuffer) {
+                try { this.gl.deleteBuffer(this.texcoordBuffer); } catch (e) {}
+                this.texcoordBuffer = undefined;
+            }
+            if (this.texture) {
+                try { this.gl.deleteTexture(this.texture); } catch (e) {}
+                this.texture = undefined;
+            }
         }
-        if (this.texture) {
-            this.texture = undefined;
-        }
+
         this.texcoordLocation = undefined;
         this.samplerLocation = undefined;
+        try { super.destroy(); } catch (e) {}
     }
 }

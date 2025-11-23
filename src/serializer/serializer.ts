@@ -1,7 +1,7 @@
 import { ImageFileMetadata } from "storage";
 import { Canvas } from "../Canvas";
 import { Renderable, Rect, Img, Grid } from "../shapes";
-import { hashStringToId } from "../util";
+import { hashStringToId, performanceTest } from "../util";
 
 /**
  * What should be exposed?
@@ -14,6 +14,8 @@ import { hashStringToId } from "../util";
  * How often should we write to the chosen method fo storage? When initialising the exporter, we can decide between indexdb and an actual db
  * is there anyway to force a save when the app closes? In what circumstances will that not work? An ungraceful shutdown?
  */
+
+export const PLACEHOLDER_IMAGE_SRC = "data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='128'%20height='128'%20viewBox='0%200%20128%20128'%3E%3Crect%20fill='%23efefef'%20width='128'%20height='128'/%3E%3Cpath%20d='M16%20112%20L112%2016%20M16%2016%20L112%20112'%20stroke='%23999'%20stroke-width='8'%20stroke-linecap='round'/%3E%3C/svg%3E";
 
 export type SerializedTransform = {
 	x: number;
@@ -142,9 +144,9 @@ export async function deserializeCanvas(
 	getFile: (id: string | number) => Promise<ImageFileMetadata>,
 	writeFileToDatabase?: (data: string) => void,
 ) {
-  	canvas.children.length = 0;
+	canvas.children.length = 0;
 	const promises = [];
-
+	
 	async function build(node: SerializedNode, parent: Canvas | Renderable) {
 		let instance: Renderable;
 		switch (node.type) {
@@ -161,12 +163,17 @@ export async function deserializeCanvas(
 			case 'Img':
 				let src: string;
 				try {
-					src = (data.files ? data.files.find(e => e.id === (node as SerializedImg).fileId) : await getFile((node as SerializedImg).fileId)).dataURL;
+					src = (
+						data.files ? 
+						data.files.find(e => e.id === (node as SerializedImg).fileId).dataURL :
+						PLACEHOLDER_IMAGE_SRC
+					);
+					
 					
 					if (writeFileToDatabase) {
 						writeFileToDatabase(src);
 					}
-
+					
 					instance = new Img({
 						x: node.transform.x,
 						y: node.transform.y,
@@ -174,6 +181,11 @@ export async function deserializeCanvas(
 						width: (node as SerializedImg).width,
 						height: (node as SerializedImg).height,
 					});
+
+					getFile((node as SerializedImg).fileId)
+						.then(file => { (instance as Img).src = file.dataURL; })
+						.catch(err => console.error('Image not loaded', err));
+
 					//  skip hashing if it already has a file ID
 					(instance as Img).fileId = (node as SerializedImg).fileId ?? await hashStringToId(src);
 					instance.setScale(node.transform.sx, node.transform.sy);
@@ -194,11 +206,11 @@ export async function deserializeCanvas(
 		}
 
 		if (node.children) {
-			for (const child of node.children) promises.push(build(child, instance));
+			for (const child of node.children) await build(child, instance);
 		}
 	}
 
 	await build(data.root, canvas);
-	await Promise.all(promises);
+	// await Promise.all(promises);
   	return canvas;
 }

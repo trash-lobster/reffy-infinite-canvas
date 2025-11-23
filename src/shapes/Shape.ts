@@ -11,6 +11,8 @@ export abstract class Shape extends WebGLRenderable {
     private static _seqCounter = 0;
     private readonly _seq = Shape._seqCounter++;
 
+    culled: boolean = false;
+
     private _layer = 0;
 
     private _renderOrder: number = 0;

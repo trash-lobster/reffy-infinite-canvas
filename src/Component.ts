@@ -10,6 +10,7 @@ import { addContextMenu, clearContextMenu, ContextMenuProps, ContextMenuType, cr
 import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, ImageFileMetadata } from './storage';
 import EventEmitter from 'eventemitter3';
 import { hideLoader, showLoader } from './loader';
+import Stats from 'stats.js';
 
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
@@ -261,7 +262,17 @@ export class InfiniteCanvasElement extends LitElement {
         
         this.dispatchEvent(new Event('load'));
 
+        const stats = new Stats();
+        stats.showPanel(0);
+
+        if (!this.renderRoot.contains(stats.dom)) {
+            this.renderRoot.appendChild(stats.dom);
+        }
+
         const animate = () => {
+            if (stats) {
+                stats.update();
+            }
             this.#canvas.render();
             requestAnimationFrame(animate);
         };

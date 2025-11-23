@@ -33,6 +33,7 @@
     "@types/d3-color": "^3.1.0",
     "@types/node": "^24.10.1",
     "@types/rbush": "^3.0.0",
+    "@types/stats.js": "^0.17.4",
     "@vitest/coverage-v8": "^4.0.12",
     "@vitest/ui": "^4.0.12",
     "esbuild": "^0.25.10",
@@ -58,6 +59,7 @@
     "lit": "^3.3.1",
     "mobx": "^6.15.0",
     "rbush": "^3.0.1",
+    "stats.js": "^0.17.0",
     "uuid": "^13.0.0"
   },
   "publishConfig": {

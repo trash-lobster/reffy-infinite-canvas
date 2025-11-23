@@ -257,9 +257,20 @@ async function framePlaceholder(
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, targetW, targetH);
 
-        const dw = PLACEHOLDER_IMAGE_SIZE;
-        const dh = PLACEHOLDER_IMAGE_SIZE;
-        const dx = Math.round((targetW - dw) / 2);
+		// if any of the sides is less than the placeholder image size, then use the natural ratio
+		const ratio = Math.min(targetW / img.naturalWidth, targetH / img.naturalHeight);
+		const ratioedHeight = img.naturalHeight * ratio;
+		const ratioedWidth = img.naturalWidth * ratio;
+
+		let dw = PLACEHOLDER_IMAGE_SIZE;
+		let dh = PLACEHOLDER_IMAGE_SIZE;
+
+		if ( PLACEHOLDER_IMAGE_SIZE > ratioedHeight || PLACEHOLDER_IMAGE_SIZE > ratioedWidth ) {
+			dw = ratioedWidth;
+			dh = ratioedHeight;
+		}
+
+		const dx = Math.round((targetW - dw) / 2);
         const dy = Math.round((targetH - dh) / 2);
 
         ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, dw, dh);

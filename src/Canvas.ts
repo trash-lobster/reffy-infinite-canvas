@@ -21,7 +21,6 @@ import { CanvasHistory } from './history';
 import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
 import EventEmitter from 'eventemitter3';
 import { ImageFileMetadata } from './storage';
-import { isContextMenuActive } from 'contextMenu';
 
 export class Canvas extends Renderable {
 	#canvas: HTMLCanvasElement;

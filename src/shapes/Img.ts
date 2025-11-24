@@ -210,9 +210,9 @@ export class Img extends Rect {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         
         // Upload the image into the texture.
-        const srcForTex = (this.bitmap && typeof createImageBitmap === 'function') ? this.bitmap : this._image;
+        const srcForTex = this.bitmap ?? this._image;
         if (srcForTex) {
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, srcForTex as any);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, srcForTex);
         }
         gl.bindTexture(gl.TEXTURE_2D, null);
     }

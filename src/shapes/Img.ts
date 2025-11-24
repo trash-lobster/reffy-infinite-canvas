@@ -56,6 +56,7 @@ export class Img extends Rect {
     }
 
     async setUseLowRes(useLowRes: boolean, gl?: WebGLRenderingContext) {
+        // checks for current state to see if we are already using low res so we can avoid doing the extra work
         if (this.useLowRes === useLowRes) return;
         this.useLowRes = useLowRes;
         if (useLowRes && gl) {
@@ -109,7 +110,7 @@ export class Img extends Rect {
         this._image.src = src;
     }
 
-        private async ensureLowResUploaded(gl: WebGLRenderingContext) {
+    private async ensureLowResUploaded(gl: WebGLRenderingContext) {
         if (this.lowResTexture) return;
         if (!this._image || !this._image.complete) return;
 

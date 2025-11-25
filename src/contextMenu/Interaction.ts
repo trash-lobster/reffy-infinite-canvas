@@ -1,6 +1,8 @@
 import { ContextMenuEvent } from "../util";
 import { ContextMenu, ContextMenuGroupProps, ContextMenuType } from "./ContextMenu";
 
+const PADDING = 5;
+
 function withContextMenuClear<T extends (...args: any[]) => any>(fn: T): T {
     const self = this;
     return function(this: any, ...args: Parameters<T>): ReturnType<T> {
@@ -17,31 +19,53 @@ export function addContextMenu(x: number, y: number, type: ContextMenuType = 'si
             type === 'multi' ? this.multiImageMenuOptions :
                 this.canvasImageMenuOptions
     );
-    menu.attachToParent(this.renderRoot as HTMLElement);
+    if (!this.rootDiv) {
+        console.error("Can't add to parent div");
+        return;
+    }
+
+    menu.attachToParent(this.rootDiv as HTMLElement);
     
     // Position the menu
     const hostRect = this.getBoundingClientRect();
-    const relX = x - hostRect.left;
-    const relY = y - hostRect.top;
+
+    console.log(hostRect);
+    const relX = x - hostRect.left; // relative x to the client 
+    const relY = y - hostRect.top;  // relative y to the client
+    
+    console.log(`Relative Y: ${relY}`);
 
     // determine the width and height of the bound rect
-    const hostWidth = hostRect.right;
-    const hostHeight = hostRect.bottom;
-    
+    const hostWidth = hostRect.right - hostRect.left;
+    const hostHeight = hostRect.bottom - hostRect.top;
     // place the menu according to the four quarters so it is always in view
     const menuRect = menu.el.getBoundingClientRect();
     
     // only flip the position of the menu if leaving it where it would have been, would lead to the menu being out of view
     const direction: number[] = [
-        relX + menuRect.width > hostWidth ? 1 : 0,
-        relY + menuRect.bottom > hostHeight ? 1 : 0,
+        relX + menuRect.width > hostWidth ? 1: 0,
+        relY + menuRect.height > hostHeight ? 1: 0,
     ]
+
+    console.log(direction);
 
     const menuHeight = menuRect.height * direction[1];
     const menuWidth = menuRect.width * direction[0];
 
-    menu._el.style.left = `${relX - menuWidth}px`;
-    menu._el.style.top = `${relY - menuHeight}px`;
+    if (menuHeight > hostHeight) {
+        const newHeight = hostHeight - 2 * PADDING;
+        menu._el.style.height = `${newHeight}px`;
+        menu._el.style.top = `${PADDING}px`;
+    } else {
+        menu._el.style.top = `${relY - menuHeight}px`;
+    }
+    
+    if (menuWidth > hostWidth) {
+        menu._el.style.width = `${hostWidth - 2 * PADDING}px`;
+        menu._el.style.left = `${PADDING}px`;
+    } else {
+        menu._el.style.left = `${relX - menuWidth}px`;
+    }
 }
 
 export function clearContextMenu() {

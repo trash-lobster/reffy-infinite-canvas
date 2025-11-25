@@ -1,7 +1,7 @@
 import { CanvasHistory } from './history';
 import { Canvas } from './Canvas';
-import {LitElement, css} from 'lit';
-import {customElement, property} from 'lit/decorators.js';
+import { LitElement, css } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste, performanceTest, SaveEvent } from './util';
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
@@ -12,10 +12,25 @@ import EventEmitter from 'eventemitter3';
 import { hideLoader, showLoader } from './loader';
 import Stats from 'stats.js';
 
+type CanvasDisplayMode = 'fullscreen' | 'windowed'
+
 @customElement('infinite-canvas')
 export class InfiniteCanvasElement extends LitElement {
-    @property({type: String})
+    static properties = {
+        name: { type: String },
+        aspectRatioHeight: { type: Number },
+        aspectRatioWidth: { type: Number },
+        width: { type: Number },
+        height: { type: Number },
+        displayMode: { type: String },
+    }
+    
     name: string = 'Reffy';
+    aspectRatioHeight: number | null;
+    aspectRatioWidth: number | null;
+    width: number;
+    height: number;
+    displayMode: CanvasDisplayMode = 'fullscreen';
 
     static styles = css`
         :host {
@@ -25,7 +40,7 @@ export class InfiniteCanvasElement extends LitElement {
         .context-menu {
             position: absolute;
             background: white;
-            min-width: 180px;
+            width: 180px;
             background: var(--menu-bg, #fff);
             border-radius: 6px;
             border: 1px solid var(--menu-border, #9f9f9fff);
@@ -36,6 +51,7 @@ export class InfiniteCanvasElement extends LitElement {
             flex-direction: column;
             font-family: system-ui, sans-serif;
             animation: fadeInMenu 0.13s cubic-bezier(.4,0,.2,1);
+            overflow: scroll;
         }
 
         @keyframes fadeInMenu {
@@ -89,6 +105,7 @@ export class InfiniteCanvasElement extends LitElement {
             padding: 0;
             margin: 0;
             touch-action: none;
+            display: block;
         }
 
         .canvas-loader {
@@ -141,6 +158,8 @@ export class InfiniteCanvasElement extends LitElement {
     #saveFrequency = 300000;
 	#timeoutId: number | null;
     #intervalId: number | null;
+
+    rootDiv: HTMLDivElement;
     
     #onChange?: () => void;
 
@@ -188,6 +207,14 @@ export class InfiniteCanvasElement extends LitElement {
         this.#history = new CanvasHistory();
         this.#eventHub = new EventEmitter();
 
+        const div = document.createElement('div');
+
+        div.style.width = this.displayMode === 'fullscreen' ? '100vw' : `${this.width}px`;
+        div.style.height = this.displayMode === 'fullscreen' ? '100vh' : `${this.height}px`;
+        
+        this.renderRoot.appendChild(div);
+        this.rootDiv = div;
+
         const canvas = document.createElement('canvas');
 
         // persistent state set up
@@ -218,36 +245,35 @@ export class InfiniteCanvasElement extends LitElement {
             this.saveImageFileMetadata,
         );
 
-        if (!this.renderRoot.contains(canvas)) {
-            this.renderRoot.appendChild(canvas);
+        if (!div.contains(canvas)) {
+            div.appendChild(canvas);
         }
 
         this.registerSignal();
-
+        
         const resizeCanvas = () => {
+            const parent = this.rootDiv; // fallback to host if no parent
             const dpr = window.devicePixelRatio || 1;
-            const parent = canvas.parentElement || this; // fallback to host if no parent
             const rect = parent.getBoundingClientRect();
             let w = Math.max(1, rect.width);
             let h = Math.max(1, rect.height);
 
-            // Maintain a fixed aspect ratio, e.g., 16:9
-            const aspect = 16 / 9;
-            if (w / h > aspect) {
-                h = w / aspect;
-            } else {
-                w = h * aspect;
+            const targetWidthPx = Math.round(w * dpr);
+            const targetHeightPx = Math.round(h * dpr);
+            
+            if (canvas.width !== targetWidthPx || canvas.height !== targetHeightPx) {
+                canvas.width = targetWidthPx;
+                canvas.height = targetHeightPx;
             }
-            canvas.width = w * dpr;
-            canvas.height = h * dpr;
-            canvas.style.width = `${w}px`;
-            canvas.style.height = `${h}px`;
+            
+            if (canvas.style.width !== `${w}px`) canvas.style.width = `${w}px`;
+            if (canvas.style.height !== `${h}px`) canvas.style.height = `${h}px`;
         };
 
         resizeCanvas();
 
         this.#resizeObserver = new ResizeObserver(() => resizeCanvas());
-        this.#resizeObserver.observe(canvas);
+        this.#resizeObserver.observe(this.rootDiv);
 
         try {
             await this.restoreStateFromCanvasStorage();

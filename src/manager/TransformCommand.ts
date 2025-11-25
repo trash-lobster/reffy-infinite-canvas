@@ -33,7 +33,7 @@ export function makeTransformCommand(
 }
 
 export function makeMultiTransformCommand(
-    entries: Array<{ ref: any; start: TransformSnapshot; end: TransformSnapshot }>,
+    entries: Array<{ ref: any; start: TransformSnapshot; end?: TransformSnapshot }>,
     label = 'Transform'
 ): Command {
     return {

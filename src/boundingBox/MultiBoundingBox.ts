@@ -12,6 +12,7 @@ import {
     AlignDirection,
     FlipDirection,
     FlipSnapshotItem,
+    TransformSnapshotItem,
 } from "../manager";
 import { Rect } from "../shapes";
 
@@ -222,6 +223,8 @@ export class MultiBoundingBox {
     align(direction: AlignDirection) {
         if (this.targets.size <= 1) return;
 
+        const transformArray: TransformSnapshotItem[] = [];
+
         const dir = [
             direction === 'top' ? 1 : direction === 'bottom' ? -1 : 0,
             direction === 'left' ? 1 : direction === 'right' ? -1 : 0
@@ -238,6 +241,10 @@ export class MultiBoundingBox {
         }
 
         for (const target of this.targets) {
+            const transform: TransformSnapshotItem = {
+                ref: target,
+                start: { x: target.x, y: target.y, sx: target.sx, sy: target.sy, },
+            }
             const aabb = target.getBoundingBox();
             target.updateTranslation(
                 direction === 'top' || direction === 'bottom' ? 
@@ -247,9 +254,12 @@ export class MultiBoundingBox {
                     aim - (direction === 'top' ? aabb.minY : aabb.maxY) :
                     0 
             );
+            transform.end = { x: target.x, y: target.y, sx: target.sx, sy: target.sy, };
+            transformArray.push(transform);
         }
 
         this.update();
+        return transformArray;
     }
 
     getPositions(): number[] {

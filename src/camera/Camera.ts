@@ -1,5 +1,7 @@
 import { CameraState } from "../state";
 import { reaction } from "mobx";
+import { AABB } from "../boundingBox";
+import { debounce } from "../util";
 
 export const ZOOM_MIN = 0.02;
 export const ZOOM_MAX = 20;
@@ -20,6 +22,9 @@ export class Camera {
         this.state = state;
 
         this.updateCameraPos = this.updateCameraPos.bind(this);
+        this.updateZoom = this.updateZoom.bind(this);
+        this.onWheel = this.onWheel.bind(this);
+        
         this.getWorldCoords = getWorldCoords;
         this.setWorldMatrix = setWorldMatrix;
         this.updateWorldMatrix = updateWorldMatrix
@@ -41,7 +46,18 @@ export class Camera {
         this.updateWorldMatrix();
     }
 
-    onWheel = (e: WheelEvent) => {
+    setViewPortDimension(width: number, height: number) {
+        if (this.state.width !== width) this.state.width = width;
+        if (this.state.height !== height) this.state.height = height;
+    }
+
+    getBoundingBox() {
+        const [minX, minY] = this.getWorldCoords(0, 0);
+        const [maxX, maxY] = this.getWorldCoords(this.state.width, this.state.height);
+        return new AABB(minX, minY, maxX, maxY);
+    }
+
+    onWheel(e: WheelEvent) {
         e.preventDefault();
 
         const ZOOM_SPEED = 0.003;

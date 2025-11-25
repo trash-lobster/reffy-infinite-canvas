@@ -252,7 +252,7 @@ export class Img extends Rect {
             this.clearDirty();
         }
         super.updateUniforms(gl);
-        this.draw(gl);
+        if (!this.culled) this.draw(gl);
     }
 
     protected draw(gl: WebGLRenderingContext) {

@@ -1,3 +1,4 @@
+import { AABB } from "../boundingBox/AABB";
 import { WebGLRenderable } from "./Renderable";
 
 export interface BoundingVal {
@@ -11,7 +12,7 @@ export abstract class Shape extends WebGLRenderable {
     private static _seqCounter = 0;
     private readonly _seq = Shape._seqCounter++;
 
-    culled: boolean = false;
+    culled = false;
 
     private _layer = 0;
 
@@ -33,15 +34,15 @@ export abstract class Shape extends WebGLRenderable {
     get seq() { return this._seq; }
 
     abstract getEdge() : BoundingVal;
+    abstract getBoundingBox(): AABB;
 
     color: [number, number, number, number] = [1, 0, 0.5, 1];
 
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
         this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
-        
         gl.useProgram(program);
 
-        if (this.dirty) {
+        if (this.dirty && !this.culled) {
             if (!this.initialized) {
                 this.setUpVertexData(gl, program);
                 this.setUpUniforms(gl, program);
@@ -55,11 +56,7 @@ export abstract class Shape extends WebGLRenderable {
         if (uColor) {
             gl.uniform4fv(uColor, this.color);
         }
-        this.draw(gl);
-        
-        this.children.forEach(child => {
-            child.render(gl, program);
-        });
+        if (!this.culled) this.draw(gl);
     }
     
     protected draw(gl: WebGLRenderingContext) {

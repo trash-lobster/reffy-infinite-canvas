@@ -21,6 +21,7 @@ import { CanvasHistory } from './history';
 import { deserializeCanvas, serializeCanvas, SerializedCanvas } from './serializer';
 import EventEmitter from 'eventemitter3';
 import { ImageFileMetadata } from './storage';
+import { AABB } from './boundingBox';
 
 export class Canvas extends Renderable {
 	#canvas: HTMLCanvasElement;
@@ -223,7 +224,21 @@ export class Canvas extends Renderable {
 			}
 		})
 
+		const cameraBoundingBox = this.camera.getBoundingBox();
+
+		let totalRenderable = 0;
+		let rendered = 0;
+
 		for (const renderable of this.renderList) {
+			totalRenderable++;
+			
+			if (!AABB.isColliding(cameraBoundingBox, renderable.getBoundingBox())) {
+				renderable.culled = true;
+			} else {
+				rendered++;
+				renderable.culled = false;
+			}
+			
 			let program: WebGLProgram;
 
 			if (renderable instanceof Img) {
@@ -240,6 +255,8 @@ export class Canvas extends Renderable {
 		}
 		
 		this.#selectionManager.render();
+
+		console.log(`${rendered} out of ${totalRenderable} rendered`);
 	}
 
 	destroy() {

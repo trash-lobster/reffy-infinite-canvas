@@ -1,3 +1,4 @@
+import { AABB } from "../boundingBox";
 import { getScalesFromMatrix, applyMatrixToPoint, isScalePositive } from "../util";
 import { Shape } from "./Shape";
 
@@ -45,6 +46,14 @@ export class Rect extends Shape {
             left,  bottom,   // bottom-left
             right, bottom    // bottom-right
         ];
+    }
+
+    getBoundingBox() {
+        // not currently taking account of flips
+        const [minX, minY] = [this.state.translation[0], this.state.translation[1]];
+        const [maxX, maxY] = [minX + this.width * this.state.scaleX, minY + this.height * this.state.scaleY];
+        
+        return new AABB(minX, minY, maxX, maxY);
     }
 
     getEdge() {

@@ -20,21 +20,22 @@ export class InfiniteCanvasElement extends LitElement {
         name: { type: String },
         aspectRatioHeight: { type: Number },
         aspectRatioWidth: { type: Number },
-        width: { type: Number },
-        height: { type: Number },
+        width: { type: String },
+        height: { type: String },
         displayMode: { type: String },
     }
     
     name: string = 'Reffy';
     aspectRatioHeight: number | null;
     aspectRatioWidth: number | null;
-    width: number;
-    height: number;
+    width: string;
+    height: string;
     displayMode: CanvasDisplayMode = 'fullscreen';
 
     static styles = css`
         :host {
             position: relative;
+            overflow: hidden;
         }
 
         .context-menu {
@@ -208,7 +209,7 @@ export class InfiniteCanvasElement extends LitElement {
         this.#eventHub = new EventEmitter();
 
         const div = document.createElement('div');
-        
+
         this.renderRoot.appendChild(div);
         this.rootDiv = div;
 
@@ -248,36 +249,8 @@ export class InfiniteCanvasElement extends LitElement {
 
         this.registerSignal();
         
-        const resizeCanvas = () => {
-            const parent = this.rootDiv;
-            const dpr = window.devicePixelRatio || 1;
-            const rect = parent.getBoundingClientRect();
-            let w = Math.max(1, rect.width);
-            let h = Math.max(1, rect.height);
-
-            // set dimensions to window screen size to prevent resizing event being called
-            // should only be called when switching to different sized monitors
-            div.style.width = this.displayMode === 'fullscreen' ? `${window.screen.width}px` : `${this.width}px`;
-            div.style.height = this.displayMode === 'fullscreen' ? `${window.screen.height}` : `${this.height}px`;
-            console.log(div.style.width);
-            console.log(div.style.height);
-
-            const targetWidthPx = Math.round(w * dpr);
-            const targetHeightPx = Math.round(h * dpr);
-            
-            if (canvas.width !== targetWidthPx || canvas.height !== targetHeightPx) {
-                canvas.width = targetWidthPx;
-                canvas.height = targetHeightPx;
-            }
-            
-            if (canvas.style.width !== `${w}px`) canvas.style.width = `${w}px`;
-            if (canvas.style.height !== `${h}px`) canvas.style.height = `${h}px`;
-        };
-
-        resizeCanvas();
-
-        this.#resizeObserver = new ResizeObserver(() => resizeCanvas());
-        this.#resizeObserver.observe(this.rootDiv);
+        // resize canvas to start
+        this.resizeCanvas(div, canvas);
 
         try {
             await this.restoreStateFromCanvasStorage();
@@ -307,6 +280,29 @@ export class InfiniteCanvasElement extends LitElement {
         };
         
         animate();
+    }
+
+    private resizeCanvas(container: HTMLDivElement, canvas: HTMLCanvasElement) {
+        // set up the container div to limit the extent of the canvas that is visible
+        container.style.width = this.displayMode === 'fullscreen' ? `100vw` : this.width;
+        container.style.height = this.displayMode === 'fullscreen' ? `100vh` : this.height;
+        container.style.overflow = 'hidden';
+        const dpr = window.devicePixelRatio || 1;
+
+        // set the canvas to be as big as possible so there will never be a flickering resize problem
+        let w = window.screen.width;
+        let h = window.screen.height;
+
+        const targetWidthPx = Math.round(w * dpr);
+        const targetHeightPx = Math.round(h * dpr);
+        
+        if (canvas.width !== targetWidthPx || canvas.height !== targetHeightPx) {
+            canvas.width = targetWidthPx;
+            canvas.height = targetHeightPx;
+        }
+        
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
     }
 
     // Register signal

@@ -208,9 +208,6 @@ export class InfiniteCanvasElement extends LitElement {
         this.#eventHub = new EventEmitter();
 
         const div = document.createElement('div');
-
-        div.style.width = this.displayMode === 'fullscreen' ? '100vw' : `${this.width}px`;
-        div.style.height = this.displayMode === 'fullscreen' ? '100vh' : `${this.height}px`;
         
         this.renderRoot.appendChild(div);
         this.rootDiv = div;
@@ -252,11 +249,18 @@ export class InfiniteCanvasElement extends LitElement {
         this.registerSignal();
         
         const resizeCanvas = () => {
-            const parent = this.rootDiv; // fallback to host if no parent
+            const parent = this.rootDiv;
             const dpr = window.devicePixelRatio || 1;
             const rect = parent.getBoundingClientRect();
             let w = Math.max(1, rect.width);
             let h = Math.max(1, rect.height);
+
+            // set dimensions to window screen size to prevent resizing event being called
+            // should only be called when switching to different sized monitors
+            div.style.width = this.displayMode === 'fullscreen' ? `${window.screen.width}px` : `${this.width}px`;
+            div.style.height = this.displayMode === 'fullscreen' ? `${window.screen.height}` : `${this.height}px`;
+            console.log(div.style.width);
+            console.log(div.style.height);
 
             const targetWidthPx = Math.round(w * dpr);
             const targetHeightPx = Math.round(h * dpr);

@@ -128,19 +128,19 @@ export function createMultiImageMenuOptions(base?: ContextMenuGroupProps[]) {
                 childOptions: [
                     {
                         text: "Align Left",
-                        onClick: () => console.log('hey')
+                        onClick: () => withClear(this.align.bind(this))('left')
                     },
                     {
                         text: "Align Right",
-                        onClick: () => console.log('hey')
+                        onClick: () => withClear(this.align.bind(this))('right')
                     },
                     {
                         text: "Align Top",
-                        onClick: () => console.log('hey')
+                        onClick: () => withClear(this.align.bind(this))('top')
                     },
                     {
                         text: "Align Bottom",
-                        onClick: () => console.log('hey')
+                        onClick: () => withClear(this.align.bind(this))('bottom')
                     }
                 ]
             }

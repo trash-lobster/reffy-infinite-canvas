@@ -222,17 +222,31 @@ export class MultiBoundingBox {
     align(direction: AlignDirection) {
         if (this.targets.size <= 1) return;
 
-        // move individual box by different distance to the target value in direction
-        if (direction === 'top') {
-            let aim = Number.POSITIVE_INFINITY;
-            for (const [k, v] of this.targets.entries()) {
-                const box = v.getBoundingBox();
-                aim = Math.min(box.minY, aim);
-            }
-            for (const target of this.targets) {
-                const aabb = target.getBoundingBox();
-                target.updateTranslation(0, aim - aabb.minY);
-            }
+        const dir = [
+            direction === 'top' ? 1 : direction === 'bottom' ? -1 : 0,
+            direction === 'left' ? 1 : direction === 'right' ? -1 : 0
+        ]
+
+        let aim = dir[0] !== 0 ? Infinity * dir[0] : Infinity * dir[1];
+        
+        for (const [k, v] of this.targets.entries()) {
+            const box = v.getBoundingBox();
+            aim = 
+                direction === 'top' || direction === 'left' ? 
+                    Math.min(direction === 'top' ? box.minY : box.minX, aim) : 
+                    Math.max(direction === 'bottom' ? box.maxY : box.maxX, aim);
+        }
+
+        for (const target of this.targets) {
+            const aabb = target.getBoundingBox();
+            target.updateTranslation(
+                direction === 'top' || direction === 'bottom' ? 
+                    0 : 
+                    aim - (direction === 'left' ? aabb.minX : aabb.maxX), 
+                direction === 'top' || direction === 'bottom' ? 
+                    aim - (direction === 'top' ? aabb.minY : aabb.maxY) :
+                    0 
+            );
         }
 
         this.update();

@@ -16,6 +16,8 @@ import { makeMultiRemoveChildCommand } from "./SceneCommand";
 import { FlipDirection, makeMultiFlipCommand } from "./FlipCommand";
 import EventEmitter from "eventemitter3";
 
+export type AlignDirection = 'top' | 'bottom' | 'left' | 'right';
+
 export class SelectionManager {
     // #canvas: Canvas;
     #history: CanvasHistory;
@@ -276,6 +278,11 @@ export class SelectionManager {
             this.#history.push(makeMultiFlipCommand(transformArray, direction));
         }
         this.#eventHub.emit(CanvasEvent.Change);
+    }
+
+    alignSelection(direction: AlignDirection) {
+        if (!this.#multiBoundingBox) return;
+        this.#multiBoundingBox.align(direction);
     }
 
     onPointerMove(

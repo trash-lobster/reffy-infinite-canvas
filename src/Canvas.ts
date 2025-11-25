@@ -206,6 +206,9 @@ export class Canvas extends Renderable {
     	this.#gl.clear(this.#gl.COLOR_BUFFER_BIT);
 		this.#gl.viewport(0, 0, this.#gl.canvas.width, this.#gl.canvas.height);
 
+		const parentBoundingBox = this.canvas.parentElement.getBoundingClientRect();
+		this.camera.setViewPortDimension(parentBoundingBox.width, parentBoundingBox.height);
+
 		let currentProgram: WebGLProgram | null = null;
 
 		currentProgram = this.#gridProgram;

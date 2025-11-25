@@ -235,14 +235,6 @@ export class InfiniteCanvasElement extends LitElement {
         this.clearContextMenu = clearContextMenu.bind(this);
         this.isContextMenuActive = isContextMenuActive.bind(this);
 
-        this.#canvas = new Canvas(
-            canvas, 
-            this.#history,
-            this.#eventHub,
-            this.debounceSaveToCanvasStorage,
-            this.saveImageFileMetadata,
-        );
-
         if (!div.contains(canvas)) {
             div.appendChild(canvas);
         }
@@ -251,6 +243,14 @@ export class InfiniteCanvasElement extends LitElement {
         
         // resize canvas to start
         this.resizeCanvas(div, canvas);
+
+        this.#canvas = new Canvas(
+            canvas, 
+            this.#history,
+            this.#eventHub,
+            this.debounceSaveToCanvasStorage,
+            this.saveImageFileMetadata,
+        );
 
         try {
             await this.restoreStateFromCanvasStorage();

@@ -49,9 +49,16 @@ export class Rect extends Shape {
     }
 
     getBoundingBox() {
-        // not currently taking account of flips
-        const [minX, minY] = [this.state.translation[0], this.state.translation[1]];
-        const [maxX, maxY] = [minX + this.width * this.state.scaleX, minY + this.height * this.state.scaleY];
+        // due to possible flips, the original width could be flipped by the scale value and become lesser the its translation[0]
+        const x0 = this.state.translation[0];
+        const x1 = x0 + this.width * this.state.scaleX;
+        const y0 = this.state.translation[1];
+        const y1 = y0 + this.height * this.state.scaleY;
+
+        const minX = Math.min(x0, x1);
+        const maxX = Math.max(x0, x1);
+        const minY = Math.min(y0, y1);
+        const maxY = Math.max(y0, y1);
         
         return new AABB(minX, minY, maxX, maxY);
     }

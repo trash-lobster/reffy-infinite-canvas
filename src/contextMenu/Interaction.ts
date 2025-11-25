@@ -29,11 +29,8 @@ export function addContextMenu(x: number, y: number, type: ContextMenuType = 'si
     // Position the menu
     const hostRect = this.getBoundingClientRect();
 
-    console.log(hostRect);
     const relX = x - hostRect.left; // relative x to the client 
     const relY = y - hostRect.top;  // relative y to the client
-    
-    console.log(`Relative Y: ${relY}`);
 
     // determine the width and height of the bound rect
     const hostWidth = hostRect.right - hostRect.left;
@@ -46,8 +43,6 @@ export function addContextMenu(x: number, y: number, type: ContextMenuType = 'si
         relX + menuRect.width > hostWidth ? 1: 0,
         relY + menuRect.height > hostHeight ? 1: 0,
     ]
-
-    console.log(direction);
 
     const menuHeight = menuRect.height * direction[1];
     const menuWidth = menuRect.width * direction[0];

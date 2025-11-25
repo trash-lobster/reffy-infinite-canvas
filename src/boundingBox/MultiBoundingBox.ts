@@ -7,21 +7,9 @@ import {
     BoundingBoxCollisionType,
     applyMatrixToPoint,
     getScalesFromMatrix,
-    getWorldCoords,
 } from "../util";
-import { 
-    OrderedList, 
-    createOrderedByStartX, 
-    createOrderedByStartY, 
-    createOrderedByEndX, 
-    createOrderedByEndY,
-    getX,
-    getY,
-    getEndX,
-    getEndY
-} from "./OrderedList";
-import { Canvas } from "Canvas";
 import {
+    AlignDirection,
     FlipDirection,
     FlipSnapshotItem,
 } from "../manager";
@@ -39,11 +27,6 @@ export class MultiBoundingBox {
     borderSize: number = 0;
     boxSize: number = 0;
     scale: number[];
-
-    orderByMinX: OrderedList = createOrderedByStartX();
-    orderByMinY: OrderedList = createOrderedByStartY();
-    orderByMaxX: OrderedList = createOrderedByEndX();
-    orderByMaxY: OrderedList = createOrderedByEndY();
 
     constructor(shapes?: Rect[]) {
         this.scale = [1, 1];
@@ -108,18 +91,10 @@ export class MultiBoundingBox {
 
     add(shape: Rect) {
         this.targets.add(shape);
-        this.orderByMinX.add(shape);
-        this.orderByMinY.add(shape);
-        this.orderByMaxX.add(shape);
-        this.orderByMaxY.add(shape);
     }
 
     remove(shape: Rect) {
         this.targets.delete(shape);
-        this.orderByMinX.remove(shape);
-        this.orderByMinY.remove(shape);
-        this.orderByMaxX.remove(shape);
-        this.orderByMaxY.remove(shape);
     }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram): void {
@@ -244,6 +219,25 @@ export class MultiBoundingBox {
         return transformArray;
     }
 
+    align(direction: AlignDirection) {
+        if (this.targets.size <= 1) return;
+
+        // move individual box by different distance to the target value in direction
+        if (direction === 'top') {
+            let aim = Number.POSITIVE_INFINITY;
+            for (const [k, v] of this.targets.entries()) {
+                const box = v.getBoundingBox();
+                aim = Math.min(box.minY, aim);
+            }
+            for (const target of this.targets) {
+                const aabb = target.getBoundingBox();
+                target.updateTranslation(0, aim - aabb.minY);
+            }
+        }
+
+        this.update();
+    }
+
     getPositions(): number[] {
         return [
             this.x, this.y, // Top-left
@@ -279,17 +273,31 @@ export class MultiBoundingBox {
         }
     }
 
+    private getBounds() {
+        const arr = Array.from(this.targets);
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        for (const rect of arr) {
+            const [ startX, startY] = applyMatrixToPoint(rect.worldMatrix);
+            const [ endX, endY] = applyMatrixToPoint(rect.worldMatrix, rect.width, rect.height);
+
+
+            minX = Math.min(minX, rect.sx < 0 ? endX : startX);
+            minY = Math.min(minY, rect.sy < 0 ? endY : startY);
+            maxX = Math.max(maxX, rect.sx < 0 ? startX : endX);
+            maxY = Math.max(maxY, rect.sy < 0 ? startY : endY);
+        }
+
+        return { minX, minY, maxX, maxY };
+    }
+
     private recalculateBounds() {
-        const minX = this.scale[0] < 0 ? this.orderByMaxX.getMax() : this.orderByMinX.getMin();
-        const minY = this.scale[1] < 0 ? this.orderByMaxY.getMax() : this.orderByMinY.getMin();
-        const maxX = this.scale[0] < 0 ? this.orderByMinX.getMin() : this.orderByMaxX.getMax();
-        const maxY = this.scale[1] < 0 ? this.orderByMinY.getMin() : this.orderByMaxY.getMax();
+        const { minX, minY, maxX, maxY } = this.getBounds();
 
-        this.x = this.scale[0] < 0 ? getEndX(maxX): getX(minX);
-        this.y = this.scale[1] < 0 ? getEndY(maxY): getY(minY);
-
-        this.width = this.scale[0] * (getEndX(maxX) - getX(minX));
-        this.height = this.scale[1] * (getEndY(maxY) - getY(minY));
+        this.x = this.scale[0] < 0 ? maxX : minX;
+        this.y = this.scale[1] < 0 ? maxY : minY;
+        this.width = this.scale[0] * (maxX - minX);
+        this.height = this.scale[1] * (maxY - minY);
     }
 
     private addHandles() {

@@ -14,10 +14,12 @@ function withContextMenuClear<T extends (...args: any[]) => any>(fn: T): T {
 
 export function addContextMenu(x: number, y: number, type: ContextMenuType = 'single') {
     // Create new menu
-    const menu = new ContextMenu(
+    const menu = new ContextMenu((
         type === 'single' ? this.singleImageMenuOptions :
             type === 'multi' ? this.multiImageMenuOptions :
                 this.canvasImageMenuOptions
+        ),
+        this.rootDiv,
     );
     if (!this.rootDiv) {
         console.error("Can't add to parent div");
@@ -78,7 +80,7 @@ export function isContextMenuActive() {
 export function createSingleImageMenuOptions(base?: ContextMenuGroupProps[]) {
     const withClear = withContextMenuClear.bind(this);
     return {
-        optionGroups: [
+        options: [
             ...base ?? [],
             {
                 childOptions: [
@@ -122,36 +124,123 @@ export function createSingleImageMenuOptions(base?: ContextMenuGroupProps[]) {
 export function createMultiImageMenuOptions(base?: ContextMenuGroupProps[]) {
     const withClear = withContextMenuClear.bind(this);
     return {
-        optionGroups: [
+        options: [
             ...base ?? [],
             {
                 childOptions: [
                     {
-                        text: "Align Left",
-                        onClick: () => withClear(this.align.bind(this))('left')
+                        text: "Align",
+                        onHover: () => {},
+                        subMenu: {
+                            options: [
+                                {
+                                    childOptions: [
+                                        {
+                                            text: "Align Left",
+                                            onClick: () => withClear(this.align.bind(this))('left')
+                                        },
+                                        {
+                                            text: "Align Right",
+                                            onClick: () => withClear(this.align.bind(this))('right')
+                                        },
+                                        {
+                                            text: "Align Top",
+                                            onClick: () => withClear(this.align.bind(this))('top')
+                                        },
+                                        {
+                                            text: "Align Bottom",
+                                            onClick: () => withClear(this.align.bind(this))('bottom')
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
                     },
                     {
-                        text: "Align Right",
-                        onClick: () => withClear(this.align.bind(this))('right')
+                        text: "Normalize by First",
+                        onHover: () => {},
+                        subMenu: {
+                            options: [
+                                {
+                                    childOptions: [
+                                        {
+                                            text: "Height",
+                                            onClick: () => {}
+                                        },
+                                        {
+                                            text: "Width",
+                                            onClick: () => {}
+                                        },
+                                        {
+                                            text: "Size",
+                                            onClick: () => {}
+                                        },
+                                        {
+                                            text: "Scale",
+                                            onClick: () => {}
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
                     },
                     {
-                        text: "Align Top",
-                        onClick: () => withClear(this.align.bind(this))('top')
+                        text: "Normalize by Average",
+                        onHover: () => {},
+                        subMenu: {
+                            options: [
+                                {
+                                    childOptions: [
+                                        {
+                                            text: "Height",
+                                            onClick: () => {}
+                                        },
+                                        {
+                                            text: "Width",
+                                            onClick: () => {}
+                                        },
+                                        {
+                                            text: "Size",
+                                            onClick: () => {}
+                                        },
+                                        {
+                                            text: "Scale",
+                                            onClick: () => {}
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
                     },
-                    {
-                        text: "Align Bottom",
-                        onClick: () => withClear(this.align.bind(this))('bottom')
-                    }
                 ]
             }
         ]
     }
 }
 
+                // childOptions: [
+                    // {
+                    //     text: "Align Left",
+                    //     onClick: () => withClear(this.align.bind(this))('left')
+                    // },
+                    // {
+                    //     text: "Align Right",
+                    //     onClick: () => withClear(this.align.bind(this))('right')
+                    // },
+                    // {
+                    //     text: "Align Top",
+                    //     onClick: () => withClear(this.align.bind(this))('top')
+                    // },
+                    // {
+                    //     text: "Align Bottom",
+                    //     onClick: () => withClear(this.align.bind(this))('bottom')
+                    // }
+                // ]
+
 export function createCanvasImageMenuOptions(base?: ContextMenuGroupProps[]) {
     const withClear = withContextMenuClear.bind(this);
     return {
-        optionGroups: [
+        options: [
             ...base ?? [],
             {
                 childOptions: [

@@ -6,14 +6,18 @@ type ContextMenuElCoreOption = {
     text: string;
     parent?: ContextMenuGroup;
     style?: CSSStyleDeclaration;
+    subMenu?: ContextMenuProps;
 }
 
 type ContextMenuElOption = 
-    ( ContextMenuElCoreOption &  { onClick?: (e?: MouseEvent) => void } ) | 
+    ( ContextMenuElCoreOption &  { 
+        onClick?: (e?: MouseEvent) => void,
+        onHover?: (e?: MouseEvent) => void,
+    } ) | 
     ( ContextMenuElCoreOption &  { childOptions: ContextMenuElOption[] } )
 
 export type ContextMenuProps = {
-    optionGroups: ContextMenuGroupProps[];
+    options: ContextMenuGroupProps[];
 }
 
 export type ContextMenuGroupProps = {
@@ -26,16 +30,18 @@ export type ContextMenuGroupProps = {
 export class ContextMenu {
     _el: HTMLDivElement;
     options: ContextMenuGroup[] = [];
+    rootNode: DocumentFragment | HTMLElement;
 
     get el() { return this._el; }
 
-    constructor(option: ContextMenuProps) {
+    constructor(option: ContextMenuProps, rootNode: DocumentFragment | HTMLElement) {
+        this.rootNode = rootNode;
         this._el = document.createElement('div');
         this._el.classList.add('context-menu');
 
-        option.optionGroups.forEach((o, idx) => {
+        option.options.forEach((o, idx) => {
             this.createOptionGroup(o);
-            if (idx !== option.optionGroups.length - 1) {
+            if (idx !== option.options.length - 1) {
                 this.addDivider();
             }
         });
@@ -50,13 +56,14 @@ export class ContextMenu {
     }
 
     private createOptionGroup(option: ContextMenuGroupProps) {
-        const element = new ContextMenuGroup(option);
+        const element = new ContextMenuGroup(option, this.rootNode);
         this.options.push(element);
         this.el.appendChild(element.el);
     }
 
     private addDivider() {
-        const divider = document.createElement('div');
+        // const divider = document.createElement('div');
+        const divider = document.createElement('hr');
         divider.classList.add('context-menu-divider');
         this.el.appendChild(divider);
     }
@@ -65,10 +72,12 @@ export class ContextMenu {
 export class ContextMenuGroup {
     _el: HTMLDivElement;
     childOptions: ContextMenuElement[] = [];
+    rootNode: DocumentFragment | HTMLElement;
 
     get el() { return this._el; }
 
-    constructor(option: ContextMenuGroupProps) {
+    constructor(option: ContextMenuGroupProps, rootNode: DocumentFragment | HTMLElement) {
+        this.rootNode = rootNode;
         this._el = document.createElement('div');        
         this.createOptionElement = this.createOptionElement.bind(this);
 
@@ -81,7 +90,7 @@ export class ContextMenuGroup {
 
     private createOptionElement(option: ContextMenuElOption) {
         option.parent = this;
-        const element = new ContextMenuElement(option);
+        const element = new ContextMenuElement(option, this.rootNode);
         this.childOptions.push(element);
     }
 }
@@ -96,33 +105,87 @@ export class ContextMenuElement {
     _el: HTMLButtonElement;
     parent: ContextMenuGroup;
     subMenu?: ContextMenu;
+    rootNode: DocumentFragment | HTMLElement;
 
     get el() { return this._el; }
 
-    constructor(option: ContextMenuElOption) {
+    constructor(option: ContextMenuElOption, rootNode: DocumentFragment | HTMLElement) {
+        this.displayText = option.text;
+        this.rootNode = rootNode;
         this.parent = option.parent;
         this._el = document.createElement('button');
         this._el.textContent = option.text;
         this._el.classList.add('context-menu-option');
         
         this.parent.el.appendChild(this._el);
-        this.attachEventListener = this.attachEventListener.bind(this);
-        this.detachEventListener = this.detachEventListener.bind(this);
 
         if ('onClick' in option) {
-            this.attachEventListener('click', option.onClick);
+            this._el.addEventListener('click', option.onClick);
         }
+
+        this._el.addEventListener('pointerenter',
+            (e: PointerEvent) => onpointerenter(e, option, this._el, this.rootNode)
+        );
 
         this._el.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
     }
 
-    attachEventListener(type: string, event: (e: PointerEvent) => void) {
-        this._el.addEventListener(type, event);
+    pointerLeave(e: PointerEvent) {
+        // attach the pointermove event
+        this.rootNode.addEventListener('pointermove', this.pointerMove);
     }
 
-    detachEventListener(type: string, event: (e: PointerEvent) => void) {
-        this._el.removeEventListener(type, event);
+    pointerMove(e: PointerEvent) {
+        const el = (this.rootNode as DocumentFragment).getElementById(`${this.displayText}-context-menu`);
+        if (el.matches(':hover')) {
+            console.log('Mouse is over the element now.');
+            el.removeEventListener('pointerleave', this.pointerMove);
+        } else {
+
+        }
+    }
+}
+
+function onpointerenter(
+    e: PointerEvent, 
+    parentOption: ContextMenuElOption, 
+    parentEl: Node, 
+    rootNode: DocumentFragment | HTMLElement,
+) {
+    if (!rootNode) return;
+    const oldMenu = rootNode.querySelector('.sub-context-menu');
+    if (oldMenu) oldMenu.remove();
+
+    if (parentOption.subMenu) {
+        const newMenu = new ContextMenu(parentOption.subMenu, this);
+        rootNode.appendChild(newMenu.el);
+        
+        newMenu.el.id = `${parentOption.text}-context-menu`;
+        newMenu.el.classList.add('sub-context-menu');
+        
+        // calculate proper position
+        const hostRect = (rootNode as any).getBoundingClientRect();
+        const parentBoundingBox = (parentEl as HTMLDivElement).getBoundingClientRect();
+        const menuRect = newMenu.el.getBoundingClientRect();
+        
+        const hostWidth = hostRect.right - hostRect.left;
+        const hostHeight = hostRect.bottom - hostRect.top;
+        
+        const menuWidth = parentBoundingBox.right + menuRect.width;
+        const menuHeight = parentBoundingBox.top + menuRect.height;
+
+        if (menuHeight > hostHeight) {
+            newMenu._el.style.top = `${parentBoundingBox.bottom - menuRect.height}px`;
+        } else {
+            newMenu._el.style.top = `${parentBoundingBox.top}px`;
+        }
+
+        if (menuWidth > hostWidth) {
+            newMenu._el.style.left = `${parentBoundingBox.left - menuRect.width}px`;
+        } else {
+            newMenu._el.style.left = `${parentBoundingBox.right}px`;
+        }
     }
 }

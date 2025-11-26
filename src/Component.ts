@@ -41,7 +41,7 @@ export class InfiniteCanvasElement extends LitElement {
         .context-menu {
             position: absolute;
             background: white;
-            width: 180px;
+            min-width: 180px;
             background: var(--menu-bg, #fff);
             border-radius: 6px;
             border: 1px solid var(--menu-border, #9f9f9fff);
@@ -209,6 +209,7 @@ export class InfiniteCanvasElement extends LitElement {
         this.#eventHub = new EventEmitter();
 
         const div = document.createElement('div');
+        div.style.overflow = 'hidden';
 
         this.renderRoot.appendChild(div);
         this.rootDiv = div;
@@ -260,7 +261,7 @@ export class InfiniteCanvasElement extends LitElement {
         
         this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)();
         this.#canvasImageMenuOptions = createCanvasImageMenuOptions.bind(this)();
-        this.#multiImageMenuOptions = createMultiImageMenuOptions.bind(this)(this.#singleImageMenuOptions.optionGroups);
+        this.#multiImageMenuOptions = createMultiImageMenuOptions.bind(this)(this.#singleImageMenuOptions.options);
         
         this.dispatchEvent(new Event('load'));
 

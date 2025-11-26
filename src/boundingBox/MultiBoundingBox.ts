@@ -215,10 +215,13 @@ export class MultiBoundingBox {
     normalize(type: NormalizeOption, mode: NormalizeMode) {
         if (mode === 'first') {
             const reference = this.targets[0];
+            let goal = 
+                type === 'height' ? (reference.height * reference.sy) :
+                    type === 'width' ? reference.width * reference.sx :
+                        type === 'scale' ? reference.sx :
+                            reference.width * reference.height * reference.sx * reference.sy; // size calculation aims to get the same area for both
 
             if (type === 'height') {
-                const goal = reference.height * reference.sy;
-
                 for (const target of this.targets) {
                     // origin of transformation is the center of the rect
                     const center = [
@@ -226,7 +229,7 @@ export class MultiBoundingBox {
                         (target.y + target.height * target.sy) / 2,
                     ]
                     const currH = target.height * target.sy;
-                    const scale = goal / currH;
+                    const scale = Math.abs(goal / currH);
                     target.updateScale(scale, scale);
 
                     // the x and y of origin has not change, we need to move this to recenter
@@ -237,8 +240,6 @@ export class MultiBoundingBox {
                     target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
                 }
             } else if (type === 'width') {
-                const goal = reference.width * reference.sx;
-
                 for (const target of this.targets) {
                     // origin of transformation is the center of the rect
                     const center = [
@@ -246,7 +247,7 @@ export class MultiBoundingBox {
                         (target.y + target.height * target.sy) / 2,
                     ]
                     const currw = target.width * target.sx;
-                    const scale = goal / currw;
+                    const scale = Math.abs(goal / currw);
                     target.updateScale(scale, scale);
 
                     // the x and y of origin has not change, we need to move this to recenter
@@ -257,16 +258,22 @@ export class MultiBoundingBox {
                     target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
                 }
             } else if (type === 'scale') {
-                const goal = reference.sx;
-
                 for (const target of this.targets) {
+                    if (target === reference) continue;
                     // origin of transformation is the center of the rect
                     const center = [
                         (target.x + target.width * target.sx) / 2,
                         (target.y + target.height * target.sy) / 2,
                     ]
+
+                    // keep existing scale direction
+                    const sx = Math.abs(target.sx) / target.sx;
+                    const sy = Math.abs(target.sy) / target.sy;
+
+                    console.log(reference.sx);
+                    console.log(reference.sy);
   
-                    target.setScale(goal, goal);
+                    target.setScale(reference.sx * sx, reference.sy * sy);
 
                     // the x and y of origin has not change, we need to move this to recenter
                     const newCenter = [
@@ -276,8 +283,6 @@ export class MultiBoundingBox {
                     target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
                 }
             } else if (type === 'size') {
-                // size calculation aims to get the same area for both
-                const goal = reference.width * reference.height * reference.sx * reference.sy;
 
                 for (const target of this.targets) {
                     // origin of transformation is the center of the rect

@@ -173,11 +173,11 @@ export function createMultiImageMenuOptions(base?: ContextMenuGroupProps[]) {
                                         },
                                         {
                                             text: "Size",
-                                            onClick: () => {}
+                                            onClick: () => withClear(this.normalizeSelection.bind(this))('size', 'first')
                                         },
                                         {
                                             text: "Scale",
-                                            onClick: () => {}
+                                            onClick: () => withClear(this.normalizeSelection.bind(this))('scale', 'first')
                                         }
                                     ]
                                 }

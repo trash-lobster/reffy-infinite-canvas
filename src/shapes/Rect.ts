@@ -6,6 +6,7 @@ export class Rect extends Shape {
     // these are not going to change throughout the lifetime as scale is going to be the one changing their visual
     private _width: number;
     private _height: number;
+    AABB: AABB;
 
     constructor(
         config: Partial<{
@@ -48,7 +49,13 @@ export class Rect extends Shape {
         ];
     }
 
+    /**
+     * 
+     * @returns A bounding box that is not adjusted for world space.
+     */
     getBoundingBox() {
+        if (this.AABB) return this.AABB;
+
         // due to possible flips, the original width could be flipped by the scale value and become lesser the its translation[0]
         const x0 = this.state.translation[0];
         const x1 = x0 + this.width * this.state.scaleX;
@@ -60,7 +67,8 @@ export class Rect extends Shape {
         const minY = Math.min(y0, y1);
         const maxY = Math.max(y0, y1);
         
-        return new AABB(minX, minY, maxX, maxY);
+        this.AABB = new AABB(minX, minY, maxX, maxY);
+        return this.AABB;
     }
 
     getEdge() {

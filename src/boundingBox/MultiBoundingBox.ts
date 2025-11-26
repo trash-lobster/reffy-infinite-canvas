@@ -38,12 +38,14 @@ export class MultiBoundingBox {
     }
 
     add(shape: Rect) {
-        this.targets.push(shape);
+        if (!this.targets.includes(shape)) {
+            this.targets.push(shape);
+        }
     }
 
     remove(shape: Rect) {
         const idx = this.targets.indexOf(shape);
-        this.targets.splice(idx, 1);
+        if (idx != -1) this.targets.splice(idx, 1);
     }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram): void {

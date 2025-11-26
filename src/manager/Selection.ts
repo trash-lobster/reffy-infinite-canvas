@@ -227,7 +227,6 @@ export class SelectionManager {
 
     clearMarquee() {
         if (this.#marqueeSelectionBox) {
-            this.#marqueeSelectionBox.hitTest(this.getWorldMatrix(), this.getCanvasChildren(), this.add);
             this.#marqueeSelectionBox = null;
         }
     }
@@ -313,6 +312,18 @@ export class SelectionManager {
             this.resize(dx, dy, resizeDirection);
         } else if (this.marqueeBox) {
             this.marqueeBox.resize(dx, dy, getWorldMatrix());
+            
+            // use the four corners to check if there are any new entry
+            const children = this.getCanvasChildren();
+            const marqueeBox = this.marqueeBox.getBoundingBox(this.getWorldCoords);
+            for (const child of children) {
+                const box = (child as Rect).getBoundingBox();
+                if (AABB.isColliding(box, marqueeBox) && !this.#selected.has(child as Rect)) {
+                    this.add([child as Rect]);
+                } else if ( !AABB.isColliding(box, marqueeBox) && this.#selected.has(child as Rect)) {
+                    this.remove([child as Rect]);
+                }
+            }
         } else {
             this.move(dx, dy);
         }

@@ -1,9 +1,12 @@
-import { Canvas } from "Canvas";
-import { Rect, Renderable } from "../shapes";
+import { Rect } from "../shapes";
 import { applyMatrixToPoint, BASE_BLUE, BORDERPX, BoundingBoxCollisionType, getScalesFromMatrix, MARQUEE_BLUE, sides } from "../util";
+import { AABB } from "./AABB";
 
 const RECT_TYPES = ["CENTER", ...sides] as BoundingBoxCollisionType[];
 
+/**
+ * Its properties related to rendering are all stored as camera space value - will need to convert to world coordinates when used
+ */
 export class MarqueeSelectionBox {
     // move and resize based on drag
     // create the side bars and also a center piece that is coloured with alpha
@@ -13,6 +16,7 @@ export class MarqueeSelectionBox {
     height: number = 0;
     rects: Map<string, Rect> = new Map();
     borderSize: number = 0;
+    AABB: AABB;
 
     constructor(x: number, y: number, worldMatrix: number[]) {
         const [hx, hy] = applyMatrixToPoint(worldMatrix, x, y);
@@ -76,39 +80,26 @@ export class MarqueeSelectionBox {
         }
     }
 
+    /**
+     * Apply bounding box in world dimension
+     * @returns 
+     */
+    getBoundingBox(getWorldCoords: (x: number, y: number) => number[]) {
+        const [wx, wy] = getWorldCoords(this.x, this.y);
+        const [wW, wH] = getWorldCoords(this.x + this.width, this.y + this.height);
+
+        const minX = Math.min(wx, wW);
+        const maxX = Math.max(wx, wW);
+        const minY = Math.min(wy, wH);
+        const maxY = Math.max(wy, wH);
+        
+        return new AABB(minX, minY, maxX, maxY);
+    }
+
     resize(dx: number, dy: number, worldMatrix: number[]) {
         const [scaleX, scaleY] = getScalesFromMatrix(worldMatrix);
         this.width += dx * scaleX;
         this.height += dy * scaleY;
-    }
-
-    hitTest(worldMatrix: number[], children: Renderable[], addToSelection: (rect: Rect[]) => void) {
-        const covered = [];
-        
-        const mx1 = Math.min(this.x, this.x + this.width);
-        const mx2 = Math.max(this.x, this.x + this.width);
-        const my1 = Math.min(this.y, this.y + this.height);
-        const my2 = Math.max(this.y, this.y + this.height);
-        
-        for (const child of children as Rect[]) {            
-            const [wx1, wy1] = applyMatrixToPoint(worldMatrix, child.x, child.y);
-            const [wx2, wy2] = applyMatrixToPoint(
-                worldMatrix,
-                child.x + child.width * child.sx,
-                child.y + child.height * child.sy
-            );
-
-            const cx1 = Math.min(wx1, wx2);
-            const cx2 = Math.max(wx1, wx2);
-            const cy1 = Math.min(wy1, wy2);
-            const cy2 = Math.max(wy1, wy2);
-
-            if (cx1 >= mx1 && cx2 <= mx2 && cy1 >= my1 && cy2 <= my2) {
-                covered.push(child);
-            }
-        }
-        
-        addToSelection(covered);
     }
 
     private addRects() {
@@ -126,8 +117,6 @@ export class MarqueeSelectionBox {
             const config = this.getRectConfig(type);
             
             if (rect) {
-                // rect.translation[0] = config.x;
-                // rect.translation[1] = config.y;
                 rect.setTranslation(config.x, config.y);
                 rect.width = config.width;
                 rect.height = config.height;

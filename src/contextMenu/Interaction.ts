@@ -165,11 +165,11 @@ export function createMultiImageMenuOptions(base?: ContextMenuGroupProps[]) {
                                     childOptions: [
                                         {
                                             text: "Height",
-                                            onClick: () => {}
+                                            onClick: () => withClear(this.normalizeSelection.bind(this))('height', 'first')
                                         },
                                         {
                                             text: "Width",
-                                            onClick: () => {}
+                                            onClick: () => withClear(this.normalizeSelection.bind(this))('width', 'first')
                                         },
                                         {
                                             text: "Size",

@@ -5,7 +5,7 @@ import { customElement } from 'lit/decorators.js';
 import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste, performanceTest, SaveEvent } from './util';
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
-import { AlignDirection, makeMultiAddChildCommand } from './manager';
+import { AlignDirection, makeMultiAddChildCommand, NormalizeMode, NormalizeOption } from './manager';
 import { addContextMenu, clearContextMenu, ContextMenuProps, ContextMenuType, createCanvasImageMenuOptions, createMultiImageMenuOptions, createSingleImageMenuOptions, isContextMenuActive } from './contextMenu';
 import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, ImageFileMetadata } from './storage';
 import EventEmitter from 'eventemitter3';
@@ -497,6 +497,11 @@ export class InfiniteCanvasElement extends LitElement {
     align(direction: AlignDirection) {
         if (!this.engine) return;
         this.engine.selectionManager.alignSelection(direction);
+    }
+
+    normalizeSelection(type: NormalizeOption, mode: NormalizeMode) {
+        if (!this.engine) return;
+        this.engine.selectionManager.normalize(type, mode);
     }
 
     deleteSelectedImages() {

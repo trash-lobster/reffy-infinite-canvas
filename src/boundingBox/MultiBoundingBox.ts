@@ -12,6 +12,8 @@ import {
     AlignDirection,
     FlipDirection,
     FlipSnapshotItem,
+    NormalizeOption,
+    NormalizeMode,
     TransformSnapshotItem,
 } from "../manager";
 import { Rect } from "../shapes";
@@ -19,7 +21,7 @@ import { Rect } from "../shapes";
 const HANDLE_TYPES: BoundingBoxCollisionType[] = [...corners, ...sides] as BoundingBoxCollisionType[];
 
 export class MultiBoundingBox {
-    targets: Set<Rect> = new Set();
+    targets: Rect[] = [];
     x: number;
     y: number;
     width: number;
@@ -35,67 +37,13 @@ export class MultiBoundingBox {
         this.addHandles();
     }
 
-    private getHandleConfig(type: string) {
-        let { x, y, width, height, borderSize, boxSize } = this;
-
-        return {
-            TOP: {
-                x, 
-                y, 
-                width: width,
-                height: borderSize 
-            },
-            BOTTOM: { 
-                x,
-                y: y + height,
-                width : width, 
-                height: borderSize
-            },
-            LEFT: { 
-                x, 
-                y, 
-                width: borderSize, 
-                height: height 
-            },
-            RIGHT: { 
-                x: x + width,
-                y, 
-                width: borderSize, 
-                height: height 
-            },
-            TOPLEFT: { 
-                x: x - boxSize,
-                y: y - boxSize, 
-                width: boxSize * 2, 
-                height: boxSize * 2 
-            },
-            TOPRIGHT: { 
-                x: x - boxSize + width, 
-                y: y - boxSize, 
-                width: boxSize * 2, 
-                height: boxSize * 2 
-            },
-            BOTTOMLEFT: { 
-                x: x - boxSize, 
-                y: y - boxSize + height, 
-                width: boxSize * 2, 
-                height: boxSize * 2 
-            },
-            BOTTOMRIGHT: { 
-                x: x - boxSize + width, 
-                y: y - boxSize + height, 
-                width: boxSize * 2, 
-                height: boxSize * 2 
-            },
-        }[type];
-    }
-
     add(shape: Rect) {
-        this.targets.add(shape);
+        this.targets.push(shape);
     }
 
     remove(shape: Rect) {
-        this.targets.delete(shape);
+        const idx = this.targets.indexOf(shape);
+        this.targets.splice(idx, 1);
     }
 
     render(gl: WebGLRenderingContext, program: WebGLProgram): void {
@@ -221,7 +169,7 @@ export class MultiBoundingBox {
     }
 
     align(direction: AlignDirection) {
-        if (this.targets.size <= 1) return;
+        if (this.targets.length <= 1) return;
 
         const transformArray: TransformSnapshotItem[] = [];
 
@@ -260,6 +208,56 @@ export class MultiBoundingBox {
 
         this.update();
         return transformArray;
+    }
+
+    normalize(type: NormalizeOption, mode: NormalizeMode) {
+        if (mode === 'first') {
+            const reference = this.targets[0];
+
+            if (type === 'height') {
+                const goal = reference.height;
+
+                for (const target of this.targets) {
+                    // origin of transformation is the center of the rect
+                    const center = [
+                        (target.x + target.width * target.sx) / 2,
+                        (target.y + target.height * target.sy) / 2,
+                    ]
+                    const currH = target.height * target.sy;
+                    const scale = goal / currH;
+                    target.updateScale(scale, scale);
+
+                    // the x and y of origin has not change, we need to move this to recenter
+                    const newCenter = [
+                        (target.x + target.width * target.sx) / 2,
+                        (target.y + target.height * target.sy) / 2,
+                    ]
+                    target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
+                }
+            } else if (type === 'width') {
+                const goal = reference.width;
+
+                console.log(this.targets);
+
+                for (const target of this.targets) {
+                    // origin of transformation is the center of the rect
+                    const center = [
+                        (target.x + target.width * target.sx) / 2,
+                        (target.y + target.height * target.sy) / 2,
+                    ]
+                    const currw = target.width * target.sx;
+                    const scale = goal / currw;
+                    target.updateScale(scale, scale);
+
+                    // the x and y of origin has not change, we need to move this to recenter
+                    const newCenter = [
+                        (target.x + target.width * target.sx) / 2,
+                        (target.y + target.height * target.sy) / 2,
+                    ]
+                    target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
+                }
+            }
+        }
     }
 
     getPositions(): number[] {
@@ -344,5 +342,60 @@ export class MultiBoundingBox {
                 handle.height = config.height;
             }
         }
+    }
+
+    private getHandleConfig(type: string) {
+        let { x, y, width, height, borderSize, boxSize } = this;
+
+        return {
+            TOP: {
+                x, 
+                y, 
+                width: width,
+                height: borderSize 
+            },
+            BOTTOM: { 
+                x,
+                y: y + height,
+                width : width, 
+                height: borderSize
+            },
+            LEFT: { 
+                x, 
+                y, 
+                width: borderSize, 
+                height: height 
+            },
+            RIGHT: { 
+                x: x + width,
+                y, 
+                width: borderSize, 
+                height: height 
+            },
+            TOPLEFT: { 
+                x: x - boxSize,
+                y: y - boxSize, 
+                width: boxSize * 2, 
+                height: boxSize * 2 
+            },
+            TOPRIGHT: { 
+                x: x - boxSize + width, 
+                y: y - boxSize, 
+                width: boxSize * 2, 
+                height: boxSize * 2 
+            },
+            BOTTOMLEFT: { 
+                x: x - boxSize, 
+                y: y - boxSize + height, 
+                width: boxSize * 2, 
+                height: boxSize * 2 
+            },
+            BOTTOMRIGHT: { 
+                x: x - boxSize + width, 
+                y: y - boxSize + height, 
+                width: boxSize * 2, 
+                height: boxSize * 2 
+            },
+        }[type];
     }
 }

@@ -7,6 +7,7 @@ import { Rect, Renderable, Shape } from "../shapes";
 import { Canvas } from "Canvas";
 import { Point } from "boundingBox/type";
 import { 
+    AABB,
     BoundingBox, 
     MarqueeSelectionBox, 
     MultiBoundingBox,
@@ -18,6 +19,8 @@ import EventEmitter from "eventemitter3";
 import { makeMultiTransformCommand } from "./TransformCommand";
 
 export type AlignDirection = 'top' | 'bottom' | 'left' | 'right';
+export type NormalizeOption = 'height' | 'width' | 'size' | 'scale';
+export type NormalizeMode = 'first' | 'average';
 
 export class SelectionManager {
     // #canvas: Canvas;
@@ -35,7 +38,7 @@ export class SelectionManager {
     #rectProgram: WebGLProgram;
 
     getWorldMatrix: () => number[];
-    getCanavsChildren: () => Renderable[];
+    getCanvasChildren: () => Renderable[];
     getWorldCoords: (x: number, y: number) => number[];
 
     get selected(): Rect[] { return Array.from(this.#selected); }
@@ -72,7 +75,7 @@ export class SelectionManager {
         this.#history = history;
         this.#eventHub = eventHub;
         this.getWorldMatrix = getWorldMatrix;
-        this.getCanavsChildren = getCanvasChildren;
+        this.getCanvasChildren = getCanvasChildren;
         this.getWorldCoords = getWorldCoords;
     
         const proto = Object.getPrototypeOf(this);
@@ -224,7 +227,7 @@ export class SelectionManager {
 
     clearMarquee() {
         if (this.#marqueeSelectionBox) {
-            this.#marqueeSelectionBox.hitTest(this.getWorldMatrix(), this.getCanavsChildren(), this.add);
+            this.#marqueeSelectionBox.hitTest(this.getWorldMatrix(), this.getCanvasChildren(), this.add);
             this.#marqueeSelectionBox = null;
         }
     }
@@ -285,6 +288,12 @@ export class SelectionManager {
         if (!this.#multiBoundingBox) return;
         const transformations = this.#multiBoundingBox.align(direction);
         this.#history.push(makeMultiTransformCommand(transformations));
+        this.#eventHub.emit(CanvasEvent.Change);
+    }
+
+    normalize(type: NormalizeOption, mode: NormalizeMode = 'first') {
+        if (!this.#multiBoundingBox) return;
+        this.#multiBoundingBox.normalize(type, mode);
         this.#eventHub.emit(CanvasEvent.Change);
     }
 

@@ -193,19 +193,19 @@ export function createMultiImageMenuOptions(base?: ContextMenuGroupProps[]) {
                                     childOptions: [
                                         {
                                             text: "Height",
-                                            onClick: () => {}
+                                            onClick: () => withClear(this.normalizeSelection.bind(this))('height', 'average')
                                         },
                                         {
                                             text: "Width",
-                                            onClick: () => {}
+                                            onClick: () => withClear(this.normalizeSelection.bind(this))('width', 'average')
                                         },
                                         {
                                             text: "Size",
-                                            onClick: () => {}
+                                            onClick: () => withClear(this.normalizeSelection.bind(this))('size', 'average')
                                         },
                                         {
                                             text: "Scale",
-                                            onClick: () => {}
+                                            onClick: () => withClear(this.normalizeSelection.bind(this))('scale', 'average')
                                         }
                                     ]
                                 }

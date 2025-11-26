@@ -292,7 +292,8 @@ export class SelectionManager {
 
     normalize(type: NormalizeOption, mode: NormalizeMode = 'first') {
         if (!this.#multiBoundingBox) return;
-        this.#multiBoundingBox.normalize(type, mode);
+        const transformations = this.#multiBoundingBox.normalize(type, mode);
+        this.#history.push(makeMultiTransformCommand(transformations));
         this.#eventHub.emit(CanvasEvent.Change);
     }
 

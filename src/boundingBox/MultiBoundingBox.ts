@@ -208,103 +208,71 @@ export class MultiBoundingBox {
             transformArray.push(transform);
         }
 
-        this.update();
         return transformArray;
     }
 
     normalize(type: NormalizeOption, mode: NormalizeMode) {
-        if (mode === 'first') {
-            const reference = this.targets[0];
-            let goal = 
-                type === 'height' ? (reference.height * reference.sy) :
-                    type === 'width' ? reference.width * reference.sx :
-                        type === 'scale' ? reference.sx :
-                            reference.width * reference.height * reference.sx * reference.sy; // size calculation aims to get the same area for both
+        const transformArray: TransformSnapshotItem[] = [];
+
+        const reference = this.targets[0];
+        const goal = 
+            type === 'height' ? mode === 'first' ? 
+                (reference.height * reference.sy) : 
+                    this.targets.reduce((a, b) => a + Math.abs(b.height * b.sy), 0) / this.targets.length :
+            type === 'width' ? mode === 'first' ? 
+                reference.width * reference.sx : 
+                    this.targets.reduce((a, b) => a + Math.abs(b.width * b.sx), 0) / this.targets.length :
+            type === 'scale' ? mode === 'first' ? 
+                reference.sx : 
+                    this.targets.reduce((a, b) => a + Math.abs(b.sx), 0) / this.targets.length :
+            mode === 'first' ? 
+                reference.width * reference.height * reference.sx * reference.sy : 
+                    this.targets.reduce((a, b) => a + Math.abs(b.sx * b.width * b.height * b.sy), 0) / this.targets.length; // size calculation aims to get the same area for both
+
+        console.log(goal);
+
+        for (const target of this.targets) {
+            const transform: TransformSnapshotItem = {
+                ref: target,
+                start: { x: target.x, y: target.y, sx: target.sx, sy: target.sy, },
+            };
+
+            // origin of transformation is the center of the rect
+            const center = [
+                (target.x + target.width * target.sx) / 2,
+                (target.y + target.height * target.sy) / 2,
+            ]
 
             if (type === 'height') {
-                for (const target of this.targets) {
-                    // origin of transformation is the center of the rect
-                    const center = [
-                        (target.x + target.width * target.sx) / 2,
-                        (target.y + target.height * target.sy) / 2,
-                    ]
-                    const currH = target.height * target.sy;
-                    const scale = Math.abs(goal / currH);
-                    target.updateScale(scale, scale);
-
-                    // the x and y of origin has not change, we need to move this to recenter
-                    const newCenter = [
-                        (target.x + target.width * target.sx) / 2,
-                        (target.y + target.height * target.sy) / 2,
-                    ]
-                    target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
-                }
+                const currH = target.height * target.sy;
+                const scale = Math.abs(goal / currH);
+                target.updateScale(scale, scale);
             } else if (type === 'width') {
-                for (const target of this.targets) {
-                    // origin of transformation is the center of the rect
-                    const center = [
-                        (target.x + target.width * target.sx) / 2,
-                        (target.y + target.height * target.sy) / 2,
-                    ]
-                    const currw = target.width * target.sx;
-                    const scale = Math.abs(goal / currw);
-                    target.updateScale(scale, scale);
-
-                    // the x and y of origin has not change, we need to move this to recenter
-                    const newCenter = [
-                        (target.x + target.width * target.sx) / 2,
-                        (target.y + target.height * target.sy) / 2,
-                    ]
-                    target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
-                }
+                const currw = target.width * target.sx;
+                const scale = Math.abs(goal / currw);
+                target.updateScale(scale, scale);
             } else if (type === 'scale') {
-                for (const target of this.targets) {
-                    if (target === reference) continue;
-                    // origin of transformation is the center of the rect
-                    const center = [
-                        (target.x + target.width * target.sx) / 2,
-                        (target.y + target.height * target.sy) / 2,
-                    ]
-
-                    // keep existing scale direction
-                    const sx = Math.abs(target.sx) / target.sx;
-                    const sy = Math.abs(target.sy) / target.sy;
-
-                    console.log(reference.sx);
-                    console.log(reference.sy);
-  
-                    target.setScale(reference.sx * sx, reference.sy * sy);
-
-                    // the x and y of origin has not change, we need to move this to recenter
-                    const newCenter = [
-                        (target.x + target.width * target.sx) / 2,
-                        (target.y + target.height * target.sy) / 2,
-                    ]
-                    target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
-                }
+                // keep existing scale direction
+                const signX = Math.sign(target.sx);
+                const signY = Math.sign(target.sy);
+                target.setScale(goal * signX, goal * signY);
             } else if (type === 'size') {
-
-                for (const target of this.targets) {
-                    // origin of transformation is the center of the rect
-                    const center = [
-                        (target.x + target.width * target.sx) / 2,
-                        (target.y + target.height * target.sy) / 2,
-                    ]
-  
-                    // get current area
-                    const currentArea = target.width * target.height * target.sx * target.sy;
-                    const scale = Math.sqrt(Math.abs(goal / currentArea));
-                    target.updateScale(scale, scale);
-
-                    // the x and y of origin has not change, we need to move this to recenter
-                    const newCenter = [
-                        (target.x + target.width * target.sx) / 2,
-                        (target.y + target.height * target.sy) / 2,
-                    ]
-                    target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
-                }
+                // get current area
+                const currentArea = target.width * target.height * target.sx * target.sy;
+                const scale = Math.sqrt(Math.abs(goal / currentArea));
+                target.updateScale(scale, scale);
             }
+            
+            // the x and y of origin has not change, we need to move this to recenter
+            const newCenter = [
+                (target.x + target.width * target.sx) / 2,
+                (target.y + target.height * target.sy) / 2,
+            ]
+            target.updateTranslation(center[0] - newCenter[0], center[1] - newCenter[1]);
+            transform.end = { x: target.x, y: target.y, sx: target.sx, sy: target.sy, };
+            transformArray.push(transform);
         }
+        return transformArray;
     }
 
     getPositions(): number[] {

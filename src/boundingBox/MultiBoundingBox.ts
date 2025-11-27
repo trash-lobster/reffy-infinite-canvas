@@ -7,6 +7,7 @@ import {
     BoundingBoxCollisionType,
     applyMatrixToPoint,
     getScalesFromMatrix,
+    willFlip,
 } from "../util";
 import {
     AlignDirection,
@@ -85,9 +86,14 @@ export class MultiBoundingBox {
     ) {
         const prevW = this.width;
         const prevH = this.height;
-        
-        const anchorX = direction.includes('LEFT') ? this.x + prevW : this.x;
-        const anchorY = direction.includes('TOP') ? this.y + prevH : this.y;
+
+        const isTop = direction.includes('TOP');
+        const isBottom = direction.includes('BOTTOM');
+        const isLeft = direction.includes('LEFT');
+        const isRight = direction.includes('RIGHT');
+
+        const anchorX = isLeft ? this.x + prevW : isRight ? this.x : this.x + prevW / 2;
+        const anchorY = isTop ? this.y + prevH : isBottom ? this.y : this.y + prevH / 2;
         
         const min = 1e-6;
         const prevWorldW = Math.abs(prevW) < min ? (prevW < 0 ? -min : min) : prevW;
@@ -97,11 +103,16 @@ export class MultiBoundingBox {
         const changeInXScale = (dx * worldScaleX) / prevWorldW;
         const changeInYScale = (dy * worldScaleY) / prevWorldH;
 
-        let mulSX = direction.includes('LEFT') ? 1 - changeInXScale : direction.includes('RIGHT')  ? 1 + changeInXScale : 1;
-        let mulSY = direction.includes('TOP')  ? 1 - changeInYScale : direction.includes('BOTTOM') ? 1 + changeInYScale : 1;
+        const factor = 
+            direction.includes('LEFT') ? 1 - changeInXScale :
+            direction.includes('RIGHT') ? 1 + changeInXScale :
+            direction === 'TOP' ? 1 - changeInYScale :
+            1 + changeInYScale;
 
-        mulSX = Math.abs(mulSX) < min ? (mulSX < 0 ? -min : min) : mulSX;
-        mulSY = Math.abs(mulSY) < min ? (mulSY < 0 ? -min : min) : mulSY;
+        if (willFlip(this.scale[0], factor, min) || willFlip(this.scale[1], factor, min)) return;
+        const nextW = prevW * factor;
+        const nextH = prevH * factor;
+        if (Math.abs(nextW) < min || Math.abs(nextH) < min) return;
 
         for (const target of this.targets) {
             const tx = target.x;
@@ -109,8 +120,8 @@ export class MultiBoundingBox {
 
             const [wtx, wty] = applyMatrixToPoint(parentMatrix, tx, ty);
 
-            const newWtx = anchorX + (wtx - anchorX) * mulSX;
-            const newWty = anchorY + (wty - anchorY) * mulSY;
+            const newWtx = anchorX + (wtx - anchorX) * factor;
+            const newWty = anchorY + (wty - anchorY) * factor;
 
             const dWx = newWtx - wtx;
             const dWy = newWty - wty;
@@ -120,12 +131,9 @@ export class MultiBoundingBox {
             const dLx = dWx / sX;
             const dLy = dWy / sY;
 
-            target.updateScale(mulSX, mulSY);
+            target.updateScale(factor, factor);
             target.updateTranslation(dLx, dLy);
         }
-
-        this.scale[0] = this.scale[0] * mulSX < 0 ? -1 : 1;
-        this.scale[1] = this.scale[1] * mulSY < 0 ? -1 : 1;
     }
 
     flip(

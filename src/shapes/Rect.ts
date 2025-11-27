@@ -54,8 +54,6 @@ export class Rect extends Shape {
      * @returns A bounding box that is not adjusted for world space.
      */
     getBoundingBox() {
-        if (this.AABB) return this.AABB;
-
         // due to possible flips, the original width could be flipped by the scale value and become lesser the its translation[0]
         const x0 = this.state.translation[0];
         const x1 = x0 + this.width * this.state.scaleX;

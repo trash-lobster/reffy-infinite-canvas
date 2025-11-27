@@ -21,3 +21,15 @@ export const isBoolean = (arg): arg is boolean => arg === !!arg;
 export const isFunction = (val): val is Function => typeof val === 'function';
 export const isUndefined = (val): val is undefined => val === undefined;
 export const isNil = (val): val is null | undefined => val == null;
+
+export const sameSign = (a: number, b: number) => Math.sign(a) === Math.sign(b);
+
+export const normalizeSign = (v: number, EPS: number) => {
+    if (Math.abs(v) < EPS) return 0;
+    return Math.sign(v);
+};
+
+export const willFlip = (current: number, factor: number, EPS: number) => {
+    const next = current * factor;
+    return normalizeSign(current, EPS) !== normalizeSign(next, EPS);
+};

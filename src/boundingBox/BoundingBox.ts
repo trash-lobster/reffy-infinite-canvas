@@ -9,6 +9,9 @@ import {
     applyMatrixToPoint,
     getScalesFromMatrix,
     isScalePositive,
+    sameSign,
+    normalizeSign,
+    willFlip,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
@@ -228,46 +231,50 @@ export class BoundingBox {
             const curSX = this.target.sx;
             const curSY = this.target.sy;
 
-            // // Current world sizes - also allow flipping by determining a non zero threshold
-            const min = 1e-6;
-            const prevWorldW = baseW * curSX < min && baseW * curSX >= 0 ? min : baseW * curSX > -min && baseW * curSX < 0 ? -min : baseW * curSX;
-            const prevWorldH = baseH * curSY < min && baseH * curSY >= 0 ? min : baseH * curSY > -min && baseH * curSY < 0 ? -min : baseH * curSY;
+            const EPS = 1e-6;
 
-            // // Incremental scale multipliers relative to current size (not base)
+            // Current effective world sizes (clamped away from 0 to avoid division issue)
+            const prevWorldW = Math.abs(baseW * curSX) < EPS ? EPS * normalizeSign(baseW * curSX || 1, EPS) : baseW * curSX;
+            const prevWorldH = Math.abs(baseH * curSY) < EPS ? EPS * normalizeSign(baseH * curSY || 1, EPS) : baseH * curSY;
+
             const changeInXScale = dx / prevWorldW;
             const changeInYScale = dy / prevWorldH;
 
+            const min = EPS;
+            const factor = 
+                direction === 'LEFT' || direction === 'BOTTOMLEFT' || direction === 'TOPLEFT' ? 1 - changeInXScale :
+                direction === 'RIGHT' || direction === 'BOTTOMRIGHT' || direction === 'TOPRIGHT' ? 1 + changeInXScale :
+                direction === 'TOP' ? 1 - changeInYScale :
+                1 + changeInYScale;
+
+            if (willFlip(curSX, factor, min) || willFlip(curSY, factor, min)) return;
+            const nextW = baseW * curSX * factor;
+            const nextH = baseH * curSY * factor;
+            if (Math.abs(nextW) < min || Math.abs(nextH) < min) return;
+            
+            this.target.updateScale(factor, factor);
+
             if (direction === 'LEFT') {
-                if (Math.abs(curSX * (1 - changeInXScale) * baseW) <= min) return;
                 const anchor = baseH * curSY;
-                this.target.updateScale(1 - changeInXScale, 1 - changeInXScale);
                 const newOrigin = baseH * this.target.sy;
-                this.target.updateTranslation(dx, (anchor - newOrigin)/ 2);
+                this.target.updateTranslation(dx, (anchor - newOrigin) / 2);
             } else if (direction === 'RIGHT') {
                 const anchor = baseH * curSY;
-                this.target.updateScale(1 + changeInXScale, 1 + changeInXScale);
                 const newOrigin = baseH * this.target.sy;
-                this.target.updateTranslation(0, (anchor - newOrigin)/ 2);
+                this.target.updateTranslation(0, (anchor - newOrigin) / 2);
             } else if (direction === 'TOP') {
                 const anchor = baseW * curSX;
-                this.target.updateScale(1 - changeInYScale, 1 - changeInYScale);
                 const newOrigin = baseW * this.target.sx;
                 this.target.updateTranslation((anchor - newOrigin) / 2, dy);
             } else if (direction === 'BOTTOM') {
                 const anchor = baseW * curSX;
-                this.target.updateScale(1 + changeInYScale, 1 + changeInYScale);
                 const newOrigin = baseW * this.target.sx;
                 this.target.updateTranslation((anchor - newOrigin) / 2, 0);
             } else if (direction === 'BOTTOMLEFT') {
-                this.target.updateScale(1 - changeInXScale, 1 - changeInXScale);
                 this.target.updateTranslation(dx, 0);
-            } else if (direction === 'BOTTOMRIGHT') {
-                this.target.updateScale(1 + changeInXScale, 1 + changeInXScale);
             } else if (direction === 'TOPLEFT') {
-                this.target.updateScale(1 - changeInXScale, 1 - changeInXScale);
                 this.target.updateTranslation(dx, dx / aspectRatio * Math.sign(this.target.sx));
             } else if (direction === 'TOPRIGHT') {
-                this.target.updateScale(1 + changeInXScale, 1 + changeInXScale);
                 this.target.updateTranslation(0, -dx / aspectRatio * Math.sign(this.target.sx));
             }
         }

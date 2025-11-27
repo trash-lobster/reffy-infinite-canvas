@@ -222,6 +222,8 @@ export class BoundingBox {
             const baseW = Math.abs(this.width);
             const baseH = Math.abs(this.height);
 
+            const aspectRatio = baseW / baseH;
+
             // Use the shape's local scale (ignore camera/view)
             const curSX = this.target.sx;
             const curSY = this.target.sy;
@@ -235,13 +237,45 @@ export class BoundingBox {
             const changeInXScale = dx / prevWorldW;
             const changeInYScale = dy / prevWorldH;
 
-            const mulSX = direction.includes('LEFT') ? 1 - changeInXScale : direction.includes('RIGHT')  ? 1 + changeInXScale : 1;
-            const mulSY = direction.includes('TOP')  ? 1 - changeInYScale : direction.includes('BOTTOM') ? 1 + changeInYScale : 1 ;        
-            if (direction.includes('LEFT')) this.target.updateTranslation(dx, 0);
-            if (direction.includes('TOP')) this.target.updateTranslation(0, dy);
-            
-            this.target.updateScale(mulSX, mulSY);
+            if (direction === 'LEFT') {
+                if (Math.abs(curSX * (1 - changeInXScale) * baseW) <= min) return;
+                const anchor = baseH * curSY;
+                this.target.updateScale(1 - changeInXScale, 1 - changeInXScale);
+                const newOrigin = baseH * this.target.sy;
+                this.target.updateTranslation(dx, (anchor - newOrigin)/ 2);
+            } else if (direction === 'RIGHT') {
+                const anchor = baseH * curSY;
+                this.target.updateScale(1 + changeInXScale, 1 + changeInXScale);
+                const newOrigin = baseH * this.target.sy;
+                this.target.updateTranslation(0, (anchor - newOrigin)/ 2);
+            } else if (direction === 'TOP') {
+                const anchor = baseW * curSX;
+                this.target.updateScale(1 - changeInYScale, 1 - changeInYScale);
+                const newOrigin = baseW * this.target.sx;
+                this.target.updateTranslation((anchor - newOrigin) / 2, dy);
+            } else if (direction === 'BOTTOM') {
+                const anchor = baseW * curSX;
+                this.target.updateScale(1 + changeInYScale, 1 + changeInYScale);
+                const newOrigin = baseW * this.target.sx;
+                this.target.updateTranslation((anchor - newOrigin) / 2, 0);
+            } else if (direction === 'BOTTOMLEFT') {
+                this.target.updateScale(1 - changeInXScale, 1 - changeInXScale);
+                this.target.updateTranslation(dx, 0);
+            } else if (direction === 'BOTTOMRIGHT') {
+                this.target.updateScale(1 + changeInXScale, 1 + changeInXScale);
+            } else if (direction === 'TOPLEFT') {
+                this.target.updateScale(1 - changeInXScale, 1 - changeInXScale);
+                this.target.updateTranslation(dx, dx / aspectRatio * Math.sign(this.target.sx));
+            } else if (direction === 'TOPRIGHT') {
+                this.target.updateScale(1 + changeInXScale, 1 + changeInXScale);
+                this.target.updateTranslation(0, -dx / aspectRatio * Math.sign(this.target.sx));
+            }
         }
+    }
+
+    // a reset method to reset the scale
+    reset() {
+        this.target.setScale(1, 1);
     }
 
     flip(

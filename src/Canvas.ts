@@ -201,8 +201,6 @@ export class Canvas extends Renderable {
 	}
 
 	render() {
-		if (this.orderDirty) this.rebuildRenderList();
-
 		this.#gl.clearColor(0, 0, 0, 0);
     	this.#gl.clear(this.#gl.COLOR_BUFFER_BIT);
 		this.#gl.viewport(0, 0, this.#gl.canvas.width, this.#gl.canvas.height);
@@ -218,6 +216,7 @@ export class Canvas extends Renderable {
 		const currentZoom = this.camera.state.zoom;
 		const lowResThreshold = 5;
 
+		// should set low res based on what screen area it has taken up
 		this.children.forEach((child) => {
 			if (child instanceof Img) {
 				(child as Img).setUseLowRes(currentZoom > lowResThreshold, this.gl);
@@ -228,19 +227,29 @@ export class Canvas extends Renderable {
 
 		let totalRenderable = 0;
 		let rendered = 0;
+		this.renderList = [];
 
-		for (const renderable of this.renderList) {
+		for (const renderable of this.children as Shape[]) {
 			totalRenderable++;
 			
 			if (!AABB.isColliding(cameraBoundingBox, renderable.getBoundingBox())) {
 				renderable.culled = true;
 			} else {
 				rendered++;
+				this.renderList.push(renderable);
 				renderable.culled = false;
 			}
-			
-			let program: WebGLProgram;
+		}
 
+		this.renderList.sort((a, b) =>
+            a.layer - b.layer ||
+            a.renderOrder - b.renderOrder ||
+            a.seq - b.seq
+        );		
+		
+		for (const renderable of this.renderList) {
+			let program: WebGLProgram;
+	
 			if (renderable instanceof Img) {
 				program = this.#imageProgram;
 			} else if (renderable instanceof Shape) {
@@ -253,10 +262,8 @@ export class Canvas extends Renderable {
 			}
 			renderable.render(this.#gl, currentProgram);
 		}
-		
-		this.#selectionManager.render();
 
-		console.log(`${rendered} out of ${totalRenderable} rendered`);
+		this.#selectionManager.render();
 	}
 
 	destroy() {
@@ -359,23 +366,6 @@ export class Canvas extends Renderable {
 		return this.#canvas.getBoundingClientRect();
 	}
 
-	private collectShapes(node: Renderable, out: Shape[]) {
-        if (node instanceof Shape) out.push(node);
-        for (const c of node.children) this.collectShapes(c, out);
-    }
-
-    private rebuildRenderList() {
-        const list: Shape[] = [];
-        this.collectShapes(this, list);
-        list.sort((a, b) =>
-            a.layer - b.layer ||
-            a.renderOrder - b.renderOrder ||
-            a.seq - b.seq
-        );
-        this.renderList = list;
-        this.orderDirty = false;
-    }
-	
 	private static webglStats = {
         buffersCreated: 0,
         buffersDeleted: 0,

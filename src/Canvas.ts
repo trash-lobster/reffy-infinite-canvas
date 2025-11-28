@@ -97,6 +97,7 @@ export class Canvas extends Renderable {
 		this.getBoundingClientRect = this.getBoundingClientRect.bind(this);
 		this.appendChild = this.appendChild.bind(this);
 		this.addImageToCanvas = this.addImageToCanvas.bind(this);
+		this.setShapeZOrder = this.setShapeZOrder.bind(this);
 		
 		this.toggleGrid = this.toggleGrid.bind(this);
 		this.changeMode = this.changeMode.bind(this);
@@ -353,6 +354,28 @@ export class Canvas extends Renderable {
 
 	getSelected() {
 		return this.#selectionManager.selected as Img[];
+	}
+
+	setShapeZOrder(toFront: boolean = true) {
+		if (this.#selectionManager.multiBoundingBox || this.#selectionManager.boundingBoxes.size != 1) return;
+		console.log(this.#selectionManager.boundingBoxes.values());
+		const child = Array.from(this.#selectionManager.boundingBoxes)[0].target;
+		
+		if (toFront) {
+			const maxLayer = Math.max(0, ...this.children.map(c => (c as Shape).layer));
+			const maxRenderOrder = Math.max(0, ...this.children.map(c => (c as Shape).renderOrder));
+
+			child.layer = Math.max(child.layer, maxLayer);
+			child.renderOrder = maxRenderOrder + 1;
+		} else {
+			const minLayer = Math.min(0, ...this.children.map(c => (c as Shape).layer));
+			const minRenderOrder = Math.min(0, ...this.children.map(c => (c as Shape).renderOrder));
+
+			child.layer = Math.min(child.layer, minLayer);
+			child.renderOrder = minRenderOrder - 1;
+		}
+
+		this.markOrderDirty();
 	}
 
 	changeMode() {

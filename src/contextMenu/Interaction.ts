@@ -77,11 +77,10 @@ export function isContextMenuActive() {
     return this.renderRoot.querySelector('.context-menu') !== null;
 }
 
-export function createSingleImageMenuOptions(base?: ContextMenuGroupProps[]) {
+export function createBasicImageMenuOptions() {
     const withClear = withContextMenuClear.bind(this);
     return {
         options: [
-            ...base ?? [],
             {
                 childOptions: [
                     {
@@ -114,6 +113,27 @@ export function createSingleImageMenuOptions(base?: ContextMenuGroupProps[]) {
                     {
                         text: "Flip Vertical",
                         onClick: withClear(this.flipVertical.bind(this))
+                    },
+                ]
+            },
+        ]
+    }
+}
+
+export function createSingleImageMenuOptions(base?: ContextMenuGroupProps[]) {
+    const withClear = withContextMenuClear.bind(this);
+    return {
+        options: [
+            ...base ?? [],
+            {
+                childOptions: [
+                    {
+                        text: "Send to Front",
+                        onClick: () => withClear(this.sendShapeToNewZOrder.bind(this))(true)
+                    },
+                    {
+                        text: "Send to Back",
+                        onClick: () => withClear(this.sendShapeToNewZOrder.bind(this))(false)
                     },
                 ]
             },
@@ -217,25 +237,6 @@ export function createMultiImageMenuOptions(base?: ContextMenuGroupProps[]) {
         ]
     }
 }
-
-                // childOptions: [
-                    // {
-                    //     text: "Align Left",
-                    //     onClick: () => withClear(this.align.bind(this))('left')
-                    // },
-                    // {
-                    //     text: "Align Right",
-                    //     onClick: () => withClear(this.align.bind(this))('right')
-                    // },
-                    // {
-                    //     text: "Align Top",
-                    //     onClick: () => withClear(this.align.bind(this))('top')
-                    // },
-                    // {
-                    //     text: "Align Bottom",
-                    //     onClick: () => withClear(this.align.bind(this))('bottom')
-                    // }
-                // ]
 
 export function createCanvasImageMenuOptions(base?: ContextMenuGroupProps[]) {
     const withClear = withContextMenuClear.bind(this);

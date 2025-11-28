@@ -6,7 +6,7 @@ import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as inner
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
 import { AlignDirection, makeMultiAddChildCommand, NormalizeMode, NormalizeOption } from './manager';
-import { addContextMenu, clearContextMenu, ContextMenuProps, ContextMenuType, createCanvasImageMenuOptions, createMultiImageMenuOptions, createSingleImageMenuOptions, isContextMenuActive } from './contextMenu';
+import { addContextMenu, clearContextMenu, ContextMenuProps, ContextMenuType, createBasicImageMenuOptions, createCanvasImageMenuOptions, createMultiImageMenuOptions, createSingleImageMenuOptions, isContextMenuActive } from './contextMenu';
 import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, ImageFileMetadata } from './storage';
 import EventEmitter from 'eventemitter3';
 import { hideLoader, showLoader } from './loader';
@@ -262,9 +262,10 @@ export class InfiniteCanvasElement extends LitElement {
             console.error('Failed to restore canvas');
         }
         
-        this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)();
+        const basicImageMenuOptions = createBasicImageMenuOptions.bind(this)();
+        this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)(basicImageMenuOptions.options);
         this.#canvasImageMenuOptions = createCanvasImageMenuOptions.bind(this)();
-        this.#multiImageMenuOptions = createMultiImageMenuOptions.bind(this)(this.#singleImageMenuOptions.options);
+        this.#multiImageMenuOptions = createMultiImageMenuOptions.bind(this)(basicImageMenuOptions.options);
         
         this.dispatchEvent(new Event('load'));
 
@@ -515,6 +516,11 @@ export class InfiniteCanvasElement extends LitElement {
     normalizeSelection(type: NormalizeOption, mode: NormalizeMode) {
         if (!this.engine) return;
         this.engine.selectionManager.normalize(type, mode);
+    }
+
+    sendShapeToNewZOrder(toFront: boolean) {
+        if (!this.engine) return;
+        this.engine.setShapeZOrder(toFront);
     }
 
     deleteSelectedImages() {

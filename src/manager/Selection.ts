@@ -32,6 +32,9 @@ export class SelectionManager {
     #marqueeSelectionBox : MarqueeSelectionBox;
     #eventHub: EventEmitter;
 
+    get multiBoundingBox() { return this.#multiBoundingBox }
+    get boundingBoxes() { return this.#boundingBoxes }
+
     #renderDirtyFlag = true;
 
     #gl: WebGLRenderingContext;
@@ -56,10 +59,6 @@ export class SelectionManager {
         this.#marqueeSelectionBox = new MarqueeSelectionBox(startingPoint.x, startingPoint.y, this.getWorldMatrix());
     }
 
-    /**
-     * @param gl 
-     * @param program Add reference to program to allow easy linking
-     */
     constructor(
         history: CanvasHistory,
         eventHub: EventEmitter,
@@ -71,7 +70,6 @@ export class SelectionManager {
     ) {
         this.#gl = gl;
         this.#rectProgram = basicShapeProgram;
-        // this.#canvas = canvas;
         this.#history = history;
         this.#eventHub = eventHub;
         this.getWorldMatrix = getWorldMatrix;

@@ -236,6 +236,8 @@ export class InfiniteCanvasElement extends LitElement {
         this.clearContextMenu = clearContextMenu.bind(this);
         this.isContextMenuActive = isContextMenuActive.bind(this);
 
+        this.getContainerSize = this.getContainerSize.bind(this);
+
         if (!div.contains(canvas)) {
             div.appendChild(canvas);
         }
@@ -251,6 +253,7 @@ export class InfiniteCanvasElement extends LitElement {
             this.#eventHub,
             this.debounceSaveToCanvasStorage,
             this.saveImageFileMetadata,
+            this.getContainerSize,
         );
 
         try {
@@ -331,6 +334,16 @@ export class InfiniteCanvasElement extends LitElement {
         } catch (err) {
             console.error('Storage warm-up failed', err);
         }
+    }
+
+    /**
+     * @returns An array containing the width and height of the container
+     */
+    getContainerSize() {
+        if (!this.rootDiv) return;
+        const rect = this.rootDiv.getBoundingClientRect();
+
+        return [rect.width, rect.height];
     }
 
     // Storage & Persistence

@@ -132,3 +132,10 @@
 - Completed default data writer to local storage and also updated data export
 - Wrote a lot of tests and more to go
 - Added loading listener
+
+20251127:
+- Adjust resizing to keep aspect ratio at all time for both bounding box and multibounding box
+
+20251129:
+- Add reordering function to context menu
+- Fix rendering distance calculation for low res images

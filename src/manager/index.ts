@@ -5,3 +5,4 @@ export * from './ContextMenu';
 export * from './SceneCommand';
 export * from './TransformCommand';
 export * from './FlipCommand';
+export * from './OrderCommand';

@@ -14,7 +14,7 @@ import {
 	Grid,
 	GRID_TYPE,
 } from './shapes';
-import { SelectionManager, PointerEventManager, KeyEventManager, ContextMenuManager } from './manager';
+import { SelectionManager, PointerEventManager, KeyEventManager, ContextMenuManager, makeMultiOrderCommand } from './manager';
 import { Camera } from './camera';
 import { CameraState, PointerEventState } from './state';
 import { CanvasHistory } from './history';
@@ -358,9 +358,17 @@ export class Canvas extends Renderable {
 
 	setShapeZOrder(toFront: boolean = true) {
 		if (this.#selectionManager.multiBoundingBox || this.#selectionManager.boundingBoxes.size != 1) return;
-		console.log(this.#selectionManager.boundingBoxes.values());
+		
 		const child = Array.from(this.#selectionManager.boundingBoxes)[0].target;
 		
+		const snapShotItem = {
+			ref: child,
+			start: {
+				layer: child.layer,
+				renderOrder: child.renderOrder,
+			}
+		}
+
 		if (toFront) {
 			const maxLayer = Math.max(0, ...this.children.map(c => (c as Shape).layer));
 			const maxRenderOrder = Math.max(0, ...this.children.map(c => (c as Shape).renderOrder));
@@ -375,7 +383,15 @@ export class Canvas extends Renderable {
 			child.renderOrder = minRenderOrder - 1;
 		}
 
+		snapShotItem['end'] = {
+			layer: child.layer,
+			renderOrder: child.renderOrder,
+		}
+
 		this.markOrderDirty();
+		// add history
+		this.#history.push(makeMultiOrderCommand([snapShotItem]));
+		this.#eventHub.emit(CanvasEvent.Change);
 	}
 
 	changeMode() {

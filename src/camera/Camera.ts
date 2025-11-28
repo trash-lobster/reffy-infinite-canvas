@@ -23,6 +23,7 @@ export class Camera {
         this.updateCameraPos = this.updateCameraPos.bind(this);
         this.updateZoom = this.updateZoom.bind(this);
         this.onWheel = this.onWheel.bind(this);
+        this.worldToCamera = this.worldToCamera.bind(this);
         
         this.getWorldCoords = getWorldCoords;
         this.setWorldMatrix = setWorldMatrix;
@@ -75,6 +76,13 @@ export class Camera {
         const [wx1, wy1] = this.getWorldCoords(x, y);
 
         this.state.incrementPosition(wx0 - wx1, wy0 - wy1);
+    }
+
+    worldToCamera(wx: number, wy: number) {
+        const m = this.state.cameraMatrix;
+        const x = m[0] * wx + m[1] * wy + m[2];
+        const y = m[3] * wx + m[4] * wy + m[5];
+        return [x, y];
     }
 
     dispose() {

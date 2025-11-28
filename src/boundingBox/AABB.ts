@@ -17,6 +17,14 @@ export class AABB {
         this.maxY = maxY;
     }
 
+    getArea() {
+        return (this.maxY - this.minY) * (this.maxX - this.minX);
+    }
+    
+    isEmpty() {
+        return this.minX > this.maxX || this.minY > this.maxY;
+    }
+
     static isColliding(a:AABB, b: AABB): boolean {
         return (
             a.minX <= b.maxX &&
@@ -24,9 +32,5 @@ export class AABB {
             a.minY <= b.maxY &&
             a.maxY >= b.minY
         );
-    }
-
-    isEmpty() {
-        return this.minX > this.maxX || this.minY > this.maxY;
     }
 }

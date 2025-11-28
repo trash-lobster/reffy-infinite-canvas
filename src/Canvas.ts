@@ -1,4 +1,4 @@
-import { BoundingBoxCollisionType, CanvasEvent, convertToPNG, createProgram, getWorldCoords, paste } from './util';
+import { BoundingBoxCollisionType, CanvasEvent, convertToPNG, createProgram, getWorldCoords, paste, } from './util';
 import { 
 	shapeVert, 
 	shapeFrag, 
@@ -44,6 +44,8 @@ export class Canvas extends Renderable {
 
 	writeToStorage: () => void;
 	saveImgFileToStorage: (data: string) => Promise<string | number | null>;
+	getContainerDimension: () => number[];
+	getWorldsCoordsFromCanvas: (x: number, y: number) => number[];
 
 	private orderDirty = true;
     private renderList: Shape[] = [];
@@ -69,6 +71,7 @@ export class Canvas extends Renderable {
 		eventHub: EventEmitter,
 		writeToStorage: () => void,
 		saveImgFileToStorage: (data: string) => Promise<string | number | null>,
+		getContainerDimension: () => number[],
 	) {
 		super();
 		this.#canvas = canvas;
@@ -88,6 +91,7 @@ export class Canvas extends Renderable {
 		
 		this.writeToStorage = writeToStorage;
 		this.saveImgFileToStorage = saveImgFileToStorage;
+		this.getContainerDimension = getContainerDimension
 		
 		this.engine = this.engine.bind(this);
 		this.getBoundingClientRect = this.getBoundingClientRect.bind(this);
@@ -100,12 +104,12 @@ export class Canvas extends Renderable {
 		this.updateZoomByFixedAmount = this.updateZoomByFixedAmount.bind(this);
 		
 		this.assignEventListener = this.assignEventListener.bind(this);
-		const getWorldsCoordsFromCanvas = (x: number, y: number) => getWorldCoords(x, y, this);
-
+		this.getWorldsCoordsFromCanvas = (x: number, y: number) => getWorldCoords(x, y, this);
+		
 		this.exportState = this.exportState.bind(this);
 		this.importState = this.importState.bind(this);
 		this.clearChildren = this.clearChildren.bind(this);
-
+		
 		this.#selectionManager = new SelectionManager(
 			history,
 			eventHub,
@@ -113,15 +117,15 @@ export class Canvas extends Renderable {
 			this.#basicShapeProgram,
 			() => this.worldMatrix,
 			() => this.children,
-			getWorldsCoordsFromCanvas,
+			this.getWorldsCoordsFromCanvas,
 		);
-
+		
 		const cameraState = new CameraState({});
 		this.#camera = new Camera(
 			cameraState,
 			this.setWorldMatrix,
 			this.updateWorldMatrix,
-			getWorldsCoordsFromCanvas
+			this.getWorldsCoordsFromCanvas
 		);
 
 		this.#keyPressManager = new KeyEventManager(
@@ -135,7 +139,7 @@ export class Canvas extends Renderable {
 			eventHub,
 			this.selectionManager.isMultiBoundingBoxHit,
 			this.selectionManager.isBoundingBoxHit,
-			getWorldsCoordsFromCanvas,
+			this.getWorldsCoordsFromCanvas,
 			this.assignEventListener
 		);
 
@@ -151,7 +155,7 @@ export class Canvas extends Renderable {
 			getWorldMatrix: () => this.worldMatrix,
 			getCanvasGlobalClick: () => this.isGlobalClick,
 			setCanvasGlobalClick: (val: boolean) => this.isGlobalClick = val,
-			getWorldCoords: getWorldsCoordsFromCanvas,
+			getWorldCoords: this.getWorldsCoordsFromCanvas,
 			updateCameraPos: this.camera.updateCameraPos,
 			onWheel: this.camera.onWheel,
 			setCursorStyle: (val: string) => canvas.style.cursor = val,
@@ -213,16 +217,6 @@ export class Canvas extends Renderable {
 		currentProgram = this.#gridProgram;
 		this.#grid.render(this.#gl, currentProgram);
 
-		const currentZoom = this.camera.state.zoom;
-		const lowResThreshold = 5;
-
-		// should set low res based on what screen area it has taken up
-		this.children.forEach((child) => {
-			if (child instanceof Img) {
-				(child as Img).setUseLowRes(currentZoom > lowResThreshold, this.gl);
-			}
-		})
-
 		const cameraBoundingBox = this.camera.getBoundingBox();
 
 		let totalRenderable = 0;
@@ -240,6 +234,21 @@ export class Canvas extends Renderable {
 				renderable.culled = false;
 			}
 		}
+
+		let lowResCounter = 0;
+
+		// should set low res based on what screen area it has taken up
+		this.renderList.forEach((child) => {
+			if (child instanceof Img) {
+				const useLowRes = (child as Img).determineIfLowRes(
+					cameraBoundingBox, 
+					this.camera.state.zoom,
+				);
+
+				if (useLowRes) lowResCounter++; 
+				(child as Img).setUseLowRes(useLowRes, this.gl);
+			}
+		})
 
 		this.renderList.sort((a, b) =>
             a.layer - b.layer ||
@@ -262,6 +271,8 @@ export class Canvas extends Renderable {
 			}
 			renderable.render(this.#gl, currentProgram);
 		}
+
+		console.log(lowResCounter);
 
 		this.#selectionManager.render();
 	}

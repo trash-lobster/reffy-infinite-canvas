@@ -1,3 +1,4 @@
+import { AABB } from "../boundingBox";
 import { Rect } from "./Rect";
 
 export class Img extends Rect {
@@ -53,6 +54,22 @@ export class Img extends Rect {
     get fileId() { return this._fileId; }
     set fileId(val: string | number) {
         this._fileId = val;
+    }
+
+    determineIfLowRes(
+        cameraBoundingBox: AABB,
+        zoomFactor: number,
+        threshold = 0.1
+    ) {
+        // get both starting point and end point of each axis
+        // compare that with the bounding box of the container (0 -> edge)
+        // see how much space the visible parts of the image takes up
+        const cameraArea = cameraBoundingBox.getArea();
+        
+        const area = this.getBoundingBox().getArea();
+
+        // Low-res if area ratio is below threshold
+        return (area / cameraArea) < (threshold / zoomFactor);
     }
 
     async setUseLowRes(useLowRes: boolean, gl?: WebGLRenderingContext) {

@@ -235,8 +235,6 @@ export class Canvas extends Renderable {
 			}
 		}
 
-		let lowResCounter = 0;
-
 		// should set low res based on what screen area it has taken up
 		this.renderList.forEach((child) => {
 			if (child instanceof Img) {
@@ -245,7 +243,6 @@ export class Canvas extends Renderable {
 					this.camera.state.zoom,
 				);
 
-				if (useLowRes) lowResCounter++; 
 				(child as Img).setUseLowRes(useLowRes, this.gl);
 			}
 		})
@@ -271,8 +268,6 @@ export class Canvas extends Renderable {
 			}
 			renderable.render(this.#gl, currentProgram);
 		}
-
-		console.log(lowResCounter);
 
 		this.#selectionManager.render();
 	}

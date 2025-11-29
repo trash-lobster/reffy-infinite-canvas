@@ -24,6 +24,7 @@ export class Img extends Rect {
     private _src: string;
     private _image: HTMLImageElement;
     private useLowRes: boolean = false;
+    private lowResNeedsRefresh: boolean = true;
     private bitmap: ImageBitmap;
     private lowResBitmap: ImageBitmap;
 
@@ -38,7 +39,6 @@ export class Img extends Rect {
     }>) {
         super(config);
         this._src = config.src;
-        // this.culled = true;
         this.loadImage(config.src, config.width, config.height);
     }
 
@@ -48,6 +48,7 @@ export class Img extends Rect {
             this._src = val;
             this.updateImageTexture(val);
             this.markDirty();
+            this.lowResNeedsRefresh = true;
         }
     }
     
@@ -74,7 +75,7 @@ export class Img extends Rect {
 
     async setUseLowRes(useLowRes: boolean, gl?: WebGLRenderingContext) {
         // checks for current state to see if we are already using low res so we can avoid doing the extra work
-        if (this.useLowRes === useLowRes) return;
+        if (this.useLowRes === useLowRes && !this.lowResNeedsRefresh) return;
         this.useLowRes = useLowRes;
         if (useLowRes && gl) {
             await this.ensureLowResUploaded(gl);
@@ -128,7 +129,7 @@ export class Img extends Rect {
     }
 
     private async ensureLowResUploaded(gl: WebGLRenderingContext) {
-        if (this.lowResTexture) return;
+        if (this.lowResTexture && !this.lowResNeedsRefresh) return;
         if (!this._image || !this._image.complete) return;
 
         try {

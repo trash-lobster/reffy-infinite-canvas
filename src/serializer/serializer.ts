@@ -84,7 +84,6 @@ export function serializeNode(node: Renderable): SerializedNode {
 		const base: SerializedImg = {
 			type: "Img",
 			id: (node as Img).seq,
-			layer: (node as Img).layer,
 			renderOrder: (node as Img).renderOrder,
 			transform: transformOf(node),
 			width: (node as Img).width,
@@ -99,7 +98,6 @@ export function serializeNode(node: Renderable): SerializedNode {
 		const base: SerializedRect = {
 			type: "Rect",
 			id: (node as Rect).seq,
-			layer: (node as Rect).layer,
 			renderOrder: (node as Rect).renderOrder,
 			transform: transformOf(node),
 			width: (node as Rect).width,

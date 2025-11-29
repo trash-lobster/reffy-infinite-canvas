@@ -55,6 +55,12 @@ export type SerializedGrid = SerializedNodeBase & {
 
 export type SerializedNode = SerializedRect | SerializedImg | SerializedGrid | SerializedNodeBase;
 
+export type SerializedCamera = {
+	zoom: number;
+	x: number;
+	y: number;
+}
+
 export type SerializedCanvas = {
 	version: 1;
 	canvas: {
@@ -62,6 +68,7 @@ export type SerializedCanvas = {
 		height: number;
 		dpr: number;
 	};
+	camera?: SerializedCamera;
 	root: SerializedNode;
 	files?: ImageFileMetadata[];
 };
@@ -132,6 +139,11 @@ export function serializeCanvas(canvas: Canvas, files?: ImageFileMetadata[]): Se
 			height: gl.canvas.height,
 			dpr: window.devicePixelRatio || 1,
 		},
+		camera: {
+			x: canvas.camera.state.x,
+			y: canvas.camera.state.y,
+			zoom: canvas.camera.state.zoom,
+		},
 		root: serializeNode(canvas),
 		files
 	};
@@ -144,6 +156,12 @@ export async function deserializeCanvas(
 	writeFileToDatabase?: (data: string) => void,
 ) {
 	canvas.children.length = 0;
+
+	if (data.camera) {
+		canvas.camera.state.setZoom(data.camera.zoom);
+		canvas.camera.state.setX(data.camera.x);
+		canvas.camera.state.setY(data.camera.y);
+	}
 	
 	async function build(node: SerializedNode, parent: Canvas | Renderable) {
 		let instance: Renderable;
@@ -184,7 +202,7 @@ export async function deserializeCanvas(
                     });
 
 					getFile((node as SerializedImg).fileId)
-						.then(file => { (instance as Img).src = file.dataURL; })
+						.then(file => { console.log('image loaded!'); (instance as Img).src = file.dataURL; })
 						.catch(err => console.error('Image not loaded', err));
 
 					//  skip hashing if it already has a file ID

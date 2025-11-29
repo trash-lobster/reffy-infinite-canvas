@@ -139,3 +139,4 @@
 20251129:
 - Add reordering function to context menu
 - Fix rendering distance calculation for low res images
+- Change rendering order to be based on renderOrder value, instead of array order

@@ -8,12 +8,10 @@ export interface OrderSnapshotItem {
 }
 
 export interface OrderSnapshot {
-    layer: number;
     renderOrder: number;
 }
 
 function apply(target: Renderable, t: OrderSnapshot) {
-    (target as Shape).layer = t.layer;
     (target as Shape).renderOrder = t.renderOrder;
 }
 

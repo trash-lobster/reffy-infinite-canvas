@@ -214,6 +214,7 @@ export class BoundingBox {
 
     move(dx: number, dy: number) {
         this.target.updateTranslation(dx, dy);
+        console.log(this.target.renderOrder, this.target.getZ());
     }
 
     resize(

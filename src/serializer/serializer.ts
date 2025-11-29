@@ -168,8 +168,7 @@ export async function deserializeCanvas(
 						data.files.find(e => e.id === (node as SerializedImg).fileId).dataURL :
 						PLACEHOLDER_IMAGE_SRC
 					);
-					
-					
+										
 					if (writeFileToDatabase) {
 						writeFileToDatabase(src);
 					}
@@ -194,6 +193,9 @@ export async function deserializeCanvas(
 					(instance as Img).fileId = (node as SerializedImg).fileId ?? await hashStringToId(src);
 					instance.setScale(node.transform.sx, node.transform.sy);
 					canvas.appendChild(instance);
+					if (typeof (node as SerializedImg).renderOrder === 'number') {
+						(instance as Img).renderOrder = (node as SerializedImg).renderOrder;
+					}
 				} catch (err) {
 					// delete node from storage? It won't be saved in the next instance, so perhaps it's fine?
 					console.error(`Failed to match image to restore with source: ${src}`);

@@ -85,6 +85,9 @@ export class Canvas extends Renderable {
 
 		this.#gl.getExtension("OES_standard_derivatives"); // required to enable fwidth
 		
+		this.#gl.enable(this.#gl.DEPTH_TEST);
+		this.#gl.depthFunc(this.#gl.LEQUAL);
+
 		this.#basicShapeProgram = createProgram(this.#gl, shapeVert, shapeFrag);
 		this.#imageProgram = createProgram(this.#gl, imageVert, imageFrag);
 		this.#gridProgram = createProgram(this.#gl, gridVert, gridFrag);
@@ -184,6 +187,12 @@ export class Canvas extends Renderable {
 
 	appendChild<T extends Renderable>(child: T): T {
 		super.appendChild(child);
+		if (child instanceof Shape) {
+			const orders = (this.children as Shape[]).map(s => s.renderOrder);
+			const maxOrder = orders.length ? Math.max(...orders) : 0;
+
+			child.renderOrder = (maxOrder + 1);
+		}
 		this.markOrderDirty();
 		return child;
 	}
@@ -207,7 +216,7 @@ export class Canvas extends Renderable {
 
 	render() {
 		this.#gl.clearColor(0, 0, 0, 0);
-    	this.#gl.clear(this.#gl.COLOR_BUFFER_BIT);
+    	this.#gl.clear(this.#gl.COLOR_BUFFER_BIT | this.#gl.DEPTH_BUFFER_BIT);
 		this.#gl.viewport(0, 0, this.#gl.canvas.width, this.#gl.canvas.height);
 
 		const parentBoundingBox = this.canvas.parentElement.getBoundingClientRect();
@@ -216,6 +225,8 @@ export class Canvas extends Renderable {
 		let currentProgram: WebGLProgram | null = null;
 
 		currentProgram = this.#gridProgram;
+		const uZGrid = this.#gl.getUniformLocation(this.#gridProgram, 'u_z');
+		this.#gl.uniform1f(uZGrid, 0.0);
 		this.#grid.render(this.#gl, currentProgram);
 
 		const cameraBoundingBox = this.camera.getBoundingBox();
@@ -247,12 +258,6 @@ export class Canvas extends Renderable {
 				(child as Img).setUseLowRes(useLowRes, this.gl);
 			}
 		})
-
-		this.renderList.sort((a, b) =>
-            a.layer - b.layer ||
-            a.renderOrder - b.renderOrder ||
-            a.seq - b.seq
-        );		
 		
 		for (const renderable of this.renderList) {
 			let program: WebGLProgram;
@@ -267,6 +272,8 @@ export class Canvas extends Renderable {
 				this.#gl.useProgram(program);
 				currentProgram = program;
 			}
+			const uZLoc = this.#gl.getUniformLocation(currentProgram, 'u_z');
+			this.#gl.uniform1f(uZLoc, renderable.getZ());
 			renderable.render(this.#gl, currentProgram);
 		}
 
@@ -364,32 +371,22 @@ export class Canvas extends Renderable {
 		const snapShotItem = {
 			ref: child,
 			start: {
-				layer: child.layer,
 				renderOrder: child.renderOrder,
 			}
 		}
 
-		if (toFront) {
-			const maxLayer = Math.max(0, ...this.children.map(c => (c as Shape).layer));
-			const maxRenderOrder = Math.max(0, ...this.children.map(c => (c as Shape).renderOrder));
+		// Compute new renderOrder based on current scene
+		const orders = (this.children as Shape[]).map(s => s.renderOrder);
+		const maxOrder = orders.length ? Math.max(...orders) : 0;
+		const minOrder = orders.length ? Math.min(...orders) : 0;
 
-			child.layer = Math.max(child.layer, maxLayer);
-			child.renderOrder = maxRenderOrder + 1;
-		} else {
-			const minLayer = Math.min(0, ...this.children.map(c => (c as Shape).layer));
-			const minRenderOrder = Math.min(0, ...this.children.map(c => (c as Shape).renderOrder));
-
-			child.layer = Math.min(child.layer, minLayer);
-			child.renderOrder = minRenderOrder - 1;
-		}
+		child.renderOrder = toFront ? (maxOrder + 1) : (minOrder - 1);
 
 		snapShotItem['end'] = {
-			layer: child.layer,
 			renderOrder: child.renderOrder,
-		}
+		};
 
 		this.markOrderDirty();
-		// add history
 		this.#history.push(makeMultiOrderCommand([snapShotItem]));
 		this.#eventHub.emit(CanvasEvent.Change);
 	}

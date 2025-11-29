@@ -11,6 +11,7 @@ precision mediump int;
 uniform mat3 u_ViewProjectionInvMatrix;
 uniform float u_ZoomScale;
 uniform float u_CheckboardStyle;
+uniform float u_z;
 
 attribute vec2 a_Position;
 
@@ -22,7 +23,8 @@ vec2 project_clipspace_to_world(vec2 p) {
 
 void main() {
   v_Position = project_clipspace_to_world(a_Position);
-  gl_Position = vec4(a_Position, 0.0, 1.0);
+  float z = mix(1.0, -1.0, u_z);
+  gl_Position = vec4(a_Position, z, 1.0);
 }
 `;
 

@@ -201,6 +201,9 @@ export class SelectionManager {
     render() {
         if (this.#renderDirtyFlag) {
             this.#gl.useProgram(this.#rectProgram);
+            // ensure that the handles are always on top
+            const uZGrid = this.#gl.getUniformLocation(this.#rectProgram, 'u_z');
+            this.#gl.uniform1f(uZGrid, 1.0);
             this.#boundingBoxes.forEach(box => box.render(this.#gl, this.#rectProgram));
         }
 

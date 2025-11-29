@@ -14,8 +14,6 @@ export abstract class Shape extends WebGLRenderable {
 
     culled = false;
 
-    private _layer = 0;
-
     private _renderOrder: number = 0;
     abstract getVertexCount(): number;
 
@@ -25,9 +23,6 @@ export abstract class Shape extends WebGLRenderable {
         this.setScale(sx, sy);
     }
 
-    get layer() { return this._layer; }
-    set layer(v: number) { if (this._layer !== v) { this._layer = v; this.markDirty(); } }
-
     get renderOrder() { return this._renderOrder; }
     set renderOrder(v: number) { if (this._renderOrder !== v) { this._renderOrder = v; this.markDirty(); } }
 
@@ -35,6 +30,14 @@ export abstract class Shape extends WebGLRenderable {
 
     abstract getEdge() : BoundingVal;
     abstract getBoundingBox(): AABB;
+
+    getZ(): number {
+        // Map renderOrder to a [0.0 .. 1.0] ratio where larger renderOrder => larger z.
+        // Choose a small step to avoid saturating quickly; clamp to [0.0, 1.0].
+        const step = 0.001; // ratio increase per renderOrder
+        const z = this.renderOrder * step;
+        return Math.max(0.0, Math.min(1.0, z));
+    }
 
     color: [number, number, number, number] = [1, 0, 0.5, 1];
 

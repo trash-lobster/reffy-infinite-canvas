@@ -81,6 +81,7 @@ export class Img extends Rect {
             await this.ensureLowResUploaded(gl);
         }
         this.markDirty();
+        this.lowResNeedsRefresh = false;
     }
 
     private loadImage(src: string, width?: number, height?: number) {

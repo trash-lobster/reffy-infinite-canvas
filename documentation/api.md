@@ -15,6 +15,7 @@ Methods:
 - `toggleGrid()` — Toggle grid visibility/type.
 - `zoomIn()` / `zoomOut()` — Adjust camera zoom by fixed increments.
 - `addImages(fileList: FileList)` — Add one or more images, centered on canvas.
+- `addImageFromURL(url: string)` — Adds an image by URL, centered at canvas midpoint.
 - `copyImage()` / `pasteImage(e: PointerEvent)` — Clipboard operations for selected images.
 - `flipVertical()` / `flipHorizontal()` — Flip selected images.
 - `deleteSelectedImages()` — Remove selected images from scene.
@@ -45,12 +46,6 @@ Selected methods:
 
 The following API surface outlines common, extensible operations expected of an infinite canvas engine. These are not all implemented today, but provide a forward-looking contract for extensions/plugins and host apps.
 
-- `addImageFromURL(url: string, options?: { x?: number; y?: number; center?: boolean })`:
-	Adds an image by URL. Optionally centers at canvas midpoint.
-- `addShape(shape: 'rect' | 'triangle' | 'ellipse' | 'path', props: ShapeProps)`:
-	Adds a geometric shape with basic styling (fill, stroke, opacity).
-- `addText(text: string, props?: { x?: number; y?: number; font?: string; size?: number; color?: string })`:
-	Adds a text node with transform support.
 - `remove(nodeId: number | Renderable)`:
 	Removes a node from the scene.
 - `duplicate(nodeId: number | Renderable)`:

@@ -5,7 +5,7 @@ import { customElement } from 'lit/decorators.js';
 import { CanvasEvent, ContextMenuEvent, copy, getWorldCoords, addImages as innerAddImages, LoaderEvent, paste, performanceTest, SaveEvent } from './util';
 import { downloadJSON, hashStringToId, readJSONFile } from './util/files';
 import { serializeCanvas, deserializeCanvas, SerializedCanvas } from './serializer';
-import { AlignDirection, makeMultiAddChildCommand, NormalizeMode, NormalizeOption } from './manager';
+import { AlignDirection, makeMultiAddChildCommand, makeRemoveChildCommand, NormalizeMode, NormalizeOption } from './manager';
 import { addContextMenu, clearContextMenu, ContextMenuProps, ContextMenuType, createBasicImageMenuOptions, createCanvasImageMenuOptions, createMultiImageMenuOptions, createSingleImageMenuOptions, isContextMenuActive } from './contextMenu';
 import { CanvasStorage, DefaultIndexedDbStorage, DefaultLocalStorage, FileStorage, ImageFileMetadata } from './storage';
 import EventEmitter from 'eventemitter3';
@@ -160,16 +160,16 @@ export class InfiniteCanvasElement extends LitElement {
 	#timeoutId: number | null;
     #intervalId: number | null;
 
-    rootDiv: HTMLDivElement;
+    #rootDiv: HTMLDivElement;
     
     #onChange?: () => void;
 
     #singleImageMenuOptions: ContextMenuProps;
     #multiImageMenuOptions: ContextMenuProps;
     #canvasImageMenuOptions: ContextMenuProps;
-    addContextMenu: (x: number, y: number, type: ContextMenuType) => void;
-    clearContextMenu: () => void;
-    isContextMenuActive: () => boolean;
+    private addContextMenu: (x: number, y: number, type: ContextMenuType) => void;
+    private clearContextMenu: () => void;
+    private isContextMenuActive: () => boolean;
 
     get singleImageMenuOptions() { return this.#singleImageMenuOptions; }
     get multiImageMenuOptions() { return this.#multiImageMenuOptions; }
@@ -177,7 +177,6 @@ export class InfiniteCanvasElement extends LitElement {
 
     get onCanvasChange() { return this.#onChange; }
     set onCanvasChange(fn: (() => void)) { this.#onChange = fn; }
-    get engine(): Canvas { return this.#canvas; }
     get eventHub() { return this.#eventHub; }
 
     // Lifecycle
@@ -212,7 +211,7 @@ export class InfiniteCanvasElement extends LitElement {
         div.style.overflow = 'hidden';
 
         this.renderRoot.appendChild(div);
-        this.rootDiv = div;
+        this.#rootDiv = div;
 
         const canvas = document.createElement('canvas');
 
@@ -341,8 +340,8 @@ export class InfiniteCanvasElement extends LitElement {
      * @returns An array containing the width and height of the container
      */
     getContainerSize() {
-        if (!this.rootDiv) return;
-        const rect = this.rootDiv.getBoundingClientRect();
+        if (!this.#rootDiv) return;
+        const rect = this.#rootDiv.getBoundingClientRect();
 
         return [rect.width, rect.height];
     }
@@ -431,7 +430,7 @@ export class InfiniteCanvasElement extends LitElement {
 		if (!this.#canvasStorage) {
             this.#canvasStorage = new DefaultLocalStorage();
         }
-        this.#canvasStorage.write(serializeCanvas(this.engine))
+        this.#canvasStorage.write(serializeCanvas(this.#canvas))
             .then(() => this.#eventHub.emit(SaveEvent.SaveCompleted))
             .catch(() => this.#eventHub.emit(SaveEvent.SaveFailed));
     }
@@ -454,8 +453,8 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     toggleGrid() {
-        if (!this.engine) return;
-        this.engine.toggleGrid();
+        if (!this.#canvas) return;
+        this.#canvas.toggleGrid();
     }
 
     zoomIn() {
@@ -469,63 +468,87 @@ export class InfiniteCanvasElement extends LitElement {
     }
 
     async addImages(fileList: FileList) {
-        if (!this.engine) return;
+        if (!this.#canvas) return;
 
-		const rect = this.engine.getBoundingClientRect();
+		const rect = this.#canvas.getBoundingClientRect();
 		const clientX = rect.left + rect.width / 2;
 		const clientY = rect.top + rect.height / 2;
 
-		const [wx, wy] = getWorldCoords(clientX, clientY, this.engine);
+		const [wx, wy] = getWorldCoords(clientX, clientY, this.#canvas);
 
         const newImages = await innerAddImages(
             fileList, 
-            (src: string) => this.engine.addImageToCanvas(src, wx, wy, 1, 1, true),
+            (src: string) => this.#canvas.addImageToCanvas(src, wx, wy, 1, 1, true),
         );
-        this.#history.push(makeMultiAddChildCommand(this.engine, newImages));
+        this.#history.push(makeMultiAddChildCommand(this.#canvas, newImages));
+    }
+
+    async removeImage(id: number) {
+        if (!this.#canvas) return;
+
+        const child = this.#canvas.getChild(id);
+        this.#canvas.removeChild(child);
+        this.#history.push(makeRemoveChildCommand(this.#canvas, child));
+    }
+
+    /**
+     * @param url Currently only accept base64 url and the image is automatically added to screen center
+     */
+    async addImageFromUrl(url: string) {
+        if (!this.#canvas) return;
+
+        const rect = this.#canvas.getBoundingClientRect();
+		const clientX = rect.left + rect.width / 2;
+		const clientY = rect.top + rect.height / 2;
+
+		const [wx, wy] = getWorldCoords(clientX, clientY, this.#canvas);
+
+        const img = await this.#canvas.addImageToCanvas(url, wx, wy, 1, 1, true);
+        this.#history.push(makeMultiAddChildCommand(this.#canvas, [img]));
     }
 
     async copyImage() {
-        if (!this.engine) return;
+        if (!this.#canvas) return;
         await copy(
-            this.engine.getSelected()
+            this.#canvas.getSelected()
         );
     }
 
     async pasteImage(e: PointerEvent) {
-        if (!this.engine) return;
+        if (!this.#canvas) return;
         this.#eventHub.emit(LoaderEvent.start, 'spinner');
-        await paste(e.clientX, e.clientY, this.engine, this.#history, false);
+        await paste(e.clientX, e.clientY, this.#canvas, this.#history, false);
         this.#eventHub.emit(LoaderEvent.done);
     }
 
     flipVertical() {
-        if (!this.engine) return;
-        this.engine.selectionManager.flip('vertical');
+        if (!this.#canvas) return;
+        this.#canvas.selectionManager.flip('vertical');
     }
 
     flipHorizontal() {
-        if (!this.engine) return;
-        this.engine.selectionManager.flip('horizontal');
+        if (!this.#canvas) return;
+        this.#canvas.selectionManager.flip('horizontal');
     }
 
     align(direction: AlignDirection) {
-        if (!this.engine) return;
-        this.engine.selectionManager.alignSelection(direction);
+        if (!this.#canvas) return;
+        this.#canvas.selectionManager.alignSelection(direction);
     }
 
     normalizeSelection(type: NormalizeOption, mode: NormalizeMode) {
-        if (!this.engine) return;
-        this.engine.selectionManager.normalize(type, mode);
+        if (!this.#canvas) return;
+        this.#canvas.selectionManager.normalize(type, mode);
     }
 
     sendShapeToNewZOrder(toFront: boolean) {
-        if (!this.engine) return;
-        this.engine.setShapeZOrder(toFront);
+        if (!this.#canvas) return;
+        this.#canvas.setShapeZOrder(toFront);
     }
 
     deleteSelectedImages() {
-        if (!this.engine) return;
-        this.engine.selectionManager.deleteSelected(this.engine);
+        if (!this.#canvas) return;
+        this.#canvas.selectionManager.deleteSelected(this.#canvas);
     }
     
     async exportCanvas(filename = 'infinite-canvas.json') {
@@ -553,6 +576,23 @@ export class InfiniteCanvasElement extends LitElement {
         if (!this.#canvas) return;
         this.#canvas.clearChildren();
     }
+
+    /**     
+     * A non-reactive method that captures the number of images added to the canvas
+    */
+    getTotalNumberOfChildren() {
+        if (!this.#canvas) return;
+        return this.#canvas.totalNumberOfChildren;
+    }
+
+    /**
+     * A non-reactive method that captures the number of images that are in camera
+     */
+    getNumberOfChildrenRendered() {
+        if (!this.#canvas) return;
+        return this.#canvas.numberOfChildrenRendered;
+    }
+
 
     // Global helper
     private handleGlobalPointerDown = (e: PointerEvent) => {

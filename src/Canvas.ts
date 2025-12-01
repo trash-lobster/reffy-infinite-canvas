@@ -185,6 +185,14 @@ export class Canvas extends Renderable {
 		return this;
 	}
 
+	get totalNumberOfChildren() {
+		return this.children.length
+	}
+
+	get numberOfChildrenRendered() {
+		return this.renderList.length
+	}
+
 	appendChild<T extends Renderable>(child: T): T {
 		super.appendChild(child);
 		if (child instanceof Shape) {
@@ -204,6 +212,10 @@ export class Canvas extends Renderable {
 		}
 		child.destroy();
 		this.markOrderDirty();
+	}
+
+	getChild(id: number): Renderable {
+		return this.state.getChild(id);
 	}
 
 	updateWorldMatrix() {

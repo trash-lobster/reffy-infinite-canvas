@@ -48,7 +48,6 @@ export class Img extends Rect {
             this._src = val;
             this.updateImageTexture(val);
             this.markDirty();
-            this.lowResNeedsRefresh = true;
         }
     }
     
@@ -77,7 +76,7 @@ export class Img extends Rect {
         // checks for current state to see if we are already using low res so we can avoid doing the extra work
         if (this.useLowRes === useLowRes && !this.lowResNeedsRefresh) return;
         this.useLowRes = useLowRes;
-        if (useLowRes && gl) {
+        if ((useLowRes && gl) || this.lowResNeedsRefresh) {
             await this.ensureLowResUploaded(gl);
         }
         this.markDirty();
@@ -122,6 +121,9 @@ export class Img extends Rect {
                     console.error('Failed to initialise texture on image load', err);
                 }
             }
+
+            // only trigger regeneration of the low res once the image has been updated
+            this.lowResNeedsRefresh = true;
         };
         this._image.onerror = (error) => {
             console.error('Failed to load image:', src, error);

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Rect } from '../../../src/shapes/Rect';
 import * as BB from '../../../src/bounding/BoundingBox';
 import { BoundingBoxMode } from '../../../src/bounding';
-import { getScalesFromMatrix, m3 } from '../../../src/util';
+import { getScalesFromMatrix, LIGHT_BLUE, m3 } from '../../../src/util';
 
 describe('BoundingBox', () => {
     it('should create a bounding box with expected width and height', () => {
@@ -31,6 +31,18 @@ describe('BoundingBox', () => {
 
         box = new BB.BoundingBox(target);
         box.setPassive();
+
+        const [r, g, b] = LIGHT_BLUE;
+
+        for (const [, side] of box.sides.entries()) {
+            const [sa, sb, sc] = side.color;
+            expect([sa, sb, sc]).toStrictEqual([r, g, b]);
+        }
+        for (const [, corner] of box.corners.entries()) {
+            const [sa, sb, sc] = corner.color;
+            expect([sa, sb, sc]).toStrictEqual([r, g, b]);
+        }
+        
         expect(box.mode).toBe(BoundingBoxMode.PASSIVE);
         expect(box.corners.size).toBe(0);
     })
@@ -46,6 +58,18 @@ describe('BoundingBox', () => {
 
         box = new BB.BoundingBox(target);
         box.setActive();
+
+        const [r, g, b] = LIGHT_BLUE;
+
+        for (const [, side] of box.sides.entries()) {
+            const [sa, sb, sc] = side.color;
+            expect([sa, sb, sc]).toStrictEqual([r, g, b]);
+        }
+        for (const [, corner] of box.corners.entries()) {
+            const [sa, sb, sc] = corner.color;
+            expect([sa, sb, sc]).toStrictEqual([r, g, b]);
+        }
+
         expect(box.mode).toBe(BoundingBoxMode.ACTIVE);
         expect(box.corners.size).toBe(4);
     })
@@ -67,6 +91,7 @@ describe('BoundingBox', () => {
 });
 
 const I = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+const EPS = 1e-6;
 
 const MATRICES = [
     { name: 'identity', M: I },
@@ -273,6 +298,200 @@ describe('bounding box move', () => {
     })
 });
 
+describe('bounding box resize', () => {
+    it('RIGHT: increases scale uniformly and adjusts vertical translation anchor', () => {
+        const target = setupTarget();
+        const box = new BB.BoundingBox(target);
+
+        // Baseline
+        const sx0 = target.sx;
+        const sy0 = target.sy;
+        const tx0 = target.x;
+        const ty0 = target.y;
+
+        box.resize(50, 0, 'RIGHT');
+
+        // scale increased uniformly
+        expect(target.sx).toBeGreaterThan(sx0);
+        expect(target.sy).toBeCloseTo(target.sx, 6);
+        expect(target.x).toBeCloseTo(tx0, 6);
+        // y translation adjusts to keep vertical anchoring centered
+        expect(target.y).not.toBeCloseTo(ty0, 6);
+    });
+
+    it('LEFT: increases/decreases scale and moves left (dx applied), with vertical re-centering', () => {
+        const target = setupTarget();
+        const box = new BB.BoundingBox(target);
+
+        const sx0 = target.sx;
+        const sy0 = target.sy;
+        const tx0 = target.x;
+        const ty0 = target.y;
+
+        box.resize(-40, 0, 'LEFT');
+
+        expect(Math.abs(target.sx - sx0)).toBeGreaterThan(EPS);
+        expect(target.sy).toBeCloseTo(target.sx, 6);
+        expect(target.x).toBeCloseTo(tx0 - 40, 6);
+        expect(target.y).not.toBeCloseTo(ty0, 6);
+    });
+
+    it('TOP: uses dy to scale and updates x translation (horizontal re-centering), y moves by dy', () => {
+        const target = setupTarget();
+        const box = new BB.BoundingBox(target);
+
+        const sx0 = target.sx;
+        const sy0 = target.sy;
+        const tx0 = target.x;
+        const ty0 = target.y;
+
+        box.resize(0, -30, 'TOP');
+
+        expect(Math.abs(target.sy - sy0)).toBeGreaterThan(EPS);
+        expect(target.sx).toBeCloseTo(target.sy, 6);
+        expect(target.x).not.toBeCloseTo(tx0, 6);
+        expect(target.y).toBeCloseTo(ty0 - 30, 6);
+    });
+
+    it('BOTTOM: uses dy to scale and keeps y translation unchanged for dy=0 anchor case', () => {
+        const target = setupTarget();
+        const box = new BB.BoundingBox(target);
+
+        const ty0 = target.y;
+
+        box.resize(0, 25, 'BOTTOM');
+        expect(target.y).toBeCloseTo(ty0, 6);
+    });
+
+    it('TOPLEFT: applies dx to both scale and translation, with aspect-ratio-based y offset', () => {
+        const target = setupTarget(120, 60); // aspect ratio = 2
+        const box = new BB.BoundingBox(target);
+
+        const tx0 = target.x;
+        const ty0 = target.y;
+        const sx0 = target.sx;
+
+        // Positive dx
+        box.resize(20, 0, 'TOPLEFT');
+
+        // scale changed uniformly
+        expect(Math.abs(target.sx - sx0)).toBeGreaterThan(EPS);
+        expect(target.sy).toBeCloseTo(target.sx, 6);
+
+        // x translated by dx
+        expect(target.x).toBeCloseTo(tx0 + 20, 6);
+
+        // y translated by dx/aspectRatio * sign(sx)
+        const expectedDy = 20 / (120 / 60) * Math.sign(target.sx); // dx / aspectRatio
+        expect(target.y).toBeCloseTo(ty0 + expectedDy, 6);
+    });
+
+    it('TOPRIGHT: applies aspect-ratio-based negative y offset and no x translation', () => {
+        const target = setupTarget(80, 40); // aspect ratio = 2
+        const box = new BB.BoundingBox(target);
+
+        const tx0 = target.x;
+        const ty0 = target.y;
+
+        box.resize(30, 0, 'TOPRIGHT');
+
+        // x translation remains unchanged for TOPRIGHT
+        expect(target.x).toBeCloseTo(tx0, 6);
+
+        // y translation moves by -dx / aspectRatio * sign(sx)
+        const expectedDy = -30 / (80 / 40) * Math.sign(target.sx);
+        expect(target.y).toBeCloseTo(ty0 + expectedDy, 6);
+    });
+
+    it('BOTTOMLEFT: applies aspect-ratio-based negative x translation', () => {
+        const target = setupTarget(80, 40); // aspect ratio = 2
+        const box = new BB.BoundingBox(target);
+
+        const tx0 = target.x;
+        const ty0 = target.y;
+
+        box.resize(30, 0, 'BOTTOMLEFT');
+
+        // y translation remains unchanged for BOTTOMLEFT
+        expect(target.x).toBeCloseTo(30, 6);
+        expect(target.y).toBeCloseTo(0, 6);
+    });
+
+    it('prevents flipping: negative dx that would cross zero scale does not change scale', () => {
+        const target = setupTarget();
+        const box = new BB.BoundingBox(target);
+
+        // Make scale very small so an aggressive resize could flip
+        target.setScale(0.001, 0.001);
+
+        const sx0 = target.sx;
+        const sy0 = target.sy;
+
+        // Large negative dx on RIGHT would try to reduce scale below 0
+        box.resize(-100000, 0, 'RIGHT');
+
+        // Guard prevents flip; scale unchanged
+        expect(target.sx).toBeCloseTo(sx0, 6);
+        expect(target.sy).toBeCloseTo(sy0, 6);
+    });
+
+    it('aborts when resulting size would be below EPS', () => {
+        const target = setupTarget();
+        const box = new BB.BoundingBox(target);
+
+        // Set extremely small scale
+        target.setScale(1e-8, 1e-8);
+        const sx0 = target.sx;
+        const sy0 = target.sy;
+
+        // Any resize that would shrink further should abort
+        box.resize(-1, 0, 'LEFT');
+
+        expect(target.sx).toBeCloseTo(sx0, 6);
+        expect(target.sy).toBeCloseTo(sy0, 6);
+    });
+});
+
+describe('bounding box reset', () => {
+    it('resets the target\'s scale', () => {
+        const target = setupTarget();
+        const box = new BB.BoundingBox(target);
+        target.setScale(10, 10);
+
+        expect(target.sx).toBe(10);
+        expect(target.sy).toBe(10);
+        
+        box.reset();
+        
+        expect(target.sx).toBe(1);
+        expect(target.sy).toBe(1);
+    })
+});
+
+describe('bounding box flip', () => {
+    it('calls target\'s flip vertical method if direction is vertical', () => {
+        const target = setupTarget();
+        const box = new BB.BoundingBox(target);
+
+        target.flipVertical = vi.fn();
+
+        box.flip('vertical');
+
+        expect(target.flipVertical).toHaveBeenCalledOnce();        
+    });
+
+    it('calls target\'s flip horizontal method if direction is horizontal', () => {
+        const target = setupTarget();
+        const box = new BB.BoundingBox(target);
+
+        target.flipHorizontal = vi.fn();
+
+        box.flip('horizontal');
+
+        expect(target.flipHorizontal).toHaveBeenCalledOnce();        
+    });
+});
+
 describe('BoundingBox getSidesInScreenSpace/getCornersInScreenSpace (scale sign branches)', () => {
     it('sides: positive scaleX/scaleY (signX=+1, signY=+1)', () => {
         const target = setupTarget();
@@ -435,8 +654,8 @@ describe('BoundingBox getSidesInScreenSpace/getCornersInScreenSpace (scale sign 
     });
 });
 
-function setupTarget(): Rect {
-    const target = new Rect({ x: 0, y: 0, width: 100, height: 50 });
+function setupTarget(w = 100, h = 50, x = 0, y = 0) {
+    const target = new Rect({ x, y, width: w, height: h });
     target.updateWorldMatrix(I);
     return target;
 }

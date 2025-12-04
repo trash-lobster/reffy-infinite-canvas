@@ -124,9 +124,11 @@ export class RenderableState {
     removeChild(child: Renderable) {
         const i = this.children.indexOf(child);
         if (i < 0) return;
-        this.children.splice(i, 1);
+        const removedChildren = this.children.splice(i, 1);
         child.state.setParent(null);
         this.markDirty();
+
+        return removedChildren[0];
     }
 
     clearChildren() {

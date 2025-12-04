@@ -1,4 +1,4 @@
-import { Rect } from "../shapes";
+import { Rect } from "../shapes/Rect";
 import { applyMatrixToPoint, BASE_BLUE, BORDERPX, BoundingBoxCollisionType, getScalesFromMatrix, MARQUEE_BLUE, sides } from "../util";
 import { AABB } from "./AABB";
 

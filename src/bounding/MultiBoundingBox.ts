@@ -17,7 +17,7 @@ import {
     NormalizeMode,
     TransformSnapshotItem,
 } from "../manager";
-import { Rect } from "../shapes";
+import { Rect } from "../shapes/Rect";
 
 const HANDLE_TYPES: BoundingBoxCollisionType[] = [...corners, ...sides] as BoundingBoxCollisionType[];
 

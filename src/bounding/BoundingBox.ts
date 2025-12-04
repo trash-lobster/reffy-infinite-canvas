@@ -9,14 +9,13 @@ import {
     applyMatrixToPoint,
     getScalesFromMatrix,
     isScalePositive,
-    sameSign,
     normalizeSign,
     willFlip,
 } from "../util";
 import { Rect } from "../shapes/Rect";
 import { Shape } from "../shapes/Shape";
 import { BoundingBoxMode } from "./type";
-import { FlipDirection } from "manager";
+import { FlipDirection } from "../manager";
 
 // different from multi bounding box, the corners and handles are separated here because they need to be individually toggled
 export class BoundingBox {
@@ -214,7 +213,6 @@ export class BoundingBox {
 
     move(dx: number, dy: number) {
         this.target.updateTranslation(dx, dy);
-        console.log(this.target.renderOrder, this.target.getZ());
     }
 
     resize(

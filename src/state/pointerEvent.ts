@@ -1,6 +1,6 @@
 import { BoundingBoxCollisionType } from "../util";
 import { PointerMode } from "../manager";
-import { Point } from "../boundingBox";
+import { Point } from "../bounding";
 
 export class PointerEventState {
 

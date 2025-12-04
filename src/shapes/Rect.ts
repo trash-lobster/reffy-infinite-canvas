@@ -1,4 +1,4 @@
-import { AABB } from "../boundingBox";
+import { AABB } from "../bounding";
 import { getScalesFromMatrix, applyMatrixToPoint, isScalePositive } from "../util";
 import { Shape } from "./Shape";
 

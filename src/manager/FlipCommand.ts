@@ -1,6 +1,6 @@
 import { Rect, Renderable } from "shapes";
 import { Command } from "../history";
-import { MultiBoundingBox } from "../boundingBox";
+import { MultiBoundingBox } from "../bounding";
 
 export interface FlipSnapshotItem {
     ref: Rect,

@@ -5,13 +5,13 @@ import {
 } from "../util";
 import { Rect, Renderable, Shape } from "../shapes";
 import { Canvas } from "Canvas";
-import { Point } from "boundingBox/type";
+import { Point } from "bounding/type";
 import { 
     AABB,
     BoundingBox, 
     MarqueeSelectionBox, 
     MultiBoundingBox,
-} from "../boundingBox";
+} from "../bounding";
 import { CanvasHistory } from "../history";
 import { makeMultiRemoveChildCommand } from "./SceneCommand";
 import { FlipDirection, makeMultiFlipCommand } from "./FlipCommand";

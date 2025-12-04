@@ -1,4 +1,4 @@
-import { AABB } from "../boundingBox/AABB";
+import { AABB } from "../bounding/AABB";
 import { WebGLRenderable } from "./Renderable";
 
 export interface BoundingVal {

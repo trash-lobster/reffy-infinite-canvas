@@ -1,4 +1,7 @@
-import { Img, Rect, Renderable, Shape } from "../shapes";
+import { Img } from '../shapes/Img';
+import { Rect } from '../shapes/Rect';
+import { Renderable } from '../shapes/Renderable';
+import { Shape } from '../shapes/Shape';
 import {
     BoundingBoxCollisionType,
     ContextMenuEvent,

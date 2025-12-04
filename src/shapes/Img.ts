@@ -1,4 +1,4 @@
-import { AABB } from "../boundingBox";
+import { AABB } from "../bounding";
 import { Rect } from "./Rect";
 
 export class Img extends Rect {

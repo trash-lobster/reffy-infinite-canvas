@@ -1,6 +1,6 @@
 import { CameraState } from "../state";
 import { reaction } from "mobx";
-import { AABB } from "../boundingBox";
+import { AABB } from "../bounding";
 
 export const ZOOM_MIN = 0.02;
 export const ZOOM_MAX = 20;

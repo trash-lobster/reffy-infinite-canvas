@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AABB } from '../../../src/boundingBox/AABB';
+import { AABB } from '../../../src/bounding/AABB';
 
 describe('AABB', () => {
     it('creates an instance as expected', () => {
@@ -33,5 +33,5 @@ describe('AABB', () => {
         expect(AABB.isColliding(a, b)).toBe(true);
     });
 
-    
+
 });

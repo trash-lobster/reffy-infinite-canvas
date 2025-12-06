@@ -178,6 +178,7 @@ export class InfiniteCanvasElement extends LitElement {
     get onCanvasChange() { return this.#onChange; }
     set onCanvasChange(fn: (() => void)) { this.#onChange = fn; }
     get eventHub() { return this.#eventHub; }
+    get rootDiv() { return this.#rootDiv }
 
     // Lifecycle
     connectedCallback() {

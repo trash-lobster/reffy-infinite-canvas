@@ -69,6 +69,9 @@ export class Camera {
         this.state.incrementPosition(dx, dy);
     }
 
+    /**
+     * Pass in the center position to resolve the scaling around
+     */
     updateZoom(x: number, y: number, scale: number) {
         const [wx0, wy0] = this.getWorldCoords(x, y);
         this.state.setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, this.state.zoom * scale)));

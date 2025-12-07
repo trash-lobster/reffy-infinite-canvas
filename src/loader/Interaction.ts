@@ -12,6 +12,7 @@ export function showLoader(
     loader.el.style.height = `${hostRect.bottom}px`;
     loader._el.style.top = `${-hostRect.bottom}px`;
 
+    return loader;
 }
 
 export function hideLoader() {

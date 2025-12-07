@@ -86,7 +86,7 @@ export class MultiBoundingBox {
     ) {
         const prevW = this.width;
         const prevH = this.height;
-
+        
         const isTop = direction.includes('TOP');
         const isBottom = direction.includes('BOTTOM');
         const isLeft = direction.includes('LEFT');
@@ -99,6 +99,7 @@ export class MultiBoundingBox {
         const prevWorldW = Math.abs(prevW) < min ? (prevW < 0 ? -min : min) : prevW;
         const prevWorldH = Math.abs(prevH) < min ? (prevH < 0 ? -min : min) : prevH;
         
+
         const [worldScaleX, worldScaleY] = getScalesFromMatrix(parentMatrix);
         const changeInXScale = (dx * worldScaleX) / prevWorldW;
         const changeInYScale = (dy * worldScaleY) / prevWorldH;
@@ -108,29 +109,32 @@ export class MultiBoundingBox {
             direction.includes('RIGHT') ? 1 + changeInXScale :
             direction === 'TOP' ? 1 - changeInYScale :
             1 + changeInYScale;
-
+            
         if (willFlip(this.scale[0], factor, min) || willFlip(this.scale[1], factor, min)) return;
         const nextW = prevW * factor;
         const nextH = prevH * factor;
         if (Math.abs(nextW) < min || Math.abs(nextH) < min) return;
-
+        
         for (const target of this.targets) {
             const tx = target.x;
             const ty = target.y;
-
+            
             const [wtx, wty] = applyMatrixToPoint(parentMatrix, tx, ty);
 
+            
             const newWtx = anchorX + (wtx - anchorX) * factor;
             const newWty = anchorY + (wty - anchorY) * factor;
-
+            
             const dWx = newWtx - wtx;
             const dWy = newWty - wty;
-
+            
             const sX = Math.abs(worldScaleX) < min ? (worldScaleX < 0 ? -min : min) : worldScaleX;
             const sY = Math.abs(worldScaleY) < min ? (worldScaleY < 0 ? -min : min) : worldScaleY;
+            
+            // delta local change
             const dLx = dWx / sX;
             const dLy = dWy / sY;
-
+            
             target.updateScale(factor, factor);
             target.updateTranslation(dLx, dLy);
         }
@@ -146,8 +150,6 @@ export class MultiBoundingBox {
         const transformArray: FlipSnapshotItem[] = [];
 
         const [wtx, wty] = getWorldCoords(this.x, this.y);
-        const bboxCenterX = wtx + this.width / worldScaleX / 2;
-        const bboxCenterY = wty + this.height / worldScaleY / 2;
 
         for (const target of this.targets) {
             const transform: FlipSnapshotItem = {
@@ -159,13 +161,13 @@ export class MultiBoundingBox {
                 const scaleH = target.height * target.sy;
                 target.setTranslation(
                     target.x,
-                    bboxCenterY - (target.y - bboxCenterY) - scaleH
+                    -target.y - scaleH
                 );
                 target.flipVertical(target.height);
             } else {
                 const scaleW = target.width * target.sx;
                 target.setTranslation(
-                    bboxCenterX - (target.x - bboxCenterX) - scaleW,
+                    -target.x - scaleW,
                     target.y
                 );
                 target.flipHorizontal(target.width);
@@ -236,9 +238,7 @@ export class MultiBoundingBox {
             mode === 'first' ? 
                 reference.width * reference.height * reference.sx * reference.sy : 
                     this.targets.reduce((a, b) => a + Math.abs(b.sx * b.width * b.height * b.sy), 0) / this.targets.length; // size calculation aims to get the same area for both
-
-        console.log(goal);
-
+                    
         for (const target of this.targets) {
             const transform: TransformSnapshotItem = {
                 ref: target,
@@ -326,19 +326,17 @@ export class MultiBoundingBox {
             const [ startX, startY] = applyMatrixToPoint(rect.worldMatrix);
             const [ endX, endY] = applyMatrixToPoint(rect.worldMatrix, rect.width, rect.height);
 
-
             minX = Math.min(minX, rect.sx < 0 ? endX : startX);
             minY = Math.min(minY, rect.sy < 0 ? endY : startY);
             maxX = Math.max(maxX, rect.sx < 0 ? startX : endX);
             maxY = Math.max(maxY, rect.sy < 0 ? startY : endY);
         }
-
         return { minX, minY, maxX, maxY };
     }
 
     private recalculateBounds() {
         const { minX, minY, maxX, maxY } = this.getBounds();
-
+        
         this.x = this.scale[0] < 0 ? maxX : minX;
         this.y = this.scale[1] < 0 ? maxY : minY;
         this.width = this.scale[0] * (maxX - minX);

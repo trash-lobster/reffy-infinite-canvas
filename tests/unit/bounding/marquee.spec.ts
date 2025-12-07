@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { MarqueeSelectionBox } from '../../../src/bounding';
 import { BORDERPX } from '../../../src/util';
 

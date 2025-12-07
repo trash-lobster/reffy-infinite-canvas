@@ -12,7 +12,8 @@ export default defineConfig({
       exclude: [
         'src/util/color.ts',
         'src/util/customEventType.ts',
-        'src/util/webgl/uniform.ts'
+        'src/util/webgl/uniform.ts',
+        'src/shaders/'
       ]
     },
     include: ['./tests/unit/**/*.spec.ts']

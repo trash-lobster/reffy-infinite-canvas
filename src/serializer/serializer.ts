@@ -179,11 +179,13 @@ export async function deserializeCanvas(
 			case 'Img':
 				let src: string;
 				try {
-					src = (
-						data.files ? 
-						data.files.find(e => e.id === (node as SerializedImg).fileId).dataURL :
-						PLACEHOLDER_IMAGE_SRC
-					);
+					src = (() => {
+						if (data.files && Array.isArray(data.files)) {
+							const fileMeta = data.files.find(e => e.id === (node as SerializedImg).fileId);
+							return fileMeta?.dataURL ?? PLACEHOLDER_IMAGE_SRC;
+						}
+						return PLACEHOLDER_IMAGE_SRC;
+					})();
 										
 					if (writeFileToDatabase) {
 						writeFileToDatabase(src);
@@ -223,7 +225,7 @@ export async function deserializeCanvas(
 					parent.grid.gridType = (node as SerializedGrid).style;
 				}
 				break;
-			default:				
+			default:
 				break;
 		}
 
@@ -263,9 +265,15 @@ async function framePlaceholder(
     }
 
     try {
-        const img = await loadImageElement(src);
-        const targetW = tw && tw > 0 ? tw : img.naturalWidth;
-        const targetH = th && th > 0 ? th : img.naturalHeight;
+		let img: HTMLImageElement | null = null;
+		try {
+			img = await loadImageElement(src);
+		} catch (e) {
+			// Swallow in order to proceed with a background-only placeholder
+		}
+
+		const targetW = tw && tw > 0 ? tw : (img?.naturalWidth ?? PLACEHOLDER_IMAGE_SIZE);
+		const targetH = th && th > 0 ? th : (img?.naturalHeight ?? PLACEHOLDER_IMAGE_SIZE);
 
         const canvas = document.createElement('canvas');
         canvas.width = targetW;
@@ -275,23 +283,25 @@ async function framePlaceholder(
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, targetW, targetH);
 
-		// if any of the sides is less than the placeholder image size, then use the natural ratio
-		const ratio = Math.min(targetW / img.naturalWidth, targetH / img.naturalHeight);
-		const ratioedHeight = img.naturalHeight * ratio;
-		const ratioedWidth = img.naturalWidth * ratio;
+		if (img) {
+			// if any of the sides is less than the placeholder image size, then use the natural ratio
+			const ratio = Math.min(targetW / img.naturalWidth, targetH / img.naturalHeight);
+			const ratioedHeight = img.naturalHeight * ratio;
+			const ratioedWidth = img.naturalWidth * ratio;
 
-		let dw = PLACEHOLDER_IMAGE_SIZE;
-		let dh = PLACEHOLDER_IMAGE_SIZE;
+			let dw = PLACEHOLDER_IMAGE_SIZE;
+			let dh = PLACEHOLDER_IMAGE_SIZE;
 
-		if ( PLACEHOLDER_IMAGE_SIZE > ratioedHeight || PLACEHOLDER_IMAGE_SIZE > ratioedWidth ) {
-			dw = ratioedWidth;
-			dh = ratioedHeight;
+			if (PLACEHOLDER_IMAGE_SIZE > ratioedHeight || PLACEHOLDER_IMAGE_SIZE > ratioedWidth) {
+				dw = ratioedWidth;
+				dh = ratioedHeight;
+			}
+
+			const dx = Math.round((targetW - dw) / 2);
+			const dy = Math.round((targetH - dh) / 2);
+
+			ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, dw, dh);
 		}
-
-		const dx = Math.round((targetW - dw) / 2);
-        const dy = Math.round((targetH - dh) / 2);
-
-        ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, dw, dh);
 
         return canvas.toDataURL('image/png');
     } finally {

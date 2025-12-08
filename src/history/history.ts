@@ -24,7 +24,7 @@ export class CanvasHistory {
         if (this._openGroup) {
             this._openGroup.push(cmd);
         } else {
-            if (this.undoStack.length >= MAX_HISTORY) {
+            while (this._undoStack.length >= MAX_HISTORY) {
                 this._undoStack.shift();   
             }
 
@@ -40,9 +40,10 @@ export class CanvasHistory {
         this._openGroup = null;
         for (const c of group) c.do();
         
-        if (this.undoStack.length >= MAX_HISTORY) {
+        while (this._undoStack.length >= MAX_HISTORY) {
             this._undoStack.shift();   
         }
+
         this._undoStack.push(group);
         this._redoStack.length = 0;
         this._openLabel = undefined;

@@ -67,7 +67,7 @@ export function addContextMenu(x: number, y: number, type: ContextMenuType = 'si
 
 export function clearContextMenu() {
     const oldMenu = this.renderRoot.querySelector('.context-menu');
-    if (this.isContextMenuActive()) {
+    if (oldMenu) {
         oldMenu.remove();
         this.eventHub.emit(ContextMenuEvent.Close);
     }

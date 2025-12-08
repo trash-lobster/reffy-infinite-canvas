@@ -131,21 +131,6 @@ export class ContextMenuElement {
             e.preventDefault();
         });
     }
-
-    pointerLeave(e: PointerEvent) {
-        // attach the pointermove event
-        this.rootNode.addEventListener('pointermove', this.pointerMove);
-    }
-
-    pointerMove(e: PointerEvent) {
-        const el = (this.rootNode as DocumentFragment).getElementById(`${this.displayText}-context-menu`);
-        if (el.matches(':hover')) {
-            console.log('Mouse is over the element now.');
-            el.removeEventListener('pointerleave', this.pointerMove);
-        } else {
-
-        }
-    }
 }
 
 function onpointerenter(

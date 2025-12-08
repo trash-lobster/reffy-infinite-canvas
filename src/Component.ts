@@ -421,7 +421,7 @@ export class InfiniteCanvasElement extends LitElement {
      */
     debounceSaveToCanvasStorage(timeout: number = 1000) {
 		if (!this.#canvasStorage) {
-            this.#canvasStorage = new DefaultLocalStorage();
+            this.#canvasStorage = new DefaultLocalStorage(this.name);
         }
 		clearTimeout(this.#timeoutId);
 		this.#timeoutId = setTimeout(this.saveToCanvasStorage, timeout);
@@ -429,7 +429,7 @@ export class InfiniteCanvasElement extends LitElement {
     
     async saveToCanvasStorage() {
 		if (!this.#canvasStorage) {
-            this.#canvasStorage = new DefaultLocalStorage();
+            this.#canvasStorage = new DefaultLocalStorage(this.name);
         }
         this.#canvasStorage.write(serializeCanvas(this.#canvas))
             .then(() => this.#eventHub.emit(SaveEvent.SaveCompleted))
@@ -438,7 +438,7 @@ export class InfiniteCanvasElement extends LitElement {
 
     async restoreStateFromCanvasStorage() {
         if (!this.#canvasStorage) {
-            this.#canvasStorage = new DefaultLocalStorage();
+            this.#canvasStorage = new DefaultLocalStorage(this.name);
         }
         const dataAsString = await this.#canvasStorage.read();
         const data = JSON.parse(dataAsString) as SerializedCanvas;

@@ -178,6 +178,11 @@ export class DefaultIndexedDbStorage extends FileStorage {
 export class DefaultLocalStorage extends CanvasStorage {
     key: string = 'infinite_canvas';
 
+    constructor(key: string) {
+        super();
+        this.key = key;
+    }
+
     async write(value: CanvasStorageEntry): Promise<void> {
         return new Promise((resolve, reject) => {
             try {

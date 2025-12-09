@@ -16,7 +16,7 @@ function apply(target: Renderable, t: OrderSnapshot) {
 }
 
 export function makeOrderCommand(
-    target: any,
+    target: Renderable,
     start: OrderSnapshot,
     end: OrderSnapshot,
     label = 'Order'

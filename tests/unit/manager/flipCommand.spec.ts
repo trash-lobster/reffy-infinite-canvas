@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Rect, Renderable } from '../../../src/shapes';
+import { describe, it, expect } from 'vitest';
+import { Rect } from '../../../src/shapes';
 import { FlipSnapshot, makeFlipCommand, makeMultiFlipCommand } from '../../../src/manager';
 
 describe('Flip command', () => {

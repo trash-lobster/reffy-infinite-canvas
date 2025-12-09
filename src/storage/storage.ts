@@ -33,7 +33,6 @@ export class ImageFileMetadata {
     }
 
     get lastRetrieved() {
-        this._touch();
         return this._lastRetrieved;
     }
 

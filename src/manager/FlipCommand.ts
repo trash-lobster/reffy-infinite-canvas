@@ -23,7 +23,7 @@ function applyFlip(target: Renderable, t: FlipSnapshot) {
 }
 
 export function makeFlipCommand(
-    target: any,
+    target: Renderable,
     start: FlipSnapshot,
     end: FlipSnapshot,
     label = 'Flip'

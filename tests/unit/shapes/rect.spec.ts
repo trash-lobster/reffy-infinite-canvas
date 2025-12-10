@@ -1,4 +1,4 @@
-import { expect, test, describe, it, vi } from 'vitest';
+import { expect, describe, it, vi } from 'vitest';
 import { Rect } from '../../../src/shapes';
 
 describe('Rect constructor', () => {

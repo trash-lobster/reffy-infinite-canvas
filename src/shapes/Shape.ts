@@ -32,10 +32,8 @@ export abstract class Shape extends WebGLRenderable {
     abstract getBoundingBox(): AABB;
 
     getZ(): number {
-        // Map renderOrder to a [0.0 .. 1.0] ratio where larger renderOrder => larger z.
-        // Choose a small step to avoid saturating quickly; clamp to [0.0, 1.0].
-        const step = 0.001; // ratio increase per renderOrder
-        const z = this.renderOrder * step;
+        const step = 0.0001;
+        const z = this.renderOrder * step + 0.5;
         return Math.max(0.0, Math.min(1.0, z));
     }
 
@@ -44,6 +42,7 @@ export abstract class Shape extends WebGLRenderable {
     render(gl: WebGLRenderingContext, program: WebGLProgram) : void {
         this.updateWorldMatrix(this.parent ? this.parent.worldMatrix : undefined);
         gl.useProgram(program);
+
 
         if (this.dirty && !this.culled) {
             if (!this.initialized) {

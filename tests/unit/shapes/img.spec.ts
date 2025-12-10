@@ -36,34 +36,33 @@ describe('Img', () => {
 	let program: WebGLProgram;
 
 	beforeEach(() => {
-		gl = {} as WebGLRenderingContext;
+		gl = {
+            ARRAY_BUFFER: 0x8892,
+            STATIC_DRAW: 0x88E4,
+            TEXTURE_2D: 0x0DE1,
+            RGBA: 0x1908,
+            UNSIGNED_BYTE: 0x1401,
+            CLAMP_TO_EDGE: 0x812F,
+            NEAREST: 0x2600,
+            LINEAR: 0x2601,
+            createBuffer: vi.fn().mockReturnValue({} as WebGLBuffer),
+            bindBuffer: vi.fn(),
+            bufferData: vi.fn(),
+            getAttribLocation: vi.fn().mockReturnValue(5),
+            createTexture: vi.fn().mockReturnValue({} as WebGLTexture),
+            bindTexture: vi.fn(),
+            activeTexture: vi.fn(),
+            texParameteri: vi.fn(),
+            texImage2D: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            enableVertexAttribArray: vi.fn(),
+            getUniformLocation: vi.fn().mockReturnValue({} as WebGLUniformLocation),
+            uniform1i: vi.fn(),
+            uniform2f: vi.fn(),
+            uniformMatrix3fv: vi.fn(),
+            canvas: { width: 640, height: 480 } as any,
+        } as unknown as WebGLRenderingContext;
 		program = {} as WebGLProgram;
-
-		(gl as any).ARRAY_BUFFER = 0x8892;
-		(gl as any).STATIC_DRAW = 0x88E4;
-		(gl as any).TEXTURE_2D = 0x0DE1;
-		(gl as any).RGBA = 0x1908;
-		(gl as any).UNSIGNED_BYTE = 0x1401;
-		(gl as any).CLAMP_TO_EDGE = 0x812F;
-		(gl as any).NEAREST = 0x2600;
-		(gl as any).LINEAR = 0x2601;
-
-		(gl as any).createBuffer = vi.fn().mockReturnValue({} as WebGLBuffer);
-		(gl as any).bindBuffer = vi.fn();
-		(gl as any).bufferData = vi.fn();
-		(gl as any).getAttribLocation = vi.fn().mockReturnValue(5);
-		(gl as any).createTexture = vi.fn().mockReturnValue({} as WebGLTexture);
-		(gl as any).bindTexture = vi.fn();
-        (gl as any).activeTexture = vi.fn();
-		(gl as any).texParameteri = vi.fn();
-		(gl as any).texImage2D = vi.fn();
-        (gl as any).vertexAttribPointer = vi.fn();
-        (gl as any).enableVertexAttribArray = vi.fn();
-		(gl as any).getUniformLocation = vi.fn().mockReturnValue({} as WebGLUniformLocation);
-		(gl as any).uniform1i = vi.fn();
-		(gl as any).uniform2f = vi.fn();
-		(gl as any).uniformMatrix3fv = vi.fn();
-		(gl as any).canvas = { width: 640, height: 480 } as any;
 	});
 
 	it('initialises texture data and uniforms when image is ready', () => {

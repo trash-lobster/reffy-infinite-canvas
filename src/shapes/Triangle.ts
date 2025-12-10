@@ -1,7 +1,10 @@
+import { AABB } from "bounding";
 import { BoundingVal, Shape } from "./Shape";
 
 export class Triangle extends Shape {
     private _base: number[];
+    width: number;
+    height: number;
 
     constructor(positions: number[]) {
         super(positions[0], positions[1]);
@@ -38,6 +41,21 @@ export class Triangle extends Shape {
             minY: Math.min(ay, by, cy),
             maxY: Math.max(ay, by, cy),
         }
+    }
+
+    getBoundingBox(): AABB {
+        const x0 = this.state.translation[0];
+        const x1 = x0 + this.width * this.state.scaleX;
+        const y0 = this.state.translation[1];
+        const y1 = y0 + this.height * this.state.scaleY;
+
+        const minX = Math.min(x0, x1);
+        const maxX = Math.max(x0, x1);
+        const minY = Math.min(y0, y1);
+        const maxY = Math.max(y0, y1);
+        
+        const aabb = new AABB(minX, minY, maxX, maxY);
+        return aabb;
     }
 
     hitTest(x: number, y: number) {

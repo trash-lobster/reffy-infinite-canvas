@@ -14,7 +14,8 @@ export default defineConfig({
         'src/util/color.ts',
         'src/util/customEventType.ts',
         'src/util/webgl/uniform.ts',
-        'src/shaders/'
+        'src/shaders/',
+        'src/shapes/Triangle.ts'
       ]
     },
     include: ['./tests/unit/**/*.spec.ts']

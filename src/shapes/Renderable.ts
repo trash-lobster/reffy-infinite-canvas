@@ -13,7 +13,7 @@ export abstract class Renderable {
     get worldMatrix() { return this.state.worldMatrix }
     get children() { return this.state.children }
     get parent() { return this.state.parent }
-    get angleRadians() { return this.angleRadians }
+    get angleRadians() { return this.state.angleRadians }
 
     updateTranslation(x: number, y: number) { this.state.updateTranslation(x, y); }
     setTranslation(x: number, y: number) { this.state.setTranslation(x, y); }

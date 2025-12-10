@@ -74,9 +74,9 @@ describe('PointerEventManager', () => {
 		eventHub = new EventEmitter();
 		assignEventListener = vi.fn((type: string, fn: any) => {
 			// Attach listeners to window/document to simulate dispatch later
-			if (type === 'pointerdown') window.addEventListener('pointerdown', fn as any);
-			if (type === 'pointermove') window.addEventListener('pointermove', fn as any);
-			if (type === 'wheel') window.addEventListener('wheel', fn as any, { passive: false } as any);
+			if (type === 'pointerdown') window.addEventListener('pointerdown', fn as EventListener);
+			if (type === 'pointermove') window.addEventListener('pointermove', fn as EventListener);
+			if (type === 'wheel') window.addEventListener('wheel', fn as EventListener, { passive: false } as any);
 		});
 		getWorldCoords = vi.fn().mockImplementation((x, y) => [x + 1, y + 2]);
 		isContextMenuActive = vi.fn().mockReturnValue(false);

@@ -255,12 +255,12 @@ export class SelectionManager {
      * @param direction 
      */
     resize(dx: number, dy: number, direction: BoundingBoxCollisionType) {
-        if (this.#multiBoundingBox) {
-            this.#multiBoundingBox.resize(dx, dy, direction, this.getWorldMatrix());
+        if (this.multiBoundingBox) {
+            this.multiBoundingBox.resize(dx, dy, direction, this.getWorldMatrix());
         }
 
-        for (const box of this.#boundingBoxes) {
-            if (this.#multiBoundingBox) {
+        for (const box of this.boundingBoxes) {
+            if (this.multiBoundingBox) {
                 box.update();
             } else {
                 box.resize(dx, dy, direction);
@@ -270,12 +270,12 @@ export class SelectionManager {
     }
 
     flip(direction: FlipDirection) {
-        if (this.#multiBoundingBox) {
-            const transformArray = this.#multiBoundingBox.flip(this.getWorldMatrix(), direction, this.getWorldCoords);
-            this.#history.push(makeMultiFlipCommand(transformArray, direction, this.#multiBoundingBox));
+        if (this.multiBoundingBox) {
+            const transformArray = this.multiBoundingBox.flip(this.getWorldMatrix(), direction, this.getWorldCoords);
+            this.#history.push(makeMultiFlipCommand(transformArray, direction, this.multiBoundingBox));
         } else {
             const transformArray  = [];
-            for (const box of this.#boundingBoxes) {
+            for (const box of this.boundingBoxes) {
                 transformArray.push(box.flip(direction));
             }
 
@@ -285,15 +285,15 @@ export class SelectionManager {
     }
 
     alignSelection(direction: AlignDirection) {
-        if (!this.#multiBoundingBox) return;
-        const transformations = this.#multiBoundingBox.align(direction);
+        if (!this.multiBoundingBox) return;
+        const transformations = this.multiBoundingBox.align(direction);
         this.#history.push(makeMultiTransformCommand(transformations));
         this.#eventHub.emit(CanvasEvent.Change);
     }
 
     normalize(type: NormalizeOption, mode: NormalizeMode = 'first') {
-        if (!this.#multiBoundingBox) return;
-        const transformations = this.#multiBoundingBox.normalize(type, mode);
+        if (!this.multiBoundingBox) return;
+        const transformations = this.multiBoundingBox.normalize(type, mode);
         this.#history.push(makeMultiTransformCommand(transformations));
         this.#eventHub.emit(CanvasEvent.Change);
     }

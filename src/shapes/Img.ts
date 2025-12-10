@@ -305,19 +305,17 @@ export class Img extends Rect {
     }
 
     destroy() {
-        if (this.gl) {
-            if (this.texcoordBuffer) {
-                try { this.gl.deleteBuffer(this.texcoordBuffer); } catch (e) {}
-                this.texcoordBuffer = undefined;
-            }
-            if (this.texture) {
-                try { this.gl.deleteTexture(this.texture); } catch (e) {}
-                this.texture = undefined;
-            }
-            if (this.lowResTexture) {
-                try { this.gl.deleteTexture(this.lowResTexture); } catch (e) {}
-                this.lowResTexture = undefined;
-            }
+        if (this.texcoordBuffer) {
+            try { this.gl.deleteBuffer(this.texcoordBuffer); } catch (e) {}
+            this.texcoordBuffer = undefined;
+        }
+        if (this.texture) {
+            try { this.gl.deleteTexture(this.texture); } catch (e) {}
+            this.texture = undefined;
+        }
+        if (this.lowResTexture) {
+            try { this.gl.deleteTexture(this.lowResTexture); } catch (e) {}
+            this.lowResTexture = undefined;
         }
 
         if (this.bitmap) {

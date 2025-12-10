@@ -81,9 +81,8 @@ export class Rect extends Shape {
 
     hitTest(x: number, y: number): boolean {                
         const [ scaleX, scaleY ] = getScalesFromMatrix(this.worldMatrix);
-        const [ signX, signY ] = isScalePositive(this.worldMatrix);   
+        const [ signX, signY ] = isScalePositive(this.worldMatrix);
         
-
         // Transform the input point to the rectangle's local space
         const [hx, hy] = applyMatrixToPoint(this.parent.worldMatrix, x, y);        
         const [cx, cy] = applyMatrixToPoint(this.worldMatrix);

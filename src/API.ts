@@ -27,7 +27,7 @@ export class InfiniteCanvasAPI {
 			el = selectorOrElement;
         }
         if (!el) throw new Error('infinite-canvas element not found');
-        if (!(el as any).engine) {
+        if (!el.canvas) {
             await new Promise<void>(res => el.addEventListener('load', () => res(), { once: true }));
         }
         return new InfiniteCanvasAPI(el);

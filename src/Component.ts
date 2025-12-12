@@ -175,6 +175,8 @@ export class InfiniteCanvasElement extends LitElement {
     get multiImageMenuOptions() { return this.#multiImageMenuOptions; }
     get canvasImageMenuOptions() { return this.#canvasImageMenuOptions; }
 
+    get canvas() { return this.#canvas; }
+
     get onCanvasChange() { return this.#onChange; }
     set onCanvasChange(fn: (() => void)) { this.#onChange = fn; }
     get eventHub() { return this.#eventHub; }

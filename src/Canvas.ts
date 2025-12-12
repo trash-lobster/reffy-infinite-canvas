@@ -57,6 +57,7 @@ export class Canvas extends Renderable {
 	get grid() { return this.#grid }
 	get history() { return this.#history }
 	get eventHub() { return this.#eventHub }
+	get pointerEventManager() { return this.#pointerEventManager }
 	get selectionManager() { return this.#selectionManager }
 	get contextMenuManager() { return this.#contextMenuManager }
 	get canvas() { return this.#canvas }
@@ -389,8 +390,13 @@ export class Canvas extends Renderable {
 
 		// Compute new renderOrder based on current scene
 		const orders = (this.children as Shape[]).map(s => s.renderOrder);
-		const maxOrder = orders.length ? Math.max(...orders) : 0;
-		const minOrder = orders.length ? Math.min(...orders) : 0;
+		
+		if (orders.length === 0) {
+			throw new Error('Order unexpected missing.');
+		}
+
+		const maxOrder = Math.max(...orders);
+		const minOrder = Math.min(...orders);
 
 		child.renderOrder = toFront ? (maxOrder + 1) : (minOrder - 1);
 

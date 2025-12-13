@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Camera, ZOOM_MIN, ZOOM_MAX } from '../../../src/camera/Camera';
+import { CameraState } from '../../../src/state';
 
 interface TestCameraState {
     width: number;
@@ -10,8 +11,10 @@ interface TestCameraState {
     canvasMatrix: number[];
     cameraMatrix: number[];
     readonly stateVector: number[];
-    incrementPosition(dx: number, dy: number): void;
-    setZoom(z: number): void;
+    incrementPosition: (dx: number, dy: number) => void;
+    setZoom: (z: number)=> void;
+    setWidth: (val: number) => void;
+    setHeight: (val: number) => void;
 }
 
 function makeState(): TestCameraState {
@@ -32,11 +35,17 @@ function makeState(): TestCameraState {
            this.y += dy;
         }),
         setZoom: vi.fn(function (this: TestCameraState, z: number) { this.zoom = z; }),
+        setWidth: vi.fn(function (this: TestCameraState, val: number) {
+            this.width = val;
+        }),
+        setHeight: vi.fn(function (this: TestCameraState, val: number) {
+            this.height = val;
+        })
     };
 }
 
 describe('Camera', () => {
-    let state: any;
+    let state: TestCameraState;
     let setWorldMatrix: any;
     let updateWorldMatrix: any;
     let getWorldCoords: any;
@@ -49,7 +58,7 @@ describe('Camera', () => {
     });
 
     it('initializes and updates view matrix (reaction path)', () => {
-        const cam = new Camera(state, setWorldMatrix, updateWorldMatrix, getWorldCoords);
+        const cam = new Camera((state as CameraState), setWorldMatrix, updateWorldMatrix, getWorldCoords);
 
         // Constructor calls updateViewMatrix once
         expect(setWorldMatrix).toHaveBeenCalledTimes(1);
@@ -63,7 +72,7 @@ describe('Camera', () => {
     });
 
     it('setViewPortDimension updates width/height only when changed', () => {
-        const cam = new Camera(state, setWorldMatrix, updateWorldMatrix, getWorldCoords);
+        const cam = new Camera((state as CameraState), setWorldMatrix, updateWorldMatrix, getWorldCoords);
         cam.setViewPortDimension(800, 600);
         expect(state.width).toBe(800);
         expect(state.height).toBe(600);
@@ -76,7 +85,7 @@ describe('Camera', () => {
     });
 
     it('getBoundingBox uses getWorldCoords for corners', () => {
-        const cam = new Camera(state, setWorldMatrix, updateWorldMatrix, getWorldCoords);
+        const cam = new Camera((state as CameraState), setWorldMatrix, updateWorldMatrix, getWorldCoords);
         state.width = 100; state.height = 50;
         const box = cam.getBoundingBox();
         expect(getWorldCoords).toHaveBeenCalledWith(0, 0);
@@ -88,7 +97,7 @@ describe('Camera', () => {
     });
 
     it('onWheel prevents default and calls updateZoom with exp scale', () => {
-        const cam = new Camera(state, setWorldMatrix, updateWorldMatrix, getWorldCoords);
+        const cam = new Camera((state as CameraState), setWorldMatrix, updateWorldMatrix, getWorldCoords);
         const preventDefault = vi.fn();
         // deltaY positive -> zoom out (scale < 1)
         cam.onWheel({ deltaY: 10, clientX: 7, clientY: 11, preventDefault } as any);
@@ -100,7 +109,7 @@ describe('Camera', () => {
     });
 
     it('updateZoom clamps zoom and recenters to keep cursor stable', () => {
-        const cam = new Camera(state, setWorldMatrix, updateWorldMatrix, getWorldCoords);
+        const cam = new Camera((state as CameraState), setWorldMatrix, updateWorldMatrix, getWorldCoords);
         
         state.zoom = 1;
         const [wx0, wy0] = getWorldCoords(10, 10);
@@ -116,7 +125,7 @@ describe('Camera', () => {
     });
 
     it('worldToCamera multiplies by cameraMatrix', () => {
-        const cam = new Camera(state, setWorldMatrix, updateWorldMatrix, getWorldCoords);
+        const cam = new Camera((state as CameraState), setWorldMatrix, updateWorldMatrix, getWorldCoords);
         // Set a non-identity camera matrix: [a,b,c, d,e,f]
         state.cameraMatrix = [2, 0, 5, 0, 3, -4];
         const [x, y] = cam.worldToCamera(1, 2);
@@ -126,7 +135,7 @@ describe('Camera', () => {
     });
 
     it('dispose stops reaction without throwing', () => {
-        const cam = new Camera(state, setWorldMatrix, updateWorldMatrix, getWorldCoords);
+        const cam = new Camera((state as CameraState), setWorldMatrix, updateWorldMatrix, getWorldCoords);
         // Spy on internal updateReaction cleanup
         const stop = cam['updateReaction'];
         cam.dispose();

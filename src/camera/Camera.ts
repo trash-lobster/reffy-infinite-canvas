@@ -47,8 +47,8 @@ export class Camera {
     }
 
     setViewPortDimension(width: number, height: number) {
-        if (this.state.width !== width) this.state.width = width;
-        if (this.state.height !== height) this.state.height = height;
+        if (this.state.width !== width) this.state.setWidth(width);
+        if (this.state.height !== height) this.state.setHeight(height);
     }
 
     getBoundingBox() {

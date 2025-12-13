@@ -606,7 +606,7 @@ export class InfiniteCanvasElement extends LitElement {
 }
 
 declare global {
-  interface HTMLElementTagNameMap {
-    'infinite-canvas': InfiniteCanvasElement;
-  }
+    interface HTMLElementTagNameMap {
+        'infinite-canvas': InfiniteCanvasElement;
+    }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@reffy/infinite-canvas",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "An infinite canvas designed to be a minimal web component, serving as an image reference board.",
   "keywords": [
     "typescript",
@@ -31,7 +31,8 @@
     "lib",
     "README.md",
     "LICENSE.txt",
-    "package.json"
+    "package.json",
+    "dist"
   ],
   "exports": {
     ".": {

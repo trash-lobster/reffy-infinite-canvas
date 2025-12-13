@@ -12,7 +12,7 @@
   ],
   "homepage": "https://github.com/trash-lobster/reffy-infinite-canvas",
   "bugs": "https://github.com/trash-lobster/reffy-infinite-canvas/issues",
-  "private": true,
+  "private": false,
   "type": "module",
   "main": "lib/index.js",
   "module": "esm/index.js",
@@ -26,6 +26,13 @@
     "type": "git",
     "url": "git+https://github.com/trash-lobster/reffy-infinite-canvas.git"
   },
+  "files": [
+    "esm",
+    "lib",
+    "README.md",
+    "LICENSE.txt",
+    "package.json"
+  ],
   "exports": {
     ".": {
       "types": "./lib/index.d.ts",
@@ -45,7 +52,7 @@
     "build:main": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm",
     "build": "run-p prettier build:*",
     "prettier": "npx prettier . --write",
-    "publish": "publish --access public"
+    "publish": "npm run publish --access public"
   },
   "license": "MIT",
   "devDependencies": {

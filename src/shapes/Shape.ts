@@ -90,6 +90,8 @@ export abstract class Shape extends WebGLRenderable {
     gl.enableVertexAttribArray(this.attributeLocation);
 
     gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.disableVertexAttribArray(this.attributeLocation);
   }
 
   destroy() {

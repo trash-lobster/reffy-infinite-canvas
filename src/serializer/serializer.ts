@@ -219,7 +219,6 @@ export async function deserializeCanvas(
 
           getFile((node as SerializedImg).fileId)
             .then((file) => {
-              console.log("image loaded!");
               (instance as Img).src = file.dataURL;
             })
             .catch((err) => console.error("Image not loaded", err));

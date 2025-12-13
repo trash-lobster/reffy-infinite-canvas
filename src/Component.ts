@@ -402,11 +402,9 @@ export class InfiniteCanvasElement extends LitElement {
       if (this.#onChange) this.#onChange();
     });
     this.#eventHub.on(SaveEvent.Save, this.saveToCanvasStorage);
-    this.#eventHub.on(SaveEvent.SaveCompleted, () =>
-      console.log("Done Saving!"),
-    );
+    this.#eventHub.on(SaveEvent.SaveCompleted, () => {});
     this.#eventHub.on(SaveEvent.SaveFailed, () =>
-      console.log("Failed to Save!"),
+      console.error("Failed to Save!"),
     );
   }
 
@@ -417,7 +415,6 @@ export class InfiniteCanvasElement extends LitElement {
     }
     try {
       await this.#fileStorage.readAll();
-      console.log("Storage warmed up");
     } catch (err) {
       console.error("Storage warm-up failed", err);
     }

@@ -214,23 +214,22 @@ export class SelectionManager {
     }
   }
 
-  render() {
+  render(program: WebGLProgram) {
+    // Bind program and set z-up front
+    if (!this.#marqueeSelectionBox && !this.#multiBoundingBox && this.#boundingBoxes.size === 0) return;
+    this.#gl.useProgram(program);
+    const uZLoc = this.#gl.getUniformLocation(program, 'u_z');
+    if (uZLoc) this.#gl.uniform1f(uZLoc, 1.0);
+
+    // Draw everything using the same bound program
     if (this.#renderDirtyFlag) {
-      this.#gl.useProgram(this.#rectProgram);
-      // ensure that the handles are always on top
-      const uZGrid = this.#gl.getUniformLocation(this.#rectProgram, "u_z");
-      this.#gl.uniform1f(uZGrid, 1.0);
-      this.#boundingBoxes.forEach((box) =>
-        box.render(this.#gl, this.#rectProgram),
-      );
+      this.#boundingBoxes.forEach(box => box.render(this.#gl, program));
     }
-
     if (this.#multiBoundingBox) {
-      this.#multiBoundingBox.render(this.#gl, this.#rectProgram);
+      this.#multiBoundingBox.render(this.#gl, program);
     }
-
     if (this.#marqueeSelectionBox) {
-      this.#marqueeSelectionBox.render(this.#gl, this.#rectProgram);
+      this.#marqueeSelectionBox.render(this.#gl, program);
     }
   }
 

@@ -294,12 +294,10 @@ export class Canvas extends Renderable {
       parentBoundingBox.height,
     );
 
-    let currentProgram: WebGLProgram | null = null;
-
-    currentProgram = this.#gridProgram;
+    this.#gl.useProgram(this.#gridProgram);
     const uZGrid = this.#gl.getUniformLocation(this.#gridProgram, "u_z");
     this.#gl.uniform1f(uZGrid, 0.0);
-    this.#grid.render(this.#gl, currentProgram);
+    this.#grid.render(this.#gl, this.#gridProgram);
 
     const cameraBoundingBox = this.camera.getBoundingBox();
 
@@ -340,16 +338,14 @@ export class Canvas extends Renderable {
         program = this.#basicShapeProgram;
       }
 
-      if (currentProgram !== program) {
-        this.#gl.useProgram(program);
-        currentProgram = program;
-      }
-      const uZLoc = this.#gl.getUniformLocation(currentProgram, "u_z");
+      this.#gl.useProgram(program);
+
+      const uZLoc = this.#gl.getUniformLocation(program, "u_z");
       this.#gl.uniform1f(uZLoc, renderable.getZ());
-      renderable.render(this.#gl, currentProgram);
+      renderable.render(this.#gl, program);
     }
 
-    this.#selectionManager.render();
+    this.#selectionManager.render(this.#basicShapeProgram);
   }
 
   destroy() {

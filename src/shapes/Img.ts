@@ -351,6 +351,9 @@ export class Img extends Rect {
           : this.texture;
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.drawArrays(gl.TRIANGLES, 0, this.getVertexCount());
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+      gl.disableVertexAttribArray(this.attributeLocation);
+      gl.disableVertexAttribArray(this.texcoordLocation);
     } catch (err) {
       console.error(err);
     }

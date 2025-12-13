@@ -467,10 +467,11 @@ export class InfiniteCanvasElement extends LitElement {
       this.#fileStorage = new DefaultIndexedDbStorage();
     }
     try {
-      if (!(await this.#fileStorage.checkIfImageStored(dataURL))) {
+      const id = await hashStringToId(dataURL);
+      if (!(await this.#fileStorage.checkIfImageStored(id))) {
         return await this.#fileStorage.write(dataURL);
       } else {
-        return await hashStringToId(dataURL);
+        return id;
       }
     } catch (err) {
       console.error(err);

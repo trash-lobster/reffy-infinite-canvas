@@ -170,10 +170,10 @@ export class DefaultIndexedDbStorage extends FileStorage {
     );
   }
 
-  async checkIfImageStored(url: string): Promise<string | number | null> {
+  async checkIfImageStored(id: string): Promise<string | number | null> {
     return handleQuotaError(async (): Promise<string | number | null> => {
       const db: IndexDb = await this.getIndexDb();
-      const entry = await db.files.where("dataURL").equals(url).first();
+      const entry = await db.files.where("id").equals(id).first();
       return entry ? entry.id : null;
     });
   }

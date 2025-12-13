@@ -60,7 +60,7 @@ export abstract class FileStorage {
   abstract read(id: string): Promise<ImageFileMetadata>;
   abstract delete(id: string): Promise<ImageFileMetadata>;
   abstract update(newVersion: ImageFileMetadata): Promise<ImageFileMetadata>;
-  abstract checkIfImageStored(url: string): Promise<string | number | null>;
+  abstract checkIfImageStored(id: string): Promise<string | number | null>;
 }
 
 export type CanvasStorageEntry = SerializedCanvas;

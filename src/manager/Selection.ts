@@ -216,14 +216,19 @@ export class SelectionManager {
 
   render(program: WebGLProgram) {
     // Bind program and set z-up front
-    if (!this.#marqueeSelectionBox && !this.#multiBoundingBox && this.#boundingBoxes.size === 0) return;
+    if (
+      !this.#marqueeSelectionBox &&
+      !this.#multiBoundingBox &&
+      this.#boundingBoxes.size === 0
+    )
+      return;
     this.#gl.useProgram(program);
-    const uZLoc = this.#gl.getUniformLocation(program, 'u_z');
+    const uZLoc = this.#gl.getUniformLocation(program, "u_z");
     if (uZLoc) this.#gl.uniform1f(uZLoc, 1.0);
 
     // Draw everything using the same bound program
     if (this.#renderDirtyFlag) {
-      this.#boundingBoxes.forEach(box => box.render(this.#gl, program));
+      this.#boundingBoxes.forEach((box) => box.render(this.#gl, program));
     }
     if (this.#multiBoundingBox) {
       this.#multiBoundingBox.render(this.#gl, program);

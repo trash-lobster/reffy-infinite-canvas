@@ -21,6 +21,7 @@
     "sourceRoot": "src",
     "baseUrl": "src",
     "resolveJsonModule": true,
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "allowJs": true
   }
 }

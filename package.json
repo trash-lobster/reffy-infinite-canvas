@@ -17,6 +17,15 @@
   "main": "lib/index.js",
   "module": "esm/index.js",
   "types": "lib/index.d.ts",
+  "author": {
+    "name": "Vincent Sit",
+    "url": "https://github.com/trash-lobster",
+    "email": "vincentsitdata@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trash-lobster/reffy-infinite-canvas.git"
+  },
   "exports": {
     ".": {
       "types": "./lib/index.d.ts",
@@ -36,11 +45,6 @@
     "build:main": "esbuild public/main.ts --bundle --outfile=dist/index.js --format=iife --global-name=InfiniteCanvas",
     "build": "run-p prettier build:*",
     "prettier": "npx prettier . --write"
-  },
-  "author": {
-    "name": "Vincent Sit",
-    "url": "https://github.com/trash-lobster",
-    "email": "vincentsitdata@gmail.com"
   },
   "license": "MIT",
   "devDependencies": {

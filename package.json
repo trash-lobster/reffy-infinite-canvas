@@ -1,6 +1,6 @@
 {
   "name": "@reffy/infinite-canvas",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "An infinite canvas designed to be a minimal web component, serving as an image reference board.",
   "keywords": [
     "typescript",
@@ -89,7 +89,8 @@
     "mobx": "^6.15.0",
     "rbush": "^3.0.1",
     "stats.js": "^0.17.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "xxhash-wasm": "^1.1.0"
   },
   "publishConfig": {
     "access": "public"

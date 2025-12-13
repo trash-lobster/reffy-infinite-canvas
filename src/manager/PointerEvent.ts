@@ -149,13 +149,11 @@ export class PointerEventManager {
 
     window.addEventListener("paste", async (e) => {
       e.preventDefault();
-      deps.eventHub.emit(LoaderEvent.start, "spinner");
       if (this.isContextMenuActive()) return;
       await deps.paste(
         this.state.lastPointerPos.x,
         this.state.lastPointerPos.y,
       );
-      deps.eventHub.emit(LoaderEvent.done);
     });
   }
 

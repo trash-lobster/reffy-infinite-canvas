@@ -607,9 +607,7 @@ export class InfiniteCanvasElement extends LitElement {
 
   async pasteImage(e: PointerEvent) {
     if (!this.#canvas) return;
-    this.#eventHub.emit(LoaderEvent.start, "spinner");
     await paste(e.clientX, e.clientY, this.#canvas, this.#history, false);
-    this.#eventHub.emit(LoaderEvent.done);
   }
 
   flipVertical() {

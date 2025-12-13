@@ -389,7 +389,7 @@ export class Canvas extends Renderable {
     center: boolean = false,
   ) {
     const newImg = new Img({ x: x, y: y, src, sx, sy });
-    newImg.fileId = await this.saveImgFileToStorage(src);
+    this.saveImgFileToStorage(src).then(id => newImg.fileId = id);
 
     if (center) {
       const preview = new Image();

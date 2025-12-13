@@ -27,7 +27,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
   private dbQueue = new DatabaseQueue();
   private dbPromise: Promise<IndexDb>;
   private cache = new Map<string | number, ImageFileMetadata>();
-  private CACHE_LIMIT = 100;
+  private CACHE_LIMIT = 500;
 
   constructor() {
     super();

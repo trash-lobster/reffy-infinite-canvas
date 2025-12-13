@@ -1,5 +1,5 @@
 {
-  "name": "reffy-infinite-canvas",
+  "name": "@reffy/infinite-canvas",
   "version": "0.0.1",
   "description": "An infinite canvas designed to be a minimal web component, serving as an image reference board.",
   "keywords": [
@@ -13,7 +13,7 @@
   "homepage": "https://github.com/trash-lobster/reffy-infinite-canvas",
   "bugs": "https://github.com/trash-lobster/reffy-infinite-canvas/issues",
   "private": true,
-  "type": "module", 
+  "type": "module",
   "main": "lib/index.js",
   "module": "esm/index.js",
   "types": "lib/index.d.ts",
@@ -42,9 +42,10 @@
     "sortGlossary": "node ./journal/sort.js -f journal/a-glossary.md",
     "build:cjs": "rimraf ./lib && tsc --module commonjs --outDir lib",
     "build:esm": "rimraf ./esm && tsc --module ESNext --outDir esm",
-    "build:main": "esbuild public/main.ts --bundle --outfile=dist/index.js --format=iife --global-name=InfiniteCanvas",
+    "build:main": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm",
     "build": "run-p prettier build:*",
-    "prettier": "npx prettier . --write"
+    "prettier": "npx prettier . --write",
+    "publish": "publish --access public"
   },
   "license": "MIT",
   "devDependencies": {

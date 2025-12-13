@@ -5,12 +5,14 @@ The serializer exports/imports the full canvas state as JSON. This includes shap
 ## Format Overview
 
 Top-level:
+
 - `version`: schema version (currently `1`).
 - `canvas`: `{ width, height, dpr }` recorded from the WebGL canvas at save time.
 - `root`: serialized node for the canvas root, with children representing the scene.
 - `files`: optional list of `{ id, dataURL, ... }` for image metadata.
 
 Per node:
+
 - `type`: `Rect` | `Img` | `Grid` | `Renderable`.
 - `id`: internal sequence id.
 - `transform`: `{ x, y, sx, sy }`.
@@ -23,12 +25,14 @@ Per node:
 ## Serialization
 
 `serializeCanvas(canvas, files?)`:
+
 - Walks the scene graph from `canvas`, serializing each child.
 - Captures `transform`, `renderOrder`, and shape-specific metadata.
 
 ## Deserialization
 
 `deserializeCanvas(data, canvas, getFile, writeFileToDatabase?)`:
+
 - Clears current children and rebuilds the scene graph.
 - For `Img`, it looks up the `fileId` in `data.files` (if present) and sets a placeholder image immediately; real image data is loaded asynchronously via `getFile(id)`.
 - Transforms and dimensions are restored.

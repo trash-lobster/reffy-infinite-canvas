@@ -1,186 +1,198 @@
 import { makeObservable, observable, computed, action } from "mobx";
 import { Renderable } from "../shapes";
-import { m3 } from '../util';
+import { m3 } from "../util";
 
 export class RenderableState {
-    translation: number[] = [0, 0];
-    angleRadians: number = 0;
-    scale: number[] = [1, 1];
+  translation: number[] = [0, 0];
+  angleRadians: number = 0;
+  scale: number[] = [1, 1];
 
-    localMatrix: number[] = m3.identity(); // manage local transformation, like rotate, scale and pan
-    worldMatrix: number[] = m3.identity(); // holds the transformation combining local transformation and parent transformation
+  localMatrix: number[] = m3.identity(); // manage local transformation, like rotate, scale and pan
+  worldMatrix: number[] = m3.identity(); // holds the transformation combining local transformation and parent transformation
 
-    children: Renderable[] = [];
-    parent: Renderable | null = null;
-    renderDirtyFlag: boolean = true; // reduces constant work to re-render if there are no changes
+  children: Renderable[] = [];
+  parent: Renderable | null = null;
+  renderDirtyFlag: boolean = true; // reduces constant work to re-render if there are no changes
 
-    constructor() {
-        makeObservable<this, 'renderDirtyFlag'>(this, {
-            translation: observable.struct,
-            angleRadians: observable,
-            scale: observable.struct,
-            localMatrix: observable.ref,
-            worldMatrix: observable.ref,
-            children: observable.shallow,
-            parent: observable.ref,
-            renderDirtyFlag: observable,
+  constructor() {
+    makeObservable<this, "renderDirtyFlag">(this, {
+      translation: observable.struct,
+      angleRadians: observable,
+      scale: observable.struct,
+      localMatrix: observable.ref,
+      worldMatrix: observable.ref,
+      children: observable.shallow,
+      parent: observable.ref,
+      renderDirtyFlag: observable,
 
-            x: computed,
-            y: computed,
-            scaleX: computed,
-            scaleY: computed,
-            dirty: computed,
+      x: computed,
+      y: computed,
+      scaleX: computed,
+      scaleY: computed,
+      dirty: computed,
 
-            setTranslation: action,
-            setScale: action,
-            flipVertical: action,
-            setAngle: action,
-            getChild: action,
-            appendChild: action,
-            appendChildren: action,
-            removeChild: action,
-            clearChildren: action,
-            setParent: action,
-            markDirty: action,
-            clearDirty: action,
-            updateLocalMatrix: action,
-            updateWorldMatrix: action,
-            setWorldMatrix: action,
-        });
-        this.updateLocalMatrix();
-        this.updateWorldMatrix();
+      setTranslation: action,
+      setScale: action,
+      flipVertical: action,
+      setAngle: action,
+      getChild: action,
+      appendChild: action,
+      appendChildren: action,
+      removeChild: action,
+      clearChildren: action,
+      setParent: action,
+      markDirty: action,
+      clearDirty: action,
+      updateLocalMatrix: action,
+      updateWorldMatrix: action,
+      setWorldMatrix: action,
+    });
+    this.updateLocalMatrix();
+    this.updateWorldMatrix();
+  }
+
+  // Computed
+  get x() {
+    return this.translation[0];
+  }
+  get y() {
+    return this.translation[1];
+  }
+  get scaleX() {
+    return this.scale[0];
+  }
+  get scaleY() {
+    return this.scale[1];
+  }
+  get dirty() {
+    return this.renderDirtyFlag;
+  }
+
+  // Actions
+  setTranslation(x: number, y: number) {
+    this.translation[0] = x;
+    this.translation[1] = y;
+    this.markDirty();
+  }
+
+  updateTranslation(x: number, y: number) {
+    this.translation[0] += x;
+    this.translation[1] += y;
+    this.markDirty();
+  }
+
+  setScale(sx: number, sy: number) {
+    if (sx === this.scale[0] && sy === this.scale[1]) return;
+    this.scale[0] = sx;
+    this.scale[1] = sy;
+    this.markDirty();
+  }
+
+  updateScale(x: number, y: number) {
+    this.scale[0] *= x;
+    this.scale[1] *= y;
+    this.markDirty();
+  }
+
+  flipVertical(imageHeight: number) {
+    this.translation[1] += this.scale[1] * imageHeight;
+    this.scale[1] *= -1;
+    this.markDirty();
+  }
+
+  flipHorizontal(imageWidth: number) {
+    this.translation[0] += this.scale[0] * imageWidth;
+    this.scale[0] *= -1;
+    this.markDirty();
+  }
+
+  setAngle(rotationDegree: number) {
+    const angleInDegrees = 360 - rotationDegree;
+    const radians = (angleInDegrees * Math.PI) / 180;
+
+    if (radians === this.angleRadians) return;
+    this.angleRadians = radians;
+    this.markDirty();
+  }
+
+  getChild(i: number) {
+    return this.children[i];
+  }
+
+  appendChild(child: Renderable) {
+    if (this.children.includes(child)) return;
+    this.children.push(child);
+    this.markDirty();
+  }
+
+  appendChildren(children: Renderable[]) {
+    for (const child of children) {
+      if (this.children.includes(child)) return;
+      this.children.push(child);
     }
+    this.markDirty();
+  }
 
-    // Computed
-    get x() { return this.translation[0]; }
-    get y() { return this.translation[1]; }
-    get scaleX() { return this.scale[0]; }
-    get scaleY() { return this.scale[1]; }
-    get dirty() { return this.renderDirtyFlag; }
-    
-    // Actions
-    setTranslation(x: number, y: number) {
-        this.translation[0] = x;
-        this.translation[1] = y;
-        this.markDirty();
+  removeChild(child: Renderable) {
+    const i = this.children.indexOf(child);
+    if (i < 0) return;
+    const removedChildren = this.children.splice(i, 1);
+    child.state.setParent(null);
+    this.markDirty();
+
+    return removedChildren[0];
+  }
+
+  clearChildren() {
+    if (this.children) {
+      for (const child of this.children) {
+        child.destroy();
+      }
+      this.children = [];
+      this.markDirty();
     }
+  }
 
-    updateTranslation(x: number, y: number) {
-        this.translation[0] += x;
-        this.translation[1] += y;
-        this.markDirty();
+  setParent(parent: Renderable | null) {
+    if (this.parent === parent) return;
+    this.parent = parent;
+    this.markDirty();
+  }
+
+  markDirty() {
+    if (!this.renderDirtyFlag) {
+      this.renderDirtyFlag = true;
+      this.updateLocalMatrix();
     }
+  }
 
-    setScale(sx: number, sy: number) {
-        if (sx === this.scale[0] && sy === this.scale[1]) return;
-        this.scale[0] = sx;
-        this.scale[1] = sy;
-        this.markDirty();
+  clearDirty() {
+    if (this.renderDirtyFlag) {
+      this.renderDirtyFlag = false;
+      this.updateLocalMatrix();
     }
+  }
 
-    updateScale(x: number, y: number) {
-        this.scale[0] *= x;
-        this.scale[1] *= y;
-        this.markDirty();
-    }
+  updateLocalMatrix() {
+    const t = m3.translation(this.translation[0], this.translation[1]);
+    const r = m3.rotation(this.angleRadians);
+    const s = m3.scaling(this.scale[0], this.scale[1]);
+    // Order: T * R * S (adjust if needed)
+    this.localMatrix = m3.multiply(m3.multiply(t, r), s);
+  }
 
-    flipVertical(imageHeight: number) {
-        this.translation[1] += this.scale[1] * imageHeight;
-        this.scale[1] *= -1;
-        this.markDirty();
-    }
+  updateWorldMatrix(parentWorldMatrix?: number[]) {
+    this.worldMatrix = parentWorldMatrix
+      ? m3.multiply(parentWorldMatrix, this.localMatrix)
+      : this.localMatrix.slice();
 
-    flipHorizontal(imageWidth: number) {
-        this.translation[0] += this.scale[0] * imageWidth;
-        this.scale[0] *= -1;
-        this.markDirty();
-    }
+    const worldMatrix = this.worldMatrix;
+    this.children.forEach((child) => {
+      child.updateWorldMatrix(worldMatrix);
+    });
+  }
 
-    setAngle(rotationDegree: number) {
-        const angleInDegrees = 360 - rotationDegree;
-        const radians = angleInDegrees * Math.PI / 180;
-        
-        if (radians === this.angleRadians) return;
-        this.angleRadians = radians;
-        this.markDirty();
-    }
-
-    getChild(i: number) { return this.children[i] }
-
-    appendChild(child: Renderable) {
-        if (this.children.includes(child)) return;
-        this.children.push(child);
-        this.markDirty();
-    }
-
-    appendChildren(children: Renderable[]) {
-        for (const child of children) {
-            if (this.children.includes(child)) return;
-            this.children.push(child);
-        }
-        this.markDirty();
-    }
-
-    removeChild(child: Renderable) {
-        const i = this.children.indexOf(child);
-        if (i < 0) return;
-        const removedChildren = this.children.splice(i, 1);
-        child.state.setParent(null);
-        this.markDirty();
-
-        return removedChildren[0];
-    }
-
-    clearChildren() {
-        if (this.children) {
-            for (const child of this.children) {
-                child.destroy();
-            }
-            this.children = [];
-            this.markDirty();
-        }
-    }
-
-    setParent(parent: Renderable | null) {
-        if (this.parent === parent) return;
-        this.parent = parent;
-        this.markDirty();
-    }
-
-    markDirty() {
-        if (!this.renderDirtyFlag) {
-            this.renderDirtyFlag = true;
-            this.updateLocalMatrix();
-        }
-    }
-
-    clearDirty() {
-        if (this.renderDirtyFlag) {
-            this.renderDirtyFlag = false;
-            this.updateLocalMatrix();
-        }
-    }
-
-    updateLocalMatrix() {
-        const t = m3.translation(this.translation[0], this.translation[1]);
-        const r = m3.rotation(this.angleRadians);
-        const s = m3.scaling(this.scale[0], this.scale[1]);
-        // Order: T * R * S (adjust if needed)
-        this.localMatrix = m3.multiply(m3.multiply(t, r), s);
-    }
-
-    updateWorldMatrix(parentWorldMatrix?: number[]) {
-        this.worldMatrix = parentWorldMatrix
-            ? m3.multiply(parentWorldMatrix, this.localMatrix)
-            : this.localMatrix.slice();
-
-        const worldMatrix = this.worldMatrix;
-        this.children.forEach(child => {
-            child.updateWorldMatrix(worldMatrix);
-        })
-    }
-
-    setWorldMatrix(worldMatrix: number[]) {
-        this.worldMatrix = worldMatrix;
-    }
+  setWorldMatrix(worldMatrix: number[]) {
+    this.worldMatrix = worldMatrix;
+  }
 }

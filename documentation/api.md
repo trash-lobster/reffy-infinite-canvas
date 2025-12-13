@@ -7,10 +7,12 @@ The library exposes a small, imperative API for host apps via the Web Component 
 Create and insert the element; it initializes the engine and starts rendering automatically.
 
 Properties:
+
 - `displayMode: 'fullscreen' | 'windowed'` — Controls the outer div size policy.
 - `onCanvasChange?: () => void` — Callback when canvas state changes.
 
 Methods:
+
 - `togglePointerMode()` — Switch between interaction modes.
 - `toggleGrid()` — Toggle grid visibility/type.
 - `zoomIn()` / `zoomOut()` — Adjust camera zoom by fixed increments.
@@ -24,16 +26,19 @@ Methods:
 - `clearCanvas()` — Remove all children and reset history.
 
 Storage helpers:
+
 - `assignCanvasStorage(storage, frequency?)` — Set canvas state storage and autosave interval.
 - `assignFileStorage(storage)` — Set image file metadata storage.
 - `saveToCanvasStorage()` / `debounceSaveToCanvasStorage(timeout?)` — Save operations.
 
 Context menu:
+
 - `addContextMenu(x, y, type)` / `clearContextMenu()` / `isContextMenuActive()` — Control contextual UI.
 
 ## Engine (`Canvas`)
 
 Selected methods:
+
 - `appendChild(child)` / `removeChild(child)` — Manage scene graph.
 - `render()` — Main draw loop.
 - `toggleGrid()` — Toggle grid.
@@ -47,39 +52,39 @@ Selected methods:
 The following API surface outlines common, extensible operations expected of an infinite canvas engine. These are not all implemented today, but provide a forward-looking contract for extensions/plugins and host apps.
 
 - `remove(nodeId: number | Renderable)`:
-	Removes a node from the scene.
+  Removes a node from the scene.
 - `duplicate(nodeId: number | Renderable)`:
-	Duplicates a node preserving transforms and style.
+  Duplicates a node preserving transforms and style.
 - `group(nodeIds: number[])` / `ungroup(groupId: number)`:
-	Groups/ungroups nodes to apply transforms collectively.
+  Groups/ungroups nodes to apply transforms collectively.
 - `setZOrder(nodeId: number, order: number)`:
-	Explicitly set `renderOrder` for GPU depth-based z-ordering.
+  Explicitly set `renderOrder` for GPU depth-based z-ordering.
 - `bringToFront(nodeId: number)` / `sendToBack(nodeId: number)`:
-	Convenience z-order operations.
+  Convenience z-order operations.
 - `select(predicate: (node: Renderable) => boolean)` / `selectById(ids: number[])`:
-	Programmatic selection.
+  Programmatic selection.
 - `clearSelection()` / `getSelection(): Renderable[]`:
-	Selection management.
+  Selection management.
 - `setTransform(nodeId: number, t: { x?: number; y?: number; sx?: number; sy?: number; rotation?: number })`:
-	Update transforms (supports rotation when available).
+  Update transforms (supports rotation when available).
 - `fitToView(nodeId: number)` / `fitAllToView()`:
-	Adjust camera to frame a node or entire scene.
+  Adjust camera to frame a node or entire scene.
 - `zoomTo(rect: { x: number; y: number; width: number; height: number })`:
-	Camera zoom to a world-space rect.
+  Camera zoom to a world-space rect.
 - `setGrid(type: 'none' | 'grid' | 'dots', opts?: { spacing?: number; color?: string; opacity?: number })`:
-	Grid display customization.
+  Grid display customization.
 - `enableSnap(options?: { toGrid?: boolean; toGuides?: boolean; toObjects?: boolean; tolerance?: number })`:
-	Enable snapping with configurable targets and tolerance.
+  Enable snapping with configurable targets and tolerance.
 - `createGuide(axis: 'x' | 'y', position: number)` / `removeGuide(id: number)`:
-	Simple guides for alignment.
+  Simple guides for alignment.
 - `history.undo()` / `history.redo()` / `history.clear()` / `history.batch(fn: () => void)`:
-	Command history control with batching.
+  Command history control with batching.
 - `export(type: 'json' | 'png' | 'svg', options?: ExportOptions)` / `import(data: SerializedCanvas | Blob)`:
-	Multi-format export/import.
+  Multi-format export/import.
 - `on(event: CanvasEvent, handler: (...args: any[]) => void)` / `off(event, handler)`:
-	Event subscription for changes, selection, pointer, context menu, storage.
+  Event subscription for changes, selection, pointer, context menu, storage.
 - `registerTool(name: string, tool: ToolDefinition)`:
-	Pluggable tools (e.g., pan/zoom, brush, lasso) that integrate with pointer lifecycle.
+  Pluggable tools (e.g., pan/zoom, brush, lasso) that integrate with pointer lifecycle.
 
 ### Event Model (recommended)
 
@@ -138,7 +143,7 @@ const selected = engine.getSelected();
 
 // Bring the first selected to front
 if (selected.length) {
-	engine.setShapeZOrder(selected[0], true);
+  engine.setShapeZOrder(selected[0], true);
 }
 ```
 
@@ -146,21 +151,29 @@ if (selected.length) {
 
 ```ts
 // Add an image by URL centered
-engine.addImageFromURL('https://example.com/pic.png', { center: true });
+engine.addImageFromURL("https://example.com/pic.png", { center: true });
 
 // Add a rectangle
-engine.addShape('rect', {
-	x: 100, y: 80, width: 320, height: 180,
-	style: { fill: '#4477ee', stroke: '#224488', opacity: 0.9 }
+engine.addShape("rect", {
+  x: 100,
+  y: 80,
+  width: 320,
+  height: 180,
+  style: { fill: "#4477ee", stroke: "#224488", opacity: 0.9 },
 });
 
 // Add text
-engine.addText('Hello Canvas', { x: 50, y: 50, font: '16px Inter', color: '#111' });
+engine.addText("Hello Canvas", {
+  x: 50,
+  y: 50,
+  font: "16px Inter",
+  color: "#111",
+});
 
 // Group and align
-const ids = engine.getSelection().map(n => n.id);
+const ids = engine.getSelection().map((n) => n.id);
 const groupId = engine.group(ids);
-engine.alignSelection?.('top');
+engine.alignSelection?.("top");
 
 // Explicit z-order
 engine.setZOrder(groupId, 1000);
@@ -169,13 +182,13 @@ engine.setZOrder(groupId, 1000);
 engine.fitAllToView();
 
 // Export / Import
-const json = engine.export('json');
+const json = engine.export("json");
 engine.import(json);
 
 // History
 engine.history.batch(() => {
-	engine.bringToFront(ids[0]);
-	engine.sendToBack(ids[1]);
+  engine.bringToFront(ids[0]);
+  engine.sendToBack(ids[1]);
 });
 engine.history.undo();
 ```
@@ -183,6 +196,7 @@ engine.history.undo();
 ## Serialization (`src/serializer/serializer.ts`)
 
 Saved per shape:
+
 - `type`, `id`, `layer` (legacy), `renderOrder`, `transform { x, y, sx, sy }`, dimension-specific props (width, height, color), and `fileId` for images.
 - Grid saves `style` (`gridType`).
 

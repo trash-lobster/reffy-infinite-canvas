@@ -1,62 +1,64 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TestDiv, makeHost } from './functions';
-import { showLoader } from '../../../src/loader/Interaction';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { TestDiv, makeHost } from "./functions";
+import { showLoader } from "../../../src/loader/Interaction";
 
-describe('loader component', () => {
-    let host : TestDiv;
+describe("loader component", () => {
+  let host: TestDiv;
 
-    beforeEach(() => {
-        document.body.innerHTML = '';
-        host = makeHost();
-    });
-    
-    it('sets message', () => {
-        const loader = showLoader.call(host, 'message', 'Loading...');
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    host = makeHost();
+  });
 
-        const el = host.renderRoot.querySelector('.canvas-loader') as HTMLElement;
-		expect(el).toBeTruthy();
+  it("sets message", () => {
+    const loader = showLoader.call(host, "message", "Loading...");
 
-        loader.setMessage('test message');
+    const el = host.renderRoot.querySelector(".canvas-loader") as HTMLElement;
+    expect(el).toBeTruthy();
 
-        const message = el.querySelector('.canvas-loader-message') as HTMLDivElement;
-        expect(message.parentElement).toBe(el);
-        expect(message.textContent).toBe('test message');
-    })
+    loader.setMessage("test message");
 
-    it('sets progress', () => {
-        const loader = showLoader.call(host, 'message', 'Loading...');
+    const message = el.querySelector(
+      ".canvas-loader-message",
+    ) as HTMLDivElement;
+    expect(message.parentElement).toBe(el);
+    expect(message.textContent).toBe("test message");
+  });
 
-        const el = host.renderRoot.querySelector('.canvas-loader') as HTMLElement;
-		expect(el).toBeTruthy();
+  it("sets progress", () => {
+    const loader = showLoader.call(host, "message", "Loading...");
 
-        loader.setProgress(100);
+    const el = host.renderRoot.querySelector(".canvas-loader") as HTMLElement;
+    expect(el).toBeTruthy();
 
-        expect(loader.progress).toBe(100);
-    })
+    loader.setProgress(100);
 
-    it ('removes element from parent', () => {
-        const loader = showLoader.call(host, 'message', 'Loading...');
-        expect(host.renderRoot.children.length).toBe(1);
+    expect(loader.progress).toBe(100);
+  });
 
-        const el = host.renderRoot.querySelector('.canvas-loader') as HTMLElement;
-		expect(el).toBeTruthy();
+  it("removes element from parent", () => {
+    const loader = showLoader.call(host, "message", "Loading...");
+    expect(host.renderRoot.children.length).toBe(1);
 
-        loader.remove();
+    const el = host.renderRoot.querySelector(".canvas-loader") as HTMLElement;
+    expect(el).toBeTruthy();
 
-        expect(host.renderRoot.children.length).toBe(0);
-    })
+    loader.remove();
 
-    it ('won\'t remove parent if there is no parent node', () => {
-        const loader = showLoader.call(host, 'message', 'Loading...');
-        expect(host.renderRoot.children.length).toBe(1);
+    expect(host.renderRoot.children.length).toBe(0);
+  });
 
-        const el = host.renderRoot.querySelector('.canvas-loader') as HTMLElement;
-		expect(el).toBeTruthy();
+  it("won't remove parent if there is no parent node", () => {
+    const loader = showLoader.call(host, "message", "Loading...");
+    expect(host.renderRoot.children.length).toBe(1);
 
-        host.renderRoot.removeChild(el);
+    const el = host.renderRoot.querySelector(".canvas-loader") as HTMLElement;
+    expect(el).toBeTruthy();
 
-        loader.remove();
+    host.renderRoot.removeChild(el);
 
-        expect(host.renderRoot.children.length).toBe(0);
-    })
+    loader.remove();
+
+    expect(host.renderRoot.children.length).toBe(0);
+  });
 });

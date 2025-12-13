@@ -12,7 +12,7 @@
     }
 
     #add-image {
-      position:absolute;
+      position: absolute;
     }
 
     #control-container {
@@ -23,9 +23,8 @@
       left: 2rem;
       top: 2rem;
     }
-
   </style>
-    <body>
+  <body>
     <infinite-canvas id="canvas"></infinite-canvas>
     <div id="control-container">
       <button id="mode-button">Toggle Mode</button>
@@ -34,9 +33,20 @@
       <button id="export-canvas-button">Export</button>
       <button id="import-canvas-button">Import</button>
       <!-- This should only certain files -->
-      <input id="import-canvas-input" type="file" accept=".json" style="display:none"> 
+      <input
+        id="import-canvas-input"
+        type="file"
+        accept=".json"
+        style="display: none"
+      />
       <button id="add-image-btn">Add Image</button>
-      <input id="add-image-input" type="file" accept="image/*" multiple style="display:none">
+      <input
+        id="add-image-input"
+        type="file"
+        accept="image/*"
+        multiple
+        style="display: none"
+      />
       <button id="clear-canvas-button">Clear</button>
     </div>
   </body>

@@ -1,8 +1,8 @@
 class TestImage {
   onload: (() => void) | null = null;
   onerror: ((e: any) => void) | null = null;
-  src = '';
-  crossOrigin = '';
+  src = "";
+  crossOrigin = "";
   naturalWidth = 240;
   naturalHeight = 240;
   constructor() {

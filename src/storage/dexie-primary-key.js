@@ -11,8 +11,8 @@
  * Original code extracted by sabatino.dev
  */
 
-import Dexie from 'dexie';
-import { v4 as uuidv4 } from 'uuid';
+import Dexie from "dexie";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * DexieUUIDPrimaryKey plugin
@@ -20,13 +20,13 @@ import { v4 as uuidv4 } from 'uuid';
  * @constructor
  */
 function DexieUUIDPrimaryKey(db) {
-    // Override the _parseStoresSpec method with our own implementation
-    db.Version.prototype._parseStoresSpec = Dexie.override(
-        db.Version.prototype._parseStoresSpec,
-        overrideParseStoresSpec,
-    );
-    // Override the open method with our own implementation
-    db.open = Dexie.override(db.open, prepareOverrideOpen(db));
+  // Override the _parseStoresSpec method with our own implementation
+  db.Version.prototype._parseStoresSpec = Dexie.override(
+    db.Version.prototype._parseStoresSpec,
+    overrideParseStoresSpec,
+  );
+  // Override the open method with our own implementation
+  db.open = Dexie.override(db.open, prepareOverrideOpen(db));
 }
 
 /**
@@ -35,17 +35,17 @@ function DexieUUIDPrimaryKey(db) {
  * @returns {(function(*, *): void)|*}
  */
 function overrideParseStoresSpec(origFunc) {
-    return function (stores, dbSchema) {
-        origFunc.call(this, stores, dbSchema);
-        Object.keys(dbSchema).forEach(function (tableName) {
-            let schema = dbSchema[tableName];
-            if (schema.primKey.name.indexOf('$$') === 0) {
-                schema.primKey.uuid = true;
-                schema.primKey.name = schema.primKey.name.substr(2);
-                schema.primKey.keyPath = schema.primKey.keyPath.substr(2);
-            }
-        });
-    };
+  return function (stores, dbSchema) {
+    origFunc.call(this, stores, dbSchema);
+    Object.keys(dbSchema).forEach(function (tableName) {
+      let schema = dbSchema[tableName];
+      if (schema.primKey.name.indexOf("$$") === 0) {
+        schema.primKey.uuid = true;
+        schema.primKey.name = schema.primKey.name.substr(2);
+        schema.primKey.keyPath = schema.primKey.keyPath.substr(2);
+      }
+    });
+  };
 }
 
 /**
@@ -54,17 +54,17 @@ function overrideParseStoresSpec(origFunc) {
  * @returns {function(*, *): undefined}
  */
 function initCreatingHook(table) {
-    return function creatingHook(primKey, obj) {
-        let rv = undefined;
-        if (primKey === undefined && table.schema.primKey.uuid) {
-            primKey = rv = uuidv4();
-            if (table.schema.primKey.keyPath) {
-                Dexie.setByKeyPath(obj, table.schema.primKey.keyPath, primKey);
-            }
-        }
+  return function creatingHook(primKey, obj) {
+    let rv = undefined;
+    if (primKey === undefined && table.schema.primKey.uuid) {
+      primKey = rv = uuidv4();
+      if (table.schema.primKey.keyPath) {
+        Dexie.setByKeyPath(obj, table.schema.primKey.keyPath, primKey);
+      }
+    }
 
-        return rv;
-    };
+    return rv;
+  };
 }
 
 /**
@@ -73,15 +73,15 @@ function initCreatingHook(table) {
  * @returns {function(*): function(): *}
  */
 function prepareOverrideOpen(db) {
-    return function overrideOpen(origOpen) {
-        return function () {
-            Object.keys(db._allTables).forEach((tableName) => {
-                let table = db._allTables[tableName];
-                table.hook('creating').subscribe(initCreatingHook(table));
-            });
-            return origOpen.apply(this, arguments);
-        };
+  return function overrideOpen(origOpen) {
+    return function () {
+      Object.keys(db._allTables).forEach((tableName) => {
+        let table = db._allTables[tableName];
+        table.hook("creating").subscribe(initCreatingHook(table));
+      });
+      return origOpen.apply(this, arguments);
     };
+  };
 }
 
 // Register addon:

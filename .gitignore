@@ -8,3 +8,11 @@ node_modules
 /playwright/.auth/
 
 **/coverage/
+
+.analyze**
+
+notes
+
+dist
+esm
+lib

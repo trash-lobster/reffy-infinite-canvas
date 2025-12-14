@@ -206,6 +206,7 @@ export class InfiniteCanvasElement extends LitElement {
   #saveFrequency = 300000;
   #timeoutId: number | null;
   #intervalId: number | null;
+  #onViewportResize: () => void;
 
   #rootDiv: HTMLDivElement;
 
@@ -261,6 +262,7 @@ export class InfiniteCanvasElement extends LitElement {
       this.handleGlobalPointerDown,
       true,
     );
+    window.removeEventListener('resize', this.#onViewportResize);
     this.#resizeObserver?.disconnect();
     this.#resizeObserver = undefined;
     this.#canvas.destroy();
@@ -354,6 +356,8 @@ export class InfiniteCanvasElement extends LitElement {
 
     // resize canvas to start
     this.resizeCanvas(div, canvas);
+    this.#onViewportResize = () => this.resizeCanvas(div, canvas);
+    window.addEventListener('resize', this.#onViewportResize);
 
     const basicImageMenuOptions = createBasicImageMenuOptions.bind(this)();
     this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)(
@@ -409,6 +413,8 @@ export class InfiniteCanvasElement extends LitElement {
     let w = window.screen.width;
     let h = window.screen.height;
 
+    const rect = container.getBoundingClientRect();
+    
     const targetWidthPx = Math.round(w * dpr);
     const targetHeightPx = Math.round(h * dpr);
 
@@ -421,7 +427,6 @@ export class InfiniteCanvasElement extends LitElement {
     canvas.style.height = `${h}px`;
 
     // sets up camera dimensions
-    const rect = container.getBoundingClientRect();
     this.canvas.camera.viewportX = rect.x;
     this.canvas.camera.viewportY = rect.y;
     this.canvas.camera.state.setHeight(rect.height);

@@ -1,6 +1,6 @@
 import { CanvasHistory } from "./history";
 import { Canvas } from "./Canvas";
-import { LitElement, css } from "lit";
+import { LitElement, PropertyValues, css } from "lit";
 import { customElement } from "lit/decorators.js";
 import {
   CanvasEvent,
@@ -52,19 +52,19 @@ type CanvasDisplayMode = "fullscreen" | "windowed";
 @customElement("infinite-canvas")
 export class InfiniteCanvasElement extends LitElement {
   static properties = {
-    name: { type: String },
-    aspectRatioHeight: { type: Number },
-    aspectRatioWidth: { type: Number },
-    width: { type: String },
-    height: { type: String },
-    displayMode: { type: String },
+    name: { type: String, reflect: true },
+    width: { type: String, reflect: true },
+    height: { type: String, reflect: true },
+    displayMode: { type: String, reflect: true },
   };
 
+  /** The name for the canvas instance. If you are using the default local storage option for your data, this is what the entry will be stored under in your local storage. */
   name: string = "Reffy";
-  aspectRatioHeight: number | null;
-  aspectRatioWidth: number | null;
+  /** The expected width of the canvas container. If there is no specific unit specified, 'px' will be automatically appended. */
   width: string;
+  /** The expected height of the canvas container. If there is no specific unit specified, 'px' will be automatically appended. */
   height: string;
+  /** There are two acceptable options: fullscreen (default) and windowed. Fullscreen mode will ignore the width and height you inputed. */
   displayMode: CanvasDisplayMode = "fullscreen";
 
   static styles = css`
@@ -267,12 +267,30 @@ export class InfiniteCanvasElement extends LitElement {
     super.disconnectedCallback();
   }
 
-  render() {
+  protected firstUpdated(_changedProperties: PropertyValues): void {
     try {
       this.initCanvas();
     } catch (err) {
       console.error(err);
       throw err;
+    }
+  }
+
+  protected updated(changed: PropertyValues) {
+    const sizeChanged =
+      changed.has("width") ||
+      changed.has("height") ||
+      changed.has("displayMode");
+
+    if (!sizeChanged) return;
+
+    const container = this.#rootDiv;
+    const canvasEl = this.renderRoot.querySelector(
+      "canvas",
+    ) as HTMLCanvasElement | null;
+
+    if (container && canvasEl) {
+      this.resizeCanvas(container, canvasEl);
     }
   }
 
@@ -319,9 +337,6 @@ export class InfiniteCanvasElement extends LitElement {
 
     this.registerSignal();
 
-    // resize canvas to start
-    this.resizeCanvas(div, canvas);
-
     this.#canvas = new Canvas(
       canvas,
       this.#history,
@@ -337,12 +352,8 @@ export class InfiniteCanvasElement extends LitElement {
       console.error("Failed to restore canvas");
     }
 
-    // sets up camera dimensions
-    const rect = div.getBoundingClientRect();
-    this.canvas.camera.viewportX = rect.x;
-    this.canvas.camera.viewportY = rect.y;
-    this.canvas.camera.state.setHeight(rect.height);
-    this.canvas.camera.state.setWidth(rect.width);
+    // resize canvas to start
+    this.resizeCanvas(div, canvas);
 
     const basicImageMenuOptions = createBasicImageMenuOptions.bind(this)();
     this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)(
@@ -373,12 +384,24 @@ export class InfiniteCanvasElement extends LitElement {
     animate();
   }
 
+  private normalizeCssSize(value: string): string {
+    if (!value) return value;
+    const trimmed = String(value).trim();
+    // If it's purely numeric (e.g., "600"), use px by default
+    if (/^\d+$/.test(trimmed)) return `${trimmed}px`;
+    return trimmed;
+  }
+
   private resizeCanvas(container: HTMLDivElement, canvas: HTMLCanvasElement) {
     // set up the container div to limit the extent of the canvas that is visible
     container.style.width =
-      this.displayMode === "fullscreen" ? `100vw` : this.width;
+      this.displayMode === "fullscreen"
+        ? `100vw`
+        : this.normalizeCssSize(this.width);
     container.style.height =
-      this.displayMode === "fullscreen" ? `100vh` : this.height;
+      this.displayMode === "fullscreen"
+        ? `100vh`
+        : this.normalizeCssSize(this.height);
     container.style.overflow = "hidden";
     const dpr = window.devicePixelRatio || 1;
 
@@ -396,6 +419,13 @@ export class InfiniteCanvasElement extends LitElement {
 
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
+
+    // sets up camera dimensions
+    const rect = container.getBoundingClientRect();
+    this.canvas.camera.viewportX = rect.x;
+    this.canvas.camera.viewportY = rect.y;
+    this.canvas.camera.state.setHeight(rect.height);
+    this.canvas.camera.state.setWidth(rect.width);
   }
 
   // Register signal

@@ -3,10 +3,10 @@
   "exclude": ["node_modules", "./dist/**/*"],
   "compilerOptions": {
     "typeRoots": ["./types"],
-    "target": "es2021",
-    "module": "es2015",
+    "target": "es2022",
+    "module": "ESNext",
     "moduleResolution": "node",
-    "lib": ["es2021", "dom"],
+    "lib": ["es2022", "dom"],
     "declaration": true,
     "declarationMap": true,
     "experimentalDecorators": true,

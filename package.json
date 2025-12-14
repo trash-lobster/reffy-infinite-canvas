@@ -1,6 +1,6 @@
 {
   "name": "@reffy/infinite-canvas",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "An infinite canvas designed to be a minimal web component, serving as an image reference board.",
   "keywords": [
     "typescript",
@@ -48,10 +48,12 @@
   "sideEffects": true,
   "scripts": {
     "dev": "vite dev --config vite.examples.config.js",
+    "preview:examples": "vite preview --config vite.examples.config.js",
     "test": "vitest --ui --coverage.enabled=true",
     "coverage": "vitest run --coverage",
     "e2e": "npx playwright test",
     "sortGlossary": "node ./journal/sort.js -f journal/a-glossary.md",
+    "build:examples": "vite build --config vite.examples.config.js",
     "build:cjs": "rimraf ./lib && tsc --module commonjs --outDir lib",
     "build:esm": "rimraf ./esm && tsc --module ESNext --outDir esm",
     "build:main": "vite build",

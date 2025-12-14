@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 The project began tracking changelog from version 0.0.8
 
+## [0.0.12] - 2025-12-14
+
+### Added
+- GitHub Pages site
+
+### Fixed
+
+- Change stat.js to dev only
+- Update TS target and lib to ES2022
+- Fix canvas import which did not replace img src properly
+
 ## [0.0.11] - 2025-12-14
 
 ### Fixed

@@ -57,8 +57,8 @@ export class Camera {
   getBoundingBox() {
     const [minX, minY] = this.getWorldCoords(this.viewportX, this.viewportY);
     const [maxX, maxY] = this.getWorldCoords(
-      (this.state.width + this.viewportX),
-      (this.state.height + this.viewportY),
+      this.state.width + this.viewportX,
+      this.state.height + this.viewportY,
     );
     return new AABB(minX, minY, maxX, maxY);
   }

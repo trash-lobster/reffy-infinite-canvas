@@ -154,7 +154,11 @@ export class Canvas extends Renderable {
 
     // marquee coordinates are calculated based on viewport, so we need to adjust it by camera viewport spawn point
     const getMarqueeCoords = (x: number, y: number) =>
-      getWorldCoords(x + this.camera.viewportX, y + this.camera.viewportY, this);
+      getWorldCoords(
+        x + this.camera.viewportX,
+        y + this.camera.viewportY,
+        this,
+      );
 
     this.exportState = this.exportState.bind(this);
     this.importState = this.importState.bind(this);

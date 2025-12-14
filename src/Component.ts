@@ -330,13 +330,13 @@ export class InfiniteCanvasElement extends LitElement {
       this.saveImageFileMetadata,
       this.getContainerSize,
     );
-    
+
     try {
       await this.restoreStateFromCanvasStorage();
     } catch (err) {
       console.error("Failed to restore canvas");
     }
-    
+
     // sets up camera dimensions
     const rect = div.getBoundingClientRect();
     this.canvas.camera.viewportX = rect.x;

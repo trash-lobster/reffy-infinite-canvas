@@ -326,10 +326,13 @@ export class Canvas extends Renderable {
     }
 
     // should set low res based on what screen area it has taken up
+    const [sww, swh] = getWorldCoords(0, 0, this);
+    const [ww, wh] = getWorldCoords(window.screen.width, window.screen.height, this);
+    const screenAABB = new AABB(sww, swh, ww, wh);
     this.renderList.forEach((child) => {
       if (child instanceof Img) {
         const useLowRes = (child as Img).determineIfLowRes(
-          cameraBoundingBox,
+          screenAABB,
           this.camera.state.zoom,
         );
 

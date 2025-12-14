@@ -1,6 +1,6 @@
 {
   "name": "@reffy/infinite-canvas",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "An infinite canvas designed to be a minimal web component, serving as an image reference board.",
   "keywords": [
     "typescript",
@@ -59,9 +59,7 @@
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.56.1",
-    "@types/d3-color": "^3.1.0",
     "@types/node": "^24.10.1",
-    "@types/rbush": "^3.0.0",
     "@types/stats.js": "^0.17.4",
     "@vitest/coverage-v8": "^4.0.12",
     "@vitest/ui": "^4.0.12",
@@ -79,18 +77,13 @@
     "@lit/task": "^1.0.1",
     "@loaders.gl/core": "^4.2.2",
     "@loaders.gl/images": "^4.2.2",
-    "@pixi/math": "^7.4.3",
-    "bezier-easing": "^2.1.0",
-    "d3-color": "^3.1.0",
     "dexie": "^4.2.1",
     "eventemitter3": "^5.0.1",
     "gl-matrix": "^3.4.4",
     "lit": "^3.3.1",
     "mobx": "^6.15.0",
-    "rbush": "^3.0.1",
     "stats.js": "^0.17.0",
-    "uuid": "^13.0.0",
-    "xxhash-wasm": "^1.1.0"
+    "uuid": "^13.0.0"
   },
   "publishConfig": {
     "access": "public"

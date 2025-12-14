@@ -1,6 +1,6 @@
 {
   "include": ["src/**/*"],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "./dist/**/*"],
   "compilerOptions": {
     "typeRoots": ["./types"],
     "target": "es2021",
@@ -22,6 +22,7 @@
     "baseUrl": "src",
     "resolveJsonModule": true,
     "downlevelIteration": true,
-    "allowJs": true
+    "allowJs": true,
+    "outDir": "./dist"
   }
 }

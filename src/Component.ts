@@ -378,25 +378,7 @@ export class InfiniteCanvasElement extends LitElement {
 
     this.dispatchEvent(new Event("load"));
 
-    const maybeInitStats = async () => {
-      if (!(import.meta as unknown as ImportMeta).env.DEV) return null;
-
-      const { default: Stats } = await import("stats.js");
-      const stats = new Stats();
-      stats.showPanel(0);
-
-      if (!this.renderRoot.contains(stats.dom)) {
-        this.renderRoot.appendChild(stats.dom);
-      }
-
-      return stats;
-    };
-
-    const statsPromise = maybeInitStats();
-
     const animate = async () => {
-      const stats = await statsPromise;
-      if (stats) stats.update();
       this.#canvas.render();
       requestAnimationFrame(animate);
     };

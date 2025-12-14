@@ -98,6 +98,17 @@ export class InfiniteCanvasElement extends LitElement {
       overflow: scroll;
     }
 
+    /* Chrome, Edge, Safari */
+    .context-menu::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    /* Firefox */
+    .context-menu {
+      scrollbar-width: none;
+    }
+
     @keyframes fadeInMenu {
       from {
         opacity: 0;

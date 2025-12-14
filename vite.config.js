@@ -1,25 +1,50 @@
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   server: { port: 8080, open: "/" },
-  resolve: {
-    extensions: [".mjs", ".js", ".ts", ".json"],
-  },
-  test: {
-    environment: "jsdom",
-    setupFiles: "./tests/unit/setup.ts",
-    coverage: {
-      include: ["src/**/*.{ts,tsx}"],
-      exclude: [
-        "src/util/color.ts",
-        "src/util/customEventType.ts",
-        "src/util/webgl/uniform.ts",
-        "src/shaders/",
-        "src/shapes/Triangle.ts",
-        "src/API.ts",
-        "src/Component.ts",
-      ],
+  resolve: { extensions: [".mjs", ".js", ".ts", ".json"] },
+  build: {
+    lib: {
+      entry: resolve(__dirname, "src/index.ts"),
+      name: "ReffyInfiniteCanvas",
+      formats: ["es", "umd"], // or ['es'] if UMD not needed
+      fileName: (format) => (format === "es" ? "index.js" : "index.umd.js"),
     },
-    include: ["./tests/unit/**/*.spec.ts"],
+    // Generate source maps for production bundles
+    sourcemap: true,
+    rollupOptions: {
+      external: [
+        "lit",
+        "mobx",
+        "eventemitter3",
+        "gl-matrix",
+        "uuid",
+        "@antv/g-device-api",
+        "@loaders.gl/core",
+        "@loaders.gl/images",
+        "stats.js",
+        "dexie",
+      ],
+      output: {
+        globals: {
+          lit: "Lit",
+          mobx: "mobx",
+          eventemitter3: "EventEmitter3",
+          "gl-matrix": "glMatrix",
+          uuid: "uuid",
+          "@antv/g-device-api": "gDeviceApi",
+          "@loaders.gl/core": "loaders",
+          "@loaders.gl/images": "loadersImages",
+          "stats.js": "Stats",
+          dexie: "Dexie",
+        },
+      },
+    },
+    outDir: "dist",
+    emptyOutDir: true,
   },
 });

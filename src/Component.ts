@@ -262,7 +262,7 @@ export class InfiniteCanvasElement extends LitElement {
       this.handleGlobalPointerDown,
       true,
     );
-    window.removeEventListener('resize', this.#onViewportResize);
+    window.removeEventListener("resize", this.#onViewportResize);
     this.#resizeObserver?.disconnect();
     this.#resizeObserver = undefined;
     this.#canvas.destroy();
@@ -357,7 +357,7 @@ export class InfiniteCanvasElement extends LitElement {
     // resize canvas to start
     this.resizeCanvas(div, canvas);
     this.#onViewportResize = () => this.resizeCanvas(div, canvas);
-    window.addEventListener('resize', this.#onViewportResize);
+    window.addEventListener("resize", this.#onViewportResize);
 
     const basicImageMenuOptions = createBasicImageMenuOptions.bind(this)();
     this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)(
@@ -414,7 +414,7 @@ export class InfiniteCanvasElement extends LitElement {
     let h = window.screen.height;
 
     const rect = container.getBoundingClientRect();
-    
+
     const targetWidthPx = Math.round(w * dpr);
     const targetHeightPx = Math.round(h * dpr);
 

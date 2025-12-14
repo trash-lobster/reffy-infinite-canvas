@@ -10,7 +10,6 @@ import {
   addImages as innerAddImages,
   LoaderEvent,
   paste,
-  performanceTest,
   SaveEvent,
 } from "./util";
 import { downloadJSON, hashStringToId, readJSONFile } from "./util/files";
@@ -331,12 +330,19 @@ export class InfiniteCanvasElement extends LitElement {
       this.saveImageFileMetadata,
       this.getContainerSize,
     );
-
+    
     try {
       await this.restoreStateFromCanvasStorage();
     } catch (err) {
       console.error("Failed to restore canvas");
     }
+    
+    // sets up camera dimensions
+    const rect = div.getBoundingClientRect();
+    this.canvas.camera.viewportX = rect.x;
+    this.canvas.camera.viewportY = rect.y;
+    this.canvas.camera.state.setHeight(rect.height);
+    this.canvas.camera.state.setWidth(rect.width);
 
     const basicImageMenuOptions = createBasicImageMenuOptions.bind(this)();
     this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)(

@@ -7,6 +7,9 @@ export const ZOOM_MAX = 20;
 
 export class Camera {
   state: CameraState;
+  // these are the origin of the camera viewport
+  viewportX: number = 0;
+  viewportY: number = 0;
   private updateReaction: () => void;
   getWorldCoords: (x: number, y: number) => number[];
   setWorldMatrix: (matrix: number[]) => void;
@@ -52,10 +55,10 @@ export class Camera {
   }
 
   getBoundingBox() {
-    const [minX, minY] = this.getWorldCoords(0, 0);
+    const [minX, minY] = this.getWorldCoords(this.viewportX, this.viewportY);
     const [maxX, maxY] = this.getWorldCoords(
-      this.state.width,
-      this.state.height,
+      (this.state.width + this.viewportX),
+      (this.state.height + this.viewportY),
     );
     return new AABB(minX, minY, maxX, maxY);
   }

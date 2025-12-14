@@ -43,6 +43,7 @@ export class SelectionManager {
   getWorldMatrix: () => number[];
   getCanvasChildren: () => Renderable[];
   getWorldCoords: (x: number, y: number) => number[];
+  getMarqueeCoords: (x: number, y: number) => number[];
 
   get selected(): Rect[] {
     return Array.from(this.#selected);
@@ -75,6 +76,7 @@ export class SelectionManager {
     getWorldMatrix: () => number[],
     getCanvasChildren: () => Renderable[],
     getWorldCoords: (x: number, y: number) => number[],
+    getMarqueeCoords: (x: number, y: number) => number[],
   ) {
     this.#gl = gl;
     this.#rectProgram = basicShapeProgram;
@@ -83,6 +85,7 @@ export class SelectionManager {
     this.getWorldMatrix = getWorldMatrix;
     this.getCanvasChildren = getCanvasChildren;
     this.getWorldCoords = getWorldCoords;
+    this.getMarqueeCoords = getMarqueeCoords;
 
     const proto = Object.getPrototypeOf(this);
     for (const key of Object.getOwnPropertyNames(proto)) {
@@ -345,7 +348,7 @@ export class SelectionManager {
 
       // use the four corners to check if there are any new entry
       const children = this.getCanvasChildren();
-      const marqueeBox = this.marqueeBox.getBoundingBox(this.getWorldCoords);
+      const marqueeBox = this.marqueeBox.getBoundingBox(this.getMarqueeCoords);
       for (const child of children) {
         const box = (child as Rect).getBoundingBox();
         if (

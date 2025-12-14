@@ -152,6 +152,10 @@ export class Canvas extends Renderable {
     this.getWorldsCoordsFromCanvas = (x: number, y: number) =>
       getWorldCoords(x, y, this);
 
+    // marquee coordinates are calculated based on viewport, so we need to adjust it by camera viewport spawn point
+    const getMarqueeCoords = (x: number, y: number) =>
+      getWorldCoords(x + this.camera.viewportX, y + this.camera.viewportY, this);
+
     this.exportState = this.exportState.bind(this);
     this.importState = this.importState.bind(this);
     this.clearChildren = this.clearChildren.bind(this);
@@ -164,6 +168,7 @@ export class Canvas extends Renderable {
       () => this.worldMatrix,
       () => this.children,
       this.getWorldsCoordsFromCanvas,
+      getMarqueeCoords,
     );
 
     const cameraState = new CameraState({});
@@ -300,7 +305,6 @@ export class Canvas extends Renderable {
     this.#grid.render(this.#gl, this.#gridProgram);
 
     const cameraBoundingBox = this.camera.getBoundingBox();
-
     let totalRenderable = 0;
     let rendered = 0;
     this.renderList = [];
@@ -389,7 +393,7 @@ export class Canvas extends Renderable {
     center: boolean = false,
   ) {
     const newImg = new Img({ x: x, y: y, src, sx, sy });
-    this.saveImgFileToStorage(src).then(id => newImg.fileId = id);
+    this.saveImgFileToStorage(src).then((id) => (newImg.fileId = id));
 
     if (center) {
       const preview = new Image();

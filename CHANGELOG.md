@@ -10,6 +10,7 @@ The project began tracking changelog from version 0.0.8
 ## [0.0.12] - 2025-12-14
 
 ### Added
+
 - GitHub Pages site
 
 ### Fixed

@@ -8,6 +8,8 @@ A TypeScript Web Component (`<infinite-canvas>`) that provides an infinite, GPU-
 - Persistence: Auto-save and manual import/export to JSON; deduplicated image storage via hashing.
 - History: Composite commands push for undo/redo across interactions.
 
+Live Demo Site: https://trash-lobster.github.io/reffy-infinite-canvas/
+
 ## A word from the developer
 
 Before you carry on to read the rest of the documentation, I would like to first state that this project was heavily influenced by the following open-sourced projects:

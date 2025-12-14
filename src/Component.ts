@@ -45,7 +45,15 @@ import {
 } from "./storage";
 import EventEmitter from "eventemitter3";
 import { hideLoader, showLoader } from "./loader";
-import Stats from "stats.js";
+
+// Add type declaration for import.meta.env for Vite compatibility
+interface ImportMetaEnv {
+  readonly DEV: boolean;
+  // add other env variables here if needed
+}
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
 
 type CanvasDisplayMode = "fullscreen" | "windowed";
 
@@ -370,17 +378,25 @@ export class InfiniteCanvasElement extends LitElement {
 
     this.dispatchEvent(new Event("load"));
 
-    const stats = new Stats();
-    stats.showPanel(0);
+    const maybeInitStats = async () => {
+      if (!(import.meta as unknown as ImportMeta).env.DEV) return null;
 
-    if (!this.renderRoot.contains(stats.dom)) {
-      this.renderRoot.appendChild(stats.dom);
-    }
+      const { default: Stats } = await import("stats.js");
+      const stats = new Stats();
+      stats.showPanel(0);
 
-    const animate = () => {
-      if (stats) {
-        stats.update();
+      if (!this.renderRoot.contains(stats.dom)) {
+        this.renderRoot.appendChild(stats.dom);
       }
+
+      return stats;
+    };
+
+    const statsPromise = maybeInitStats();
+
+    const animate = async () => {
+      const stats = await statsPromise;
+      if (stats) stats.update();
       this.#canvas.render();
       requestAnimationFrame(animate);
     };
@@ -605,7 +621,7 @@ export class InfiniteCanvasElement extends LitElement {
   async addImages(fileList: FileList) {
     if (!this.#canvas) return;
 
-    const rect = this.#canvas.getBoundingClientRect();
+    const rect = this.#rootDiv.getBoundingClientRect();
     const clientX = rect.left + rect.width / 2;
     const clientY = rect.top + rect.height / 2;
 
@@ -631,7 +647,7 @@ export class InfiniteCanvasElement extends LitElement {
   async addImageFromUrl(url: string) {
     if (!this.#canvas) return;
 
-    const rect = this.#canvas.getBoundingClientRect();
+    const rect = this.#rootDiv.getBoundingClientRect();
     const clientX = rect.left + rect.width / 2;
     const clientY = rect.top + rect.height / 2;
 

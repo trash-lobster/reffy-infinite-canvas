@@ -217,11 +217,18 @@ export async function deserializeCanvas(
             height,
           });
 
-          getFile((node as SerializedImg).fileId)
-            .then((file) => {
-              (instance as Img).src = file.dataURL;
-            })
-            .catch((err) => console.error("Image not loaded", err));
+          if (data.files && Array.isArray(data.files)) {
+            const fileMeta = data.files.find(
+              (e) => e.id === (node as SerializedImg).fileId,
+            );
+            (instance as Img).src = fileMeta.dataURL;
+          } else {
+            getFile((node as SerializedImg).fileId)
+              .then((file) => {
+                (instance as Img).src = file.dataURL;
+              })
+              .catch((err) => console.error("Image not loaded", err));
+          }
 
           //  skip hashing if it already has a file ID
           (instance as Img).fileId =

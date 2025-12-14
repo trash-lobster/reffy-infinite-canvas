@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 The project began tracking changelog from version 0.0.8
 
+## [0.0.11] - 2025-12-14
+
+### Fixed
+
+- Using low resolution of added image was based on the portion of camera viewport occupied by image. This has been changed to be based on the user's screen dimension instead.
+- Component was not resizing its canvas when the browser window itself is updated. Add event listener to trigger a recalculation of where the canvas anchor should be.
+
+## [0.0.10] - 2025-12-14
+
+### Added
+
+- Add helper method to convert numerical value to CSS appropriate values
+
+### Fixed
+
+- When deployed as a component to React, the component does not get updated when properties change. Update the component to rely on reflect and update method to stay consistent.
+- Build commands
+
 ## [0.0.9] - 2025-12-14
 
 ### Fixed
@@ -28,5 +46,7 @@ The project began tracking changelog from version 0.0.8
 
 - File storage cache limit has been increased from 100 to 500
 
+[0.0.11]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.10...v0.0.11
+[0.0.10]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/trash-lobster/reffy-infinite-canvas/releases/tag/v0.0.8

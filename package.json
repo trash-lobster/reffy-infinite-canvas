@@ -1,6 +1,6 @@
 {
   "name": "@reffy/infinite-canvas",
-  "version": "0.0.9",
+  "version": "0.0.11",
   "description": "An infinite canvas designed to be a minimal web component, serving as an image reference board.",
   "keywords": [
     "typescript",
@@ -39,22 +39,25 @@
       "types": "./lib/index.d.ts",
       "import": "./esm/index.js",
       "require": "./lib/index.js"
-    }
+    },
+    "./dist": {
+      "import": "./dist/index.js"
+    },
+    "./dist/umd": "./dist/index.umd.js"
   },
-  "sideEffects": false,
+  "sideEffects": true,
   "scripts": {
     "dev": "vite dev --config vite.examples.config.js",
-    "deploy": "vite build",
     "test": "vitest --ui --coverage.enabled=true",
     "coverage": "vitest run --coverage",
     "e2e": "npx playwright test",
     "sortGlossary": "node ./journal/sort.js -f journal/a-glossary.md",
     "build:cjs": "rimraf ./lib && tsc --module commonjs --outDir lib",
     "build:esm": "rimraf ./esm && tsc --module ESNext --outDir esm",
-    "build:main": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm",
+    "build:main": "vite build",
     "build": "run-p prettier build:*",
     "prettier": "npx prettier . --write",
-    "publish": "npm run publish --access public"
+    "release": "npm publish --access public"
   },
   "license": "MIT",
   "devDependencies": {

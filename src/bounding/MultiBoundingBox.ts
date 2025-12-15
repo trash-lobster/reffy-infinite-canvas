@@ -174,7 +174,8 @@ export class MultiBoundingBox {
 
     const transformArray: FlipSnapshotItem[] = [];
 
-    const [wtx, wty] = getWorldCoords(this.x, this.y);
+    const [startX, startY] = getWorldCoords(this.x, this.y);
+    const [endX, endY] = getWorldCoords(this.x + this.width, this.y + this.height);
 
     for (const target of this.targets) {
       const transform: FlipSnapshotItem = {
@@ -183,12 +184,14 @@ export class MultiBoundingBox {
       };
 
       if (direction === "vertical") {
-        const scaleH = target.height * target.sy;
-        target.setTranslation(target.x, -target.y - scaleH);
+        const disFromBotEdge = endY - (target.y + target.height * target.sy);
+        const disFromTopEdge = target.y - startY;
+        target.updateTranslation(0, disFromBotEdge - disFromTopEdge);
         target.flipVertical(target.height);
       } else {
-        const scaleW = target.width * target.sx;
-        target.setTranslation(-target.x - scaleW, target.y);
+        const disFromRightEdge = endX - (target.x + target.width * target.sx);
+        const disFromLeftEdge = target.x - startX;
+        target.updateTranslation(disFromRightEdge - disFromLeftEdge, 0);
         target.flipHorizontal(target.width);
       }
 

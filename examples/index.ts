@@ -2,27 +2,54 @@ import { InfiniteCanvasAPI, InfiniteCanvasElement } from "../src";
 
 const el = document.querySelector("#canvas") as InfiniteCanvasElement;
 InfiniteCanvasAPI.forElement(el).then((api) => {
+  const openMenuBtn = document.getElementById("open-menu");
+  const mobileContainer = document.getElementById("mobile-container");
+
+  if (openMenuBtn && mobileContainer) {
+    openMenuBtn.addEventListener("click", () => {
+      mobileContainer.classList.toggle("is-open");
+    });
+  }
+
   const buttons = {
     "mode-button": api.toggleMode.bind(api),
+    "mode-button-mob": api.toggleMode.bind(api),
     "zoom-in-button": api.zoomIn.bind(api),
+    "zoom-in-button-mob": api.zoomIn.bind(api),
     "zoom-out-button": api.zoomOut.bind(api),
+    "zoom-out-button-mob": api.zoomOut.bind(api),
     "export-canvas-button": api.exportCanvas.bind(api),
+    "export-canvas-button-mob": api.exportCanvas.bind(api),
     "clear-canvas-button": api.clearCanvas.bind(api),
+    "clear-canvas-button-mob": api.clearCanvas.bind(api),
   };
 
   for (const [key, fn] of Object.entries(buttons)) {
     const btn = document.getElementById(key)!;
-    btn.onclick = () => fn();
+    if (!key.includes('-mob')) {
+      btn.onclick = () => fn();
+    } else {
+      btn.onclick = () => {
+        fn();
+        if(mobileContainer) mobileContainer.classList.toggle("is-open");
+      }
+    }
   }
 
   const hiddenInput = document.getElementById(
     "add-image-input",
   ) as HTMLInputElement;
+
+  const triggerBtnMob = document.getElementById(
+    "add-image-btn-mob",
+  ) as HTMLInputElement;
+
   const triggerBtn = document.getElementById(
     "add-image-btn",
   ) as HTMLButtonElement;
 
   triggerBtn.onclick = () => hiddenInput.click();
+  triggerBtnMob.onclick = () => hiddenInput.click();
 
   hiddenInput.onchange = async () => {
     if (!hiddenInput.files || hiddenInput.files.length === 0) return;
@@ -37,7 +64,12 @@ InfiniteCanvasAPI.forElement(el).then((api) => {
     "import-canvas-button",
   ) as HTMLButtonElement;
 
+  const triggerImportCanvasBtnMob = document.getElementById(
+    "import-canvas-button-mob",
+  ) as HTMLButtonElement;
+
   triggerImportCanvasBtn.onclick = () => hiddenImportCanvasInput.click();
+  triggerImportCanvasBtnMob.onclick = () => hiddenImportCanvasInput.click();
 
   hiddenImportCanvasInput.onchange = async () => {
     if (
@@ -52,4 +84,5 @@ InfiniteCanvasAPI.forElement(el).then((api) => {
   };
 
   el.onCanvasChange = () => console.log("data changed");
+
 });

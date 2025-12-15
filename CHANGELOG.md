@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-The project began tracking changelog from version 0.0.8
+The project began tracking changelog from version 0.0.8.
+
+View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
+
+## [0.0.13] - 2025-12-15
+
+### Fixed
+
+- Fix bug with multibounding box not flipping content to correct position
 
 ## [0.0.12] - 2025-12-14
 
@@ -58,6 +66,8 @@ The project began tracking changelog from version 0.0.8
 
 - File storage cache limit has been increased from 100 to 500
 
+[0.0.13]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.12...v0.0.13
+[0.0.12]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.11...v0.0.12
 [0.0.11]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.8...v0.0.9

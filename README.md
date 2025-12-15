@@ -8,18 +8,18 @@ A TypeScript Web Component (`<infinite-canvas>`) that provides an infinite, GPU-
 - Persistence: Auto-save and manual import/export to JSON; deduplicated image storage via hashing.
 - History: Composite commands push for undo/redo across interactions.
 
-[Live Demo Site](https://trash-lobster.github.io/reffy-infinite-canvas/{target=_blank})
+Live Demo Site: https://trash-lobster.github.io/reffy-infinite-canvas/
 
 ## A word from the developer
 
 Before you carry on to read the rest of the documentation, I would like to first state that this project was heavily influenced by the following open-sourced projects:
 
-- [Excalidraw](https://excalidraw.com/{target=_blank})
-- [An infinite canvas tutorial](https://infinitecanvas.cc/{target=_blank})
+- [Excalidraw](https://excalidraw.com/)
+- [An infinite canvas tutorial](https://infinitecanvas.cc/)
 
 They are both incredible resources and have sped up my own learning and I highly recommend browsing through their materials. I am still learning as I go and working on this project.
 
-Additionally, I referenced [PureRef](https://www.pureref.com/{target=_blank}) for a lot of the available functions. In fact, as the project continued development, it became clear that I wanted to create a version of PureRef, but for the web.
+Additionally, I referenced [PureRef](https://www.pureref.com/) for a lot of the available functions. In fact, as the project continued development, it became clear that I wanted to create a version of PureRef, but for the web.
 
 Happy learning!
 

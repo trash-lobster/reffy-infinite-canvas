@@ -14,7 +14,7 @@ Live Demo Site: https://trash-lobster.github.io/reffy-infinite-canvas/
 
 Before you carry on to read the rest of the documentation, I would like to first state that this project was heavily influenced by the following open-sourced projects:
 
-- [Excalidraw](https://excalidraw.com/)
+- <a href="https://excalidraw.com/" target="_blank">Excalidraw</a>
 - [An infinite canvas tutorial](https://infinitecanvas.cc/)
 
 They are both incredible resources and have sped up my own learning and I highly recommend browsing through their materials. I am still learning as I go and working on this project.

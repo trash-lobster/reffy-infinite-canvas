@@ -223,11 +223,40 @@ export class DefaultIndexedDbStorage extends FileStorage {
 }
 
 export class DefaultLocalStorage extends CanvasStorage {
+  private static readonly NS_PREFIX = "reffy:canvas:";
+  private static readonly RESERVED = new Set<string>([
+    "", "null", "undefined", ".", "..",
+    "__proto__", "prototype", "constructor",
+  ]);
   key: string = "infinite_canvas";
 
   constructor(key: string) {
     super();
-    this.key = key;
+    this.key = DefaultLocalStorage.makeKey(key);
+  }
+
+  private static slug(input: string): string {
+    // Lowercase, trim, replace spaces with '-', strip invalid chars, collapse dashes
+    const s = String(input ?? "")
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9._-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^[-.]+|[-.]+$/g, "");
+    return s;
+  }
+
+  private static makeKey(name: string): string {
+    const slug = DefaultLocalStorage.slug(name);
+    if (!slug || DefaultLocalStorage.RESERVED.has(slug)) {
+      throw new Error(`Invalid canvas name: "${name}"`);
+    }
+    const key = `${DefaultLocalStorage.NS_PREFIX}${slug}`;
+    if (DefaultLocalStorage.RESERVED.has(key)) {
+      throw new Error(`Reserved storage key: "${key}"`);
+    }
+    return key;
   }
 
   async write(value: CanvasStorageEntry): Promise<void> {
@@ -265,13 +294,22 @@ export class DefaultLocalStorage extends CanvasStorage {
   async update(value: CanvasStorageEntry): Promise<void> {
     return this.write(value);
   }
-  
-  async changeCanvasKey(oldKey: string, newKey: string): Promise<void> {
+
+  async changeCanvasKey(oldName: string, newName: string): Promise<void> {
+    const oldKey = DefaultLocalStorage.makeKey(oldName);
+    const newKey = DefaultLocalStorage.makeKey(newName);
+
+    if (oldKey === newKey) return;
+
     return new Promise((resolve, reject) => {
       try {
         const entry = localStorage.getItem(oldKey);
-        localStorage.setItem(newKey, entry);
-        localStorage.removeItem(oldKey);
+        if (entry !== null) {
+          localStorage.setItem(newKey, entry);
+          localStorage.removeItem(oldKey);
+        }
+        
+        if (this.key === oldKey) this.key = newKey;
         resolve();
       } catch (err) {
         reject(err);

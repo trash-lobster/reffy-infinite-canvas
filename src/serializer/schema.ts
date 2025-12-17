@@ -17,6 +17,7 @@ const ImageFileSchema = z
       .regex(/^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+$/, "Invalid image data URL"),
     mimetype: z.string().regex(/^image\/[a-z0-9.+-]+$/i, "Invalid image MIME type"),
     created: z.number(),
+    lastRetrieved: z.number(),
   })
   .strict();
 

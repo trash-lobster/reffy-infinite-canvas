@@ -619,7 +619,21 @@ export class InfiniteCanvasElement extends LitElement {
       this.#canvasStorage = new DefaultLocalStorage(this.name);
     }
     const dataAsString = await this.#canvasStorage.read();
-    if (!dataAsString) return;
+    if (!dataAsString) {
+      const legacy = localStorage.getItem(this.name);
+      if (legacy) {
+        try {
+          const newKey = (DefaultLocalStorage as any).makeKey
+            ? (DefaultLocalStorage as any)["makeKey"](this.name)
+            : `reffy:canvas:${this.name}`;
+          localStorage.setItem(newKey, legacy);
+          localStorage.removeItem(this.name);
+        } catch (err) {
+          console.error(err);
+          return;
+        }
+      }
+    }
     let raw: unknown;
     try {
       raw = JSON.parse(dataAsString);

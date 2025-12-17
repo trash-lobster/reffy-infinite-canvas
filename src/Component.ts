@@ -650,6 +650,17 @@ export class InfiniteCanvasElement extends LitElement {
     }
   }
 
+  async deleteStateFromCanvasStorage() {
+    if (!this.#canvasStorage) {
+      this.#canvasStorage = new DefaultLocalStorage(this.name);
+    }
+    try {
+      this.#canvasStorage.delete();
+    } catch(err) {
+      console.error('Failed to delete canvas storage ', err);
+    }
+  }
+
   // Canvas API
   togglePointerMode() {
     if (!this.#canvas) return;

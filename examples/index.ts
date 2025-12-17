@@ -22,6 +22,8 @@ InfiniteCanvasAPI.forElement(el).then((api) => {
     "export-canvas-button-mob": api.exportCanvas.bind(api),
     "clear-canvas-button": api.clearCanvas.bind(api),
     "clear-canvas-button-mob": api.clearCanvas.bind(api),
+    'center-canvas-button': api.snapToCenter.bind(api),
+    'center-canvas-button-mob': api.snapToCenter.bind(api),
   };
 
   for (const [key, fn] of Object.entries(buttons)) {

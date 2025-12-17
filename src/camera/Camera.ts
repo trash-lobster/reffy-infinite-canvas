@@ -75,6 +75,10 @@ export class Camera {
     this.state.incrementPosition(dx, dy);
   }
 
+  setCameraPos(x: number, y: number) {
+    this.state.setPosition(x, y);
+  }
+
   /**
    * Pass in the center position to resolve the scaling around
    */

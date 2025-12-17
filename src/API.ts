@@ -62,6 +62,10 @@ export class InfiniteCanvasAPI {
     this.el.togglePointerMode();
   }
 
+  snapToCenter() {
+    this.el.snapToCenter();
+  }
+
   async addImageFromLocal(fileList: FileList) {
     // Validate all files are images before proceeding
     if (!fileList || fileList.length === 0) return;

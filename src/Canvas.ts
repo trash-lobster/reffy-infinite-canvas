@@ -499,18 +499,25 @@ export class Canvas extends Renderable {
 
   snapToCenter() {
     // move camera so its focus is on center point
+    const [camW, camH] = this.#camera.state.dimension;
+
+    const zoom = this.#camera.state.zoom;
     const center = this.getCenterPoint();
+    const diffX = center[0] - (camW * zoom / 2);
+    const diffY = center[1] - (camH * zoom / 2);
+
+    this.#camera.setCameraPos(diffX, diffY);
   }
 
   private getCenterPoint() {
     let minX = Number.MAX_SAFE_INTEGER, minY = Number.MAX_SAFE_INTEGER, maxX = Number.MIN_SAFE_INTEGER, maxY = Number.MIN_SAFE_INTEGER;
     for (const child of this.children) {
       if (!(child instanceof Img)) continue;
-      const aabb = child.AABB;
-      minX = Math.min(minX, child.AABB.minX);
-      maxX = Math.max(maxX, child.AABB.maxX);
-      minY = Math.min(minY, child.AABB.minY);
-      maxY = Math.max(maxY, child.AABB.maxY);
+      const edges = child.getEdge();
+      minX = Math.min(minX, edges.minX);
+      maxX = Math.max(maxX, edges.maxX);
+      minY = Math.min(minY, edges.minY);
+      maxY = Math.max(maxY, edges.maxY);
     }
 
     return [(minX + maxX) / 2, (minY + maxY) / 2];

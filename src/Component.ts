@@ -695,6 +695,11 @@ export class InfiniteCanvasElement extends LitElement {
     this.#canvas.updateZoomByFixedAmount();
   }
 
+  snapToCenter() {
+    if (!this.#canvas) return;
+    this.#canvas.snapToCenter();
+  }
+
   async addImages(fileList: FileList) {
     if (!this.#canvas) return;
 

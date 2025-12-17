@@ -229,7 +229,7 @@ export class InfiniteCanvasElement extends LitElement {
 
   #rootDiv: HTMLDivElement;
 
-  #onChange?: () => void;
+  #onChangeHandlers: Set<() => void> = new Set();
 
   #singleImageMenuOptions: ContextMenuProps;
   #multiImageMenuOptions: ContextMenuProps;
@@ -252,12 +252,29 @@ export class InfiniteCanvasElement extends LitElement {
     return this.#canvas;
   }
 
+  /**
+   * Backward-compatible single handler accessor.
+   * Returns the first registered handler (if any).
+   * Setting this will replace all registered handlers with the provided one.
+   */
   get onCanvasChange() {
-    return this.#onChange;
+    return this.#onChangeHandlers.values().next().value as
+      | (() => void)
+      | undefined;
   }
   set onCanvasChange(fn: () => void) {
-    this.#onChange = fn;
+    this.#onChangeHandlers.clear();
+    if (fn) this.#onChangeHandlers.add(fn);
   }
+
+  registerOnCanvasChange(fn: () => void) {
+    if (typeof fn === "function") this.#onChangeHandlers.add(fn);
+  }
+
+  deregisterOnCanvasChange(fn: () => void) {
+    this.#onChangeHandlers.delete(fn);
+  }
+  
   get eventHub() {
     return this.#eventHub;
   }
@@ -449,7 +466,13 @@ export class InfiniteCanvasElement extends LitElement {
     this.#eventHub.on(ContextMenuEvent.Open, this.addContextMenu);
     this.#eventHub.on(ContextMenuEvent.Close, this.clearContextMenu);
     this.#eventHub.on(CanvasEvent.Change, () => {
-      if (this.#onChange) this.#onChange();
+      for (const fn of this.#onChangeHandlers) {
+        try {
+          fn();
+        } catch (err) {
+          console.error("onCanvasChange handler failed", err);
+        }
+      }
     });
     this.#eventHub.on(SaveEvent.Save, this.saveToCanvasStorage);
     this.#eventHub.on(SaveEvent.SaveCompleted, () => {});
@@ -553,6 +576,18 @@ export class InfiniteCanvasElement extends LitElement {
 
     try {
       return await this.#fileStorage.readAll();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async deleteAllImageFileMetadata(): Promise<void> {
+    if (!this.#fileStorage) {
+      this.#fileStorage = new DefaultIndexedDbStorage();
+    }
+
+    try {
+      await this.#fileStorage.deleteAll();
     } catch (err) {
       console.error(err);
     }

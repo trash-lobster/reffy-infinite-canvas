@@ -67,7 +67,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
           .transaction("rw", db.files, async () => {
             await checkImageLimit(db);
 
-            return await db.files.add({
+            const id = await db.files.add({
               id: file.id,
               blob,
               dataURL: file.dataURL,
@@ -75,6 +75,15 @@ export class DefaultIndexedDbStorage extends FileStorage {
               created: file.created,
               lastRetrieved: file.lastRetrieved,
             } as any);
+
+            // Write-through to cache
+            this.cache.set(file.id, file);
+            if (this.cache.size > this.CACHE_LIMIT) {
+              const firstKey = this.cache.keys().next().value;
+              this.cache.delete(firstKey);
+            }
+
+            return id;
           })
           .catch((error) => {
             console.error("Failed to save image blob to local DB:", error);
@@ -134,16 +143,42 @@ export class DefaultIndexedDbStorage extends FileStorage {
       handleQuotaError(async (): Promise<ImageFileMetadata> => {
         const db: IndexDb = await this.getIndexDb();
 
-        return await db
+        const entry = await db
           .transaction("rw", db.files, async () => {
-            const entry = await db.files.where("id").equals(id).first();
-            await db.files.delete(entry.id);
-            return entry;
+            const existing = await db.files.where("id").equals(id).first();
+            if (existing) {
+              await db.files.delete(existing.id);
+            }
+            return existing;
           })
           .catch((error) => {
-            console.error("Failed to save image blob to local DB:", error);
+            console.error("Failed to delete image blob from local DB:", error);
             throw error;
           });
+
+        if (entry) this.cache.delete(entry.id);
+        else this.cache.delete(id);
+
+        return entry;
+      }),
+    );
+  }
+
+  async deleteAll(): Promise<void> {
+    return this.dbQueue.add(() =>
+      handleQuotaError(async (): Promise<void> => {
+        const db: IndexDb = await this.getIndexDb();
+
+        await db
+          .transaction("rw", db.files, async () => {
+            await db.files.clear();
+          })
+          .catch((error) => {
+            console.error("Failed to clear image blobs from local DB:", error);
+            throw error;
+          });
+
+        this.cache.clear();
       }),
     );
   }
@@ -165,6 +200,14 @@ export class DefaultIndexedDbStorage extends FileStorage {
           .where("id")
           .equals(newVersion.id)
           .first();
+          
+        if (updated) {
+          this.cache.set(updated.id, updated);
+          if (this.cache.size > this.CACHE_LIMIT) {
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+          }
+        }
         return updated;
       }),
     );

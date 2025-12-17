@@ -59,6 +59,7 @@ export abstract class FileStorage {
   ): Promise<ImageFileMetadata[]>;
   abstract read(id: string): Promise<ImageFileMetadata>;
   abstract delete(id: string): Promise<ImageFileMetadata>;
+  abstract deleteAll(): Promise<void>;
   abstract update(newVersion: ImageFileMetadata): Promise<ImageFileMetadata>;
   abstract checkIfImageStored(id: string): Promise<string | number | null>;
 }

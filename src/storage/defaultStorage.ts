@@ -265,6 +265,19 @@ export class DefaultLocalStorage extends CanvasStorage {
   async update(value: CanvasStorageEntry): Promise<void> {
     return this.write(value);
   }
+  
+  async changeCanvasKey(oldKey: string, newKey: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        const entry = localStorage.getItem(oldKey);
+        localStorage.setItem(newKey, entry);
+        localStorage.removeItem(oldKey);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    })
+  }
 }
 
 class QuotaExceededError extends Error {

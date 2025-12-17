@@ -2,6 +2,7 @@ import { ImageFileMetadata } from "storage";
 import { Canvas } from "../Canvas";
 import { Renderable, Rect, Img, Grid } from "../shapes";
 import { hashStringToId, performanceTest } from "../util";
+import { ParsedSerializedCanvas } from "./schema";
 
 /**
  * What should be exposed?
@@ -76,6 +77,7 @@ export type SerializedCanvas = {
   camera?: SerializedCamera;
   root: SerializedNode;
   files?: ImageFileMetadata[];
+  lastRetrieved: number;
 };
 
 function transformOf(node: Renderable): SerializedTransform {
@@ -154,11 +156,12 @@ export function serializeCanvas(
     },
     root: serializeNode(canvas),
     files,
+    lastRetrieved: Date.now(),
   };
 }
 
 export async function deserializeCanvas(
-  data: SerializedCanvas,
+  data: ParsedSerializedCanvas,
   canvas: Canvas,
   getFile: (id: string | number) => Promise<ImageFileMetadata>,
   writeFileToDatabase?: (data: string) => void,

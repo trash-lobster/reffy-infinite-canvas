@@ -80,11 +80,6 @@ export function downloadJSON(filename: string, data: SerializedCanvas) {
   URL.revokeObjectURL(url);
 }
 
-export async function readJSONFile<T = unknown>(file: File): Promise<T> {
-  const text = await file.text();
-  return JSON.parse(text) as T;
-}
-
 export function convertToPNG(src: string, quality = 1.0): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();

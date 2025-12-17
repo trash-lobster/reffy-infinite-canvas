@@ -161,7 +161,6 @@ export class Canvas extends Renderable {
       );
 
     this.exportState = this.exportState.bind(this);
-    this.importState = this.importState.bind(this);
     this.clearChildren = this.clearChildren.bind(this);
 
     this.#selectionManager = new SelectionManager(
@@ -428,13 +427,6 @@ export class Canvas extends Renderable {
 
   exportState() {
     return serializeCanvas(this);
-  }
-
-  async importState(
-    data: SerializedCanvas,
-    getFile: (fileId: string | number) => Promise<ImageFileMetadata>,
-  ) {
-    return await deserializeCanvas(data, this, getFile);
   }
 
   clearChildren() {

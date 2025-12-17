@@ -74,4 +74,5 @@ export abstract class CanvasStorage {
   abstract read(): Promise<string>;
   abstract delete(): Promise<void>;
   abstract update(value: CanvasStorageEntry): Promise<void>;
+  abstract changeCanvasKey(oldKey: string, newKey: string): Promise<void>;
 }

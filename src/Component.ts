@@ -12,11 +12,11 @@ import {
   paste,
   SaveEvent,
 } from "./util";
-import { downloadJSON, hashStringToId, readJSONFile } from "./util/files";
+import { downloadJSON, hashStringToId } from "./util/files";
 import {
   serializeCanvas,
   deserializeCanvas,
-  SerializedCanvas,
+  parseSerializedCanvas,
 } from "./serializer";
 import {
   AlignDirection,
@@ -619,9 +619,20 @@ export class InfiniteCanvasElement extends LitElement {
       this.#canvasStorage = new DefaultLocalStorage(this.name);
     }
     const dataAsString = await this.#canvasStorage.read();
-    const data = JSON.parse(dataAsString) as SerializedCanvas;
-    if (data) {
+    if (!dataAsString) return;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(dataAsString);
+    } catch (err) {
+      console.warn('Uploaded JSON cannot be converted to canvas');
+      return;
+    }
+
+    try {
+      const data = parseSerializedCanvas(raw);
       await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
+    } catch (e) {
+      console.warn("Saved canvas failed schema validation; ignoring.", e);
     }
   }
 
@@ -745,15 +756,25 @@ export class InfiniteCanvasElement extends LitElement {
         !file.name.toLowerCase().endsWith(".json"))
     )
       return;
-    const data = await readJSONFile<SerializedCanvas>(file);
-    await deserializeCanvas(
-      data,
-      this.#canvas,
-      this.getImageFileMetadata,
-      this.saveImageFileMetadata,
-    );
-    this.#eventHub.emit(SaveEvent.Save);
-    this.#eventHub.emit(LoaderEvent.done);
+    const dataString = await file.text();
+
+    let raw: unknown;
+    try {
+      raw = JSON.parse(dataString);
+    } catch (err) {
+      console.warn('Uploaded JSON cannot be converted to canvas');
+      return;
+    }
+
+    try {
+      const data = parseSerializedCanvas(raw);
+      await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
+      this.#eventHub.emit(SaveEvent.Save);
+    } catch (e) {
+      console.warn("Saved canvas failed schema validation; ignoring.", e);
+    } finally {
+      this.#eventHub.emit(LoaderEvent.done);
+    }
   }
 
   clearCanvas() {

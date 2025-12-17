@@ -49,6 +49,24 @@ export class DefaultIndexedDbStorage extends FileStorage {
     return this.dbPromise;
   }
 
+  private setCache(id: string | number, entry: ImageFileMetadata) {
+    this.cache.delete(id);
+    this.cache.set(id, entry);
+
+    if (this.cache.size > this.CACHE_LIMIT) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+  }
+
+  private touchCache(id: string | number) {
+    const val = this.cache.get(id);
+    if (!val) return;
+    
+    this.cache.delete(id);
+    this.cache.set(id, val);
+  }
+
   /**
    * Writes to indexedDB
    * @param data
@@ -76,13 +94,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
               lastRetrieved: file.lastRetrieved,
             } as any);
 
-            // Write-through to cache
-            this.cache.set(file.id, file);
-            if (this.cache.size > this.CACHE_LIMIT) {
-              const firstKey = this.cache.keys().next().value;
-              this.cache.delete(firstKey);
-            }
-
+            this.setCache(file.id, file);
             return id;
           })
           .catch((error) => {
@@ -112,7 +124,8 @@ export class DefaultIndexedDbStorage extends FileStorage {
       const db: IndexDb = await this.getIndexDb();
 
       if (this.cache.has(id)) {
-        return this.cache.get(id) as ImageFileMetadata;
+        this.touchCache(id);
+        return this.cache.get(id)!;
       }
 
       const entry = await db.files.get(id);
@@ -128,12 +141,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
         })
         .catch(() => {});
 
-      this.cache.set(id, entry);
-      if (this.cache.size > this.CACHE_LIMIT) {
-        const firstKey = this.cache.keys().next().value;
-        this.cache.delete(firstKey);
-      }
-
+      this.setCache(id, entry);
       return entry;
     });
   }
@@ -202,11 +210,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
           .first();
           
         if (updated) {
-          this.cache.set(updated.id, updated);
-          if (this.cache.size > this.CACHE_LIMIT) {
-            const firstKey = this.cache.keys().next().value;
-            this.cache.delete(firstKey);
-          }
+          this.setCache(updated.id, updated);
         }
         return updated;
       }),
@@ -308,7 +312,7 @@ export class DefaultLocalStorage extends CanvasStorage {
           localStorage.setItem(newKey, entry);
           localStorage.removeItem(oldKey);
         }
-        
+
         if (this.key === oldKey) this.key = newKey;
         resolve();
       } catch (err) {

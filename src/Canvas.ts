@@ -26,12 +26,9 @@ import { Camera } from "./camera";
 import { CameraState, PointerEventState } from "./state";
 import { CanvasHistory } from "./history";
 import {
-  deserializeCanvas,
   serializeCanvas,
-  SerializedCanvas,
 } from "./serializer";
 import EventEmitter from "eventemitter3";
-import { ImageFileMetadata } from "./storage";
 import { AABB } from "./bounding";
 
 export class Canvas extends Renderable {
@@ -147,6 +144,7 @@ export class Canvas extends Renderable {
     this.changeMode = this.changeMode.bind(this);
     this.getSelected = this.getSelected.bind(this);
     this.updateZoomByFixedAmount = this.updateZoomByFixedAmount.bind(this);
+    this.getCenterPoint = this.getCenterPoint.bind(this);
 
     this.assignEventListener = this.assignEventListener.bind(this);
     this.getWorldsCoordsFromCanvas = (x: number, y: number) =>
@@ -497,6 +495,25 @@ export class Canvas extends Renderable {
 
   getBoundingClientRect() {
     return this.#canvas.getBoundingClientRect();
+  }
+
+  snapToCenter() {
+    // move camera so its focus is on center point
+    const center = this.getCenterPoint();
+  }
+
+  private getCenterPoint() {
+    let minX = Number.MAX_SAFE_INTEGER, minY = Number.MAX_SAFE_INTEGER, maxX = Number.MIN_SAFE_INTEGER, maxY = Number.MIN_SAFE_INTEGER;
+    for (const child of this.children) {
+      if (!(child instanceof Img)) continue;
+      const aabb = child.AABB;
+      minX = Math.min(minX, child.AABB.minX);
+      maxX = Math.max(maxX, child.AABB.maxX);
+      minY = Math.min(minY, child.AABB.minY);
+      maxY = Math.max(maxY, child.AABB.maxY);
+    }
+
+    return [(minX + maxX) / 2, (minY + maxY) / 2];
   }
 
   private static webglStats = {

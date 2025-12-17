@@ -21,6 +21,7 @@ import {
 import {
   AlignDirection,
   makeMultiAddChildCommand,
+  makeMultiRemoveChildCommand,
   makeRemoveChildCommand,
   NormalizeMode,
   NormalizeOption,
@@ -45,6 +46,7 @@ import {
 } from "./storage";
 import EventEmitter from "eventemitter3";
 import { hideLoader, showLoader } from "./loader";
+import { Img } from "./shapes";
 
 // Add type declaration for import.meta.env for Vite compatibility
 interface ImportMetaEnv {
@@ -248,10 +250,6 @@ export class InfiniteCanvasElement extends LitElement {
     return this.#canvasImageMenuOptions;
   }
 
-  get canvas() {
-    return this.#canvas;
-  }
-
   /**
    * Backward-compatible single handler accessor.
    * Returns the first registered handler (if any).
@@ -453,10 +451,10 @@ export class InfiniteCanvasElement extends LitElement {
     canvas.style.height = `${h}px`;
 
     // sets up camera dimensions
-    this.canvas.camera.viewportX = rect.x;
-    this.canvas.camera.viewportY = rect.y;
-    this.canvas.camera.state.setHeight(rect.height);
-    this.canvas.camera.state.setWidth(rect.width);
+    this.#canvas.camera.viewportX = rect.x;
+    this.#canvas.camera.viewportY = rect.y;
+    this.#canvas.camera.state.setHeight(rect.height);
+    this.#canvas.camera.state.setWidth(rect.width);
   }
 
   // Register signal
@@ -491,6 +489,10 @@ export class InfiniteCanvasElement extends LitElement {
     } catch (err) {
       console.error("Storage warm-up failed", err);
     }
+  }
+
+  isCanvasReady() {
+    return this.#canvas !== null;
   }
 
   /**
@@ -714,6 +716,13 @@ export class InfiniteCanvasElement extends LitElement {
     const child = this.#canvas.getChild(id);
     this.#canvas.removeChild(child);
     this.#history.push(makeRemoveChildCommand(this.#canvas, child));
+  }
+
+  removeAllImages() {
+    if (!this.#canvas) return;
+    const images = Array.from(this.#canvas.children).filter(ch => ch instanceof Img);
+    for (const img of images) this.#canvas.removeChild(img);
+    this.#history.push(makeMultiRemoveChildCommand(this.#canvas, images));
   }
 
   /**

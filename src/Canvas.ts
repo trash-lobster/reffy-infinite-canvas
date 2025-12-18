@@ -509,6 +509,107 @@ export class Canvas extends Renderable {
     this.#camera.setCameraPos(diffX, diffY);
   }
 
+  async getViewportThumbnail(width: number, height: number): Promise<string> {
+    await new Promise(requestAnimationFrame);
+
+    this.render();
+    const src = this.gl.canvas as HTMLCanvasElement;
+
+    if (typeof OffscreenCanvas !== 'undefined') {
+      const off = new OffscreenCanvas(width, height);
+      const ctx = off.getContext('2d');
+      if (!ctx) throw new Error('Failed to get 2D context for OffscreenCanvas');
+      ctx.imageSmoothingEnabled = true;
+      
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, width, height);
+
+      const blob = await off.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      return dataUrl;
+    }
+
+    // Fallback to DOM canvas in environments without OffscreenCanvas
+    const out = document.createElement('canvas');
+    out.width = width;
+    out.height = height;
+    const ctx = out.getContext('2d');
+    if (!ctx) throw new Error('Failed to get 2D context for Canvas');
+    ctx.imageSmoothingEnabled = true;
+
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, width, height);
+    return out.toDataURL('image/jpeg');
+  }
+
+  async getContentThumbnail(width: number, height: number, padding = 12): Promise<string> {
+    const prev = {
+      x: this.camera.state.x,
+      y: this.camera.state.y,
+      zoom: this.camera.state.zoom,
+    };
+    try {
+      const bounds = this.getContentBound();
+      if (!bounds) return this.getViewportThumbnail(width, height);
+      console.log(bounds);
+      
+      const worldW = bounds.maxX - bounds.minX;
+      const worldH = bounds.maxY - bounds.minY;
+
+      console.log(worldW, worldH);
+
+      // Fit world bounds into current canvas viewport, then we’ll downscale
+      const vpW = this.#camera.state.width;
+      const vpH = this.#camera.state.height;
+      const worldPad = padding * 2;
+
+      const scaleX = (worldW + worldPad) / vpW;
+      const scaleY = (worldH + worldPad) / vpH;
+      const targetZoom = Math.max(0.0001, Math.max(scaleX, scaleY));
+      console.log(scaleX, scaleY);
+
+      this.camera.state.setZoom(targetZoom);
+      console.log(targetZoom);
+      // Position so that minX/minY is at top-left with a padding that is consistent despite zoom
+      const offsetX = bounds.minX - (padding / 2 * targetZoom);
+      const offsetY = bounds.minY - (padding / 2 * targetZoom);
+      // need to center it
+      this.camera.setCameraPos(bounds.minX, bounds.minY);
+
+      // Render once with framed camera
+      // this.render();
+      return await this.getViewportThumbnail(width, height);
+    } catch(err) {
+      console.error(err);
+    } finally {
+      // Restore camera
+      this.camera.state.setZoom(prev.zoom);
+      this.camera.setCameraPos(prev.x, prev.y);
+      // this.render();
+    }
+  }
+
+  private getContentBound() {
+    let minX = Number.MAX_SAFE_INTEGER, minY = Number.MAX_SAFE_INTEGER, maxX = Number.MIN_SAFE_INTEGER, maxY = Number.MIN_SAFE_INTEGER;
+    for (const child of this.children) {
+      if (!(child instanceof Img)) continue;
+      const edges = child.getEdge();
+      minX = Math.min(minX, edges.minX);
+      maxX = Math.max(maxX, edges.maxX);
+      minY = Math.min(minY, edges.minY);
+      maxY = Math.max(maxY, edges.maxY);
+    }
+    
+    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) return null;
+    return { minX, minY, maxX, maxY };
+  }
+
   private getCenterPoint() {
     let minX = Number.MAX_SAFE_INTEGER, minY = Number.MAX_SAFE_INTEGER, maxX = Number.MIN_SAFE_INTEGER, maxY = Number.MIN_SAFE_INTEGER;
     for (const child of this.children) {

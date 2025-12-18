@@ -595,6 +595,14 @@ export class InfiniteCanvasElement extends LitElement {
     }
   }
 
+  async generateViewportThumbnail(width: number, height: number) {
+    return await this.#canvas.getViewportThumbnail(width, height);
+  }
+
+  async generateContentThumbnail(width: number, height: number) {
+    return await this.#canvas.getContentThumbnail(width, height);
+  }
+
   /**
    * Schedule the auto save to the canvas storage based on timer
    */

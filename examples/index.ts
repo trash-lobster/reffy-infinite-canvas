@@ -38,6 +38,18 @@ InfiniteCanvasAPI.forElement(el).then((api) => {
     }
   }
 
+  const viewportThumbnailButton = document.getElementById('viewport-thumbnail-button') as HTMLButtonElement;
+  viewportThumbnailButton.onclick = async () => {
+    const thumbnail = await api.generateViewportThumbnail(500, 200);
+    if (thumbnail) api.addImage(thumbnail);
+  }
+
+  const contentThumbnailButton = document.getElementById('content-thumbnail-button') as HTMLButtonElement;
+  contentThumbnailButton.onclick = async () => {
+    const thumbnail = await api.generateContentThumbnail(1000, 500);
+    if (thumbnail) api.addImage(thumbnail);
+  }
+
   const hiddenInput = document.getElementById(
     "add-image-input",
   ) as HTMLInputElement;

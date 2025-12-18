@@ -46,7 +46,7 @@ InfiniteCanvasAPI.forElement(el).then((api) => {
 
   const contentThumbnailButton = document.getElementById('content-thumbnail-button') as HTMLButtonElement;
   contentThumbnailButton.onclick = async () => {
-    const thumbnail = await api.generateContentThumbnail(1000, 500);
+    const thumbnail = await api.generateContentThumbnail(1500, 1000);
     if (thumbnail) api.addImage(thumbnail);
   }
 

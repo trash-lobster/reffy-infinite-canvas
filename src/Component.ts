@@ -600,7 +600,8 @@ export class InfiniteCanvasElement extends LitElement {
   }
 
   async generateContentThumbnail(width: number, height: number) {
-    return await this.#canvas.getContentThumbnail(width, height);
+    return await this.#canvas.getContentThumbnailViaFBO(width, height);
+    // return await this.#canvas.getContentThumbnail(width, height);
   }
 
   /**

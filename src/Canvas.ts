@@ -595,6 +595,102 @@ export class Canvas extends Renderable {
     }
   }
 
+  async getContentThumbnailViaFBO(width: number, height: number, padding = 12): Promise<string> {
+    const gl = this.gl;
+
+    /**
+     * Issues:
+     * Respect aspect ratio
+     * Resize image based on given aspect ratio + add minimum padding
+     * Add padding to fill the image
+     * Turn off grid when doing screenshot
+     */
+
+    // Create offscreen target
+    const fbo = gl.createFramebuffer();
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+
+    // Save camera; compute target framing
+    const prev = { x: this.camera.state.x, y: this.camera.state.y, zoom: this.camera.state.zoom };
+    const bounds = this.getContentBound();
+    if (!bounds) {
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.deleteTexture(tex); gl.deleteFramebuffer(fbo);
+      return this.getViewportThumbnail(width, height);
+    }
+
+    const worldW = bounds.maxX - bounds.minX;
+    const worldH = bounds.maxY - bounds.minY;
+    const aspectRatio = worldW / worldH;
+    const vpW = this.#camera.state.width;
+    const vpH = this.#camera.state.height;
+    const worldPad = padding * 2;
+
+    const ratioedW = aspectRatio * height > width ? width : aspectRatio * height;
+    const ratioedH = width / aspectRatio > height ? height : width / aspectRatio;
+
+    const scale = ratioedH / worldH;
+
+    const scaleX = (worldW + worldPad) / vpW;
+    const scaleY = (worldH + worldPad) / vpH;
+    const targetZoom = Math.max(0.0001, Math.max(scaleX, scaleY));
+    this.camera.state.setZoom(targetZoom);
+    this.camera.setCameraPos(bounds.minX, bounds.minY);
+
+    // Render offscreen
+    gl.viewport(0, 0, width, height);
+    this.render(); // draws into FBO, not the visible canvas
+
+    // Read pixels
+    const pixels = new Uint8Array(width * height * 4);
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+    const rowSize = width * 4;
+    const flipped = new Uint8ClampedArray(pixels.length);
+    for (let y = 0; y < height; y++) {
+      const srcStart = y * rowSize;
+      const dstStart = (height - 1 - y) * rowSize;
+      flipped.set(pixels.subarray(srcStart, srcStart + rowSize), dstStart);
+    }
+
+    // Restore
+    // this.camera.state.setZoom(prev.zoom);
+    // this.camera.setCameraPos(prev.x, prev.y);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.deleteTexture(tex); 
+    gl.deleteFramebuffer(fbo);
+
+    // Encode via OffscreenCanvas (fast) into data URL
+    const off = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : null;
+    if (off) {
+      const ctx = off.getContext('2d')!;
+      const imgData = new ImageData(flipped, width, height);
+      ctx.putImageData(imgData, 0, 0);
+      const blob = await off.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+      return await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onloadend = () => resolve(r.result as string);
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+      });
+    } else {
+      const out = document.createElement('canvas');
+      out.width = width; out.height = height;
+      const ctx = out.getContext('2d')!;
+      const imgData = new ImageData(flipped, width, height);
+      ctx.putImageData(imgData, 0, 0);
+      return out.toDataURL('image/jpeg');
+    }
+  }
+
   private getContentBound() {
     let minX = Number.MAX_SAFE_INTEGER, minY = Number.MAX_SAFE_INTEGER, maxX = Number.MIN_SAFE_INTEGER, maxY = Number.MIN_SAFE_INTEGER;
     for (const child of this.children) {

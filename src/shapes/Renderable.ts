@@ -110,7 +110,7 @@ export abstract class Renderable {
     this.state.updateWorldMatrix(parentWorldMatrix);
   }
 
-  abstract render(gl: WebGLRenderingContext, program: WebGLProgram): void;
+  abstract render(gl: WebGLRenderingContext, program: WebGLProgram, captureSize?: { width: number; height: number }): void;
   abstract destroy(): void;
   abstract hitTest(x: number, y: number): boolean;
 

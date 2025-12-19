@@ -43,6 +43,8 @@ export class Canvas extends Renderable {
   #gridProgram: WebGLProgram;
   #grid: Grid;
 
+  #screenShotCaptureSize: { width: number; height: number } = null;
+
   #isGlobalClick = true;
 
   #selectionManager: SelectionManager;
@@ -294,11 +296,19 @@ export class Canvas extends Renderable {
     this.#gl.clear(this.#gl.COLOR_BUFFER_BIT | this.#gl.DEPTH_BUFFER_BIT);
     this.#gl.viewport(0, 0, this.#gl.canvas.width, this.#gl.canvas.height);
 
+    if (this.#screenShotCaptureSize) {
+      this.#gl.viewport(0, 0, this.#screenShotCaptureSize.width, this.#screenShotCaptureSize.height);
+      this.camera.setViewPortDimension(
+        this.#screenShotCaptureSize.width,
+        this.#screenShotCaptureSize.height,
+      );
+    } else {
     const parentBoundingBox = this.canvas.parentElement.getBoundingClientRect();
     this.camera.setViewPortDimension(
       parentBoundingBox.width,
       parentBoundingBox.height,
     );
+    }
 
     this.#gl.useProgram(this.#gridProgram);
     const uZGrid = this.#gl.getUniformLocation(this.#gridProgram, "u_z");
@@ -313,7 +323,8 @@ export class Canvas extends Renderable {
     for (const renderable of this.children as Shape[]) {
       totalRenderable++;
 
-      if (!AABB.isColliding(cameraBoundingBox, renderable.getBoundingBox())) {
+      // ignore culling when performing screen shot
+      if (!this.#screenShotCaptureSize && !AABB.isColliding(cameraBoundingBox, renderable.getBoundingBox())) {
         renderable.culled = true;
       } else {
         rendered++;
@@ -330,16 +341,20 @@ export class Canvas extends Renderable {
       this,
     );
     const screenAABB = new AABB(sww, swh, ww, wh);
-    this.renderList.forEach((child) => {
-      if (child instanceof Img) {
-        const useLowRes = (child as Img).determineIfLowRes(
-          screenAABB,
-          this.camera.state.zoom,
-        );
-
-        (child as Img).setUseLowRes(useLowRes, this.gl);
-      }
-    });
+    
+    // ignore low res calculation when performing screenshot, quality is determined by processing anyways
+    if (!this.#screenShotCaptureSize) {
+      this.renderList.forEach((child) => {
+        if (child instanceof Img) {
+          const useLowRes = (child as Img).determineIfLowRes(
+            screenAABB,
+            this.camera.state.zoom,
+          );
+  
+          (child as Img).setUseLowRes(useLowRes, this.gl);
+        }
+      });
+    }
 
     for (const renderable of this.renderList) {
       let program: WebGLProgram;
@@ -620,7 +635,6 @@ export class Canvas extends Renderable {
     const prev = { x: this.camera.state.x, y: this.camera.state.y, zoom: this.camera.state.zoom };
     const bounds = this.getContentBound();
     if (!bounds) {
-
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.deleteTexture(tex); gl.deleteFramebuffer(fbo);
       return this.getViewportThumbnail(width, height);
@@ -631,24 +645,27 @@ export class Canvas extends Renderable {
     const aspectRatio = worldW / worldH;
     const vpW = this.#camera.state.width;
     const vpH = this.#camera.state.height;
-    const worldPad = padding * 2;
 
     const ratioedW = aspectRatio * height > width ? width : aspectRatio * height;
     const ratioedH = width / aspectRatio > height ? height : width / aspectRatio;
 
-    const scale = ratioedH / worldH;
-
-    const scaleX = (worldW + worldPad) / vpW;
-    const scaleY = (worldH + worldPad) / vpH;
+    const scaleX = (worldW ) / vpW;
+    const scaleY = (worldH ) / vpH;
     const targetZoom = Math.max(0.0001, Math.max(scaleX, scaleY));
     this.camera.state.setZoom(targetZoom);
     this.camera.setCameraPos(bounds.minX, bounds.minY);
 
     // Render offscreen
     gl.viewport(0, 0, width, height);
+    this.#screenShotCaptureSize = {
+      height,
+      width,
+    }
     this.render(); // draws into FBO, not the visible canvas
 
-    // Read pixels
+    this.#screenShotCaptureSize = null;
+
+    // // Read pixels
     const pixels = new Uint8Array(width * height * 4);
     gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
@@ -660,15 +677,15 @@ export class Canvas extends Renderable {
       flipped.set(pixels.subarray(srcStart, srcStart + rowSize), dstStart);
     }
 
-    // Restore
-    // this.camera.state.setZoom(prev.zoom);
-    // this.camera.setCameraPos(prev.x, prev.y);
+    // // Restore
+    // // this.camera.state.setZoom(prev.zoom);
+    // // this.camera.setCameraPos(prev.x, prev.y);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.deleteTexture(tex); 
     gl.deleteFramebuffer(fbo);
 
-    // Encode via OffscreenCanvas (fast) into data URL
+    // // Encode via OffscreenCanvas (fast) into data URL
     const off = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : null;
     if (off) {
       const ctx = off.getContext('2d')!;

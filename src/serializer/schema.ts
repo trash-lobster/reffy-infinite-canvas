@@ -45,7 +45,7 @@ const NodeSchema: z.ZodType<any> = z.lazy(() =>
         renderOrder: z.number().int().optional(),
         width: z.number().positive(),
         height: z.number().positive(),
-        fileId: z.union([z.string(), z.number()]),
+        fileId: z.union([z.string(), z.number()]).optional(),
       })
       .strict(),
     z.object({

@@ -343,7 +343,6 @@ export class Canvas extends Renderable {
     const screenAABB = new AABB(sww, swh, ww, wh);
     
     // ignore low res calculation when performing screenshot, quality is determined by processing anyways
-    if (!this.#screenShotCaptureSize) {
       this.renderList.forEach((child) => {
         if (child instanceof Img) {
           const useLowRes = (child as Img).determineIfLowRes(
@@ -351,10 +350,9 @@ export class Canvas extends Renderable {
             this.camera.state.zoom,
           );
   
-          (child as Img).setUseLowRes(useLowRes, this.gl);
+        (child as Img).setUseLowRes(this.#screenShotCaptureSize ? false : useLowRes, this.gl);
         }
       });
-    }
 
     for (const renderable of this.renderList) {
       let program: WebGLProgram;

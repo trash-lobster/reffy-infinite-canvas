@@ -93,6 +93,10 @@ export class Rect extends Shape {
     return this.AABB;
   }
 
+  /**
+   * edges are unaffected by world zoom factor
+   * @returns 
+   */
   getEdge() {
     const x = this.x,
       y = this.y;

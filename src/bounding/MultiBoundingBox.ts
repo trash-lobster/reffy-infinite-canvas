@@ -162,6 +162,7 @@ export class MultiBoundingBox {
 
       target.updateScale(factor, factor);
       target.updateTranslation(dLx, dLy);
+
     }
   }
 

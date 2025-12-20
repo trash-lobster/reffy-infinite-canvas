@@ -599,9 +599,14 @@ export class InfiniteCanvasElement extends LitElement {
     return await this.#canvas.getViewportThumbnail(width, height);
   }
 
-  async generateContentThumbnail(width: number, height: number) {
-    return await this.#canvas.getContentThumbnailViaFBO(width, height);
-    // return await this.#canvas.getContentThumbnail(width, height);
+  /**
+   * If neither
+   * @param width 
+   * @param height 
+   * @returns 
+   */
+  async generateContentThumbnail(width?: number, height?: number) {
+    return await this.#canvas.getContentThumbnail({width, height});
   }
 
   /**
@@ -790,6 +795,13 @@ export class InfiniteCanvasElement extends LitElement {
     this.#canvas.setShapeZOrder(toFront);
   }
 
+  checkMetadata() {
+    if (!this.#canvas) return;
+    const selected = this.#canvas.selectionManager.selected;
+    if (selected.length != 1) return;
+    console.log(selected[0].getEdge());
+  }
+
   deleteSelectedImages() {
     if (!this.#canvas) return;
     this.#canvas.selectionManager.deleteSelected(this.#canvas);
@@ -827,6 +839,8 @@ export class InfiniteCanvasElement extends LitElement {
 
     try {
       const data = parseSerializedCanvas(raw);
+      // clear any existing selection - might write a wrapper instead
+      this.#canvas.selectionManager.clear();
       await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
       this.#eventHub.emit(SaveEvent.Save);
     } catch (e) {

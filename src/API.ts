@@ -16,6 +16,10 @@ export class InfiniteCanvasAPI {
     this.exportCanvas = this.exportCanvas.bind(this);
     this.importCanvas = this.importCanvas.bind(this);
     this.clearCanvas = this.clearCanvas.bind(this);
+    this.snapToCenter = this.snapToCenter.bind(this);
+    this.addImage = this.addImage.bind(this);
+    this.generateContentThumbnail = this.generateContentThumbnail.bind(this);
+    this.generateViewportThumbnail = this.generateViewportThumbnail.bind(this);
   }
 
   static async forElement(

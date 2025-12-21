@@ -43,9 +43,10 @@ export class BoundingBox {
   }
 
   private setDimension() {
-    const edge = this.target.getEdge();
-    this.width = edge.maxX - edge.minX;
-    this.height = edge.maxY - edge.minY;
+    const [signX, signY] = isScalePositive(this.target.worldMatrix);
+    const {minX, maxX, minY, maxY} = this.target.getEdge();
+    this.width = (maxX - minX) / this.target.sx * signX;
+    this.height = (maxY - minY) / this.target.sy * signY;
   }
 
   private getSidesInScreenSpace(type: string, matrix?: number[]) {

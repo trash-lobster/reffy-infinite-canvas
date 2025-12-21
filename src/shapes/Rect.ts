@@ -101,10 +101,10 @@ export class Rect extends Shape {
     const x = this.x,
       y = this.y;
     return {
-      minX: Math.min(x, x + this.width),
-      maxX: Math.max(x, x + this.width),
-      minY: Math.min(y, y + this.height),
-      maxY: Math.max(y, y + this.height),
+      minX: Math.min(x, x + this.width * this.sx),
+      maxX: Math.max(x, x + this.width * this.sx),
+      minY: Math.min(y, y + this.height * this.sy),
+      maxY: Math.max(y, y + this.height * this.sy),
     };
   }
 

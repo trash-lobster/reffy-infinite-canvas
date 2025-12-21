@@ -98,7 +98,7 @@ export class InfiniteCanvasAPI {
     return await this.el.generateViewportThumbnail(width, height);
   }
 
-  async generateContentThumbnail(width?: number, height?: number) {    
+  async generateContentThumbnail(width?: number, height?: number) {
     return await this.el.generateContentThumbnail(width, height);
   }
 

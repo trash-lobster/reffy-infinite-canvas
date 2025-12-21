@@ -162,7 +162,6 @@ export class MultiBoundingBox {
 
       target.updateScale(factor, factor);
       target.updateTranslation(dLx, dLy);
-
     }
   }
 
@@ -176,7 +175,10 @@ export class MultiBoundingBox {
     const transformArray: FlipSnapshotItem[] = [];
 
     const [startX, startY] = getWorldCoords(this.x, this.y);
-    const [endX, endY] = getWorldCoords(this.x + this.width, this.y + this.height);
+    const [endX, endY] = getWorldCoords(
+      this.x + this.width,
+      this.y + this.height,
+    );
 
     for (const target of this.targets) {
       const transform: FlipSnapshotItem = {

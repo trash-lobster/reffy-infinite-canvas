@@ -22,33 +22,37 @@ InfiniteCanvasAPI.forElement(el).then((api) => {
     "export-canvas-button-mob": api.exportCanvas.bind(api),
     "clear-canvas-button": api.clearCanvas.bind(api),
     "clear-canvas-button-mob": api.clearCanvas.bind(api),
-    'center-canvas-button': api.snapToCenter.bind(api),
-    'center-canvas-button-mob': api.snapToCenter.bind(api),
+    "center-canvas-button": api.snapToCenter.bind(api),
+    "center-canvas-button-mob": api.snapToCenter.bind(api),
   };
 
   for (const [key, fn] of Object.entries(buttons)) {
     const btn = document.getElementById(key)!;
-    if (!key.includes('-mob')) {
+    if (!key.includes("-mob")) {
       btn.onclick = () => fn();
     } else {
       btn.onclick = () => {
         fn();
-        if(mobileContainer) mobileContainer.classList.toggle("is-open");
-      }
+        if (mobileContainer) mobileContainer.classList.toggle("is-open");
+      };
     }
   }
 
-  const viewportThumbnailButton = document.getElementById('viewport-thumbnail-button') as HTMLButtonElement;
+  const viewportThumbnailButton = document.getElementById(
+    "viewport-thumbnail-button",
+  ) as HTMLButtonElement;
   viewportThumbnailButton.onclick = async () => {
     const thumbnail = await api.generateViewportThumbnail(500, 200);
     if (thumbnail) api.addImage(thumbnail);
-  }
+  };
 
-  const contentThumbnailButton = document.getElementById('content-thumbnail-button') as HTMLButtonElement;
+  const contentThumbnailButton = document.getElementById(
+    "content-thumbnail-button",
+  ) as HTMLButtonElement;
   contentThumbnailButton.onclick = async () => {
     const thumbnail = await api.generateContentThumbnail();
     if (thumbnail) api.addImage(thumbnail);
-  }
+  };
 
   const hiddenInput = document.getElementById(
     "add-image-input",
@@ -98,5 +102,4 @@ InfiniteCanvasAPI.forElement(el).then((api) => {
   };
 
   el.onCanvasChange = () => console.log("data changed");
-
 });

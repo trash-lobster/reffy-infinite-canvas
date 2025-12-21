@@ -14,8 +14,13 @@ const ImageFileSchema = z
     id: z.union([z.string(), z.number()]),
     dataURL: z
       .string()
-      .regex(/^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+$/, "Invalid image data URL"),
-    mimetype: z.string().regex(/^image\/[a-z0-9.+-]+$/i, "Invalid image MIME type"),
+      .regex(
+        /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+$/,
+        "Invalid image data URL",
+      ),
+    mimetype: z
+      .string()
+      .regex(/^image\/[a-z0-9.+-]+$/i, "Invalid image MIME type"),
     created: z.number(),
     lastRetrieved: z.number(),
   })
@@ -24,7 +29,8 @@ const ImageFileSchema = z
 type NodeSchemaType = z.infer<typeof NodeSchema>;
 const NodeSchema: z.ZodType<any> = z.lazy(() =>
   z.discriminatedUnion("type", [
-    z.object({
+    z
+      .object({
         type: z.literal("Rect"),
         id: z.number().int().optional(),
         transform: TransformSchema,
@@ -36,7 +42,8 @@ const NodeSchema: z.ZodType<any> = z.lazy(() =>
         color: z.tuple([z.number(), z.number(), z.number(), z.number()]),
       })
       .strict(),
-    z.object({
+    z
+      .object({
         type: z.literal("Img"),
         id: z.number().int().optional(),
         transform: TransformSchema,
@@ -48,14 +55,16 @@ const NodeSchema: z.ZodType<any> = z.lazy(() =>
         fileId: z.union([z.string(), z.number()]).optional(),
       })
       .strict(),
-    z.object({
+    z
+      .object({
         type: z.literal("Grid"),
         id: z.number().int().optional(),
         style: z.number().int().optional(),
         children: z.array(NodeSchema).optional(),
       })
       .strict(),
-    z.object({
+    z
+      .object({
         type: z.literal("Renderable"),
         id: z.number().int().optional(),
         transform: TransformSchema.optional(),
@@ -64,7 +73,7 @@ const NodeSchema: z.ZodType<any> = z.lazy(() =>
         renderOrder: z.number().int().optional(),
       })
       .strict(),
-  ])
+  ]),
 );
 
 const CameraSchema = z
@@ -88,7 +97,10 @@ export const SerializedCanvasSchema = z
     camera: CameraSchema.optional(),
     root: NodeSchema,
     files: z.array(ImageFileSchema).optional(),
-    lastRetrieved: z.number().optional().transform((v) => (typeof v === "number" ? v : Date.now())),
+    lastRetrieved: z
+      .number()
+      .optional()
+      .transform((v) => (typeof v === "number" ? v : Date.now())),
   })
   .strict();
 

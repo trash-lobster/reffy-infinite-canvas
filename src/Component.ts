@@ -272,7 +272,7 @@ export class InfiniteCanvasElement extends LitElement {
   deregisterOnCanvasChange(fn: () => void) {
     this.#onChangeHandlers.delete(fn);
   }
-  
+
   get eventHub() {
     return this.#eventHub;
   }
@@ -601,12 +601,12 @@ export class InfiniteCanvasElement extends LitElement {
 
   /**
    * If neither
-   * @param width 
-   * @param height 
-   * @returns 
+   * @param width
+   * @param height
+   * @returns
    */
   async generateContentThumbnail(width?: number, height?: number) {
-    return await this.#canvas.getContentThumbnail({width, height});
+    return await this.#canvas.getContentThumbnail({ width, height });
   }
 
   /**
@@ -654,7 +654,7 @@ export class InfiniteCanvasElement extends LitElement {
     try {
       raw = JSON.parse(dataAsString);
     } catch (err) {
-      console.warn('Uploaded JSON cannot be converted to canvas');
+      console.warn("Uploaded JSON cannot be converted to canvas");
       return;
     }
 
@@ -672,8 +672,8 @@ export class InfiniteCanvasElement extends LitElement {
     }
     try {
       this.#canvasStorage.delete();
-    } catch(err) {
-      console.error('Failed to delete canvas storage ', err);
+    } catch (err) {
+      console.error("Failed to delete canvas storage ", err);
     }
   }
 
@@ -683,8 +683,8 @@ export class InfiniteCanvasElement extends LitElement {
     }
     try {
       this.#canvasStorage.changeCanvasKey(this.name, newName);
-    } catch(err) {
-      console.error('Failed to delete canvas storage ', err);
+    } catch (err) {
+      console.error("Failed to delete canvas storage ", err);
     }
   }
 
@@ -739,7 +739,9 @@ export class InfiniteCanvasElement extends LitElement {
 
   removeAllImages() {
     if (!this.#canvas) return;
-    const images = Array.from(this.#canvas.children).filter(ch => ch instanceof Img);
+    const images = Array.from(this.#canvas.children).filter(
+      (ch) => ch instanceof Img,
+    );
     for (const img of images) this.#canvas.removeChild(img);
     this.#history.push(makeMultiRemoveChildCommand(this.#canvas, images));
   }
@@ -833,7 +835,7 @@ export class InfiniteCanvasElement extends LitElement {
     try {
       raw = JSON.parse(dataString);
     } catch (err) {
-      console.warn('Uploaded JSON cannot be converted to canvas');
+      console.warn("Uploaded JSON cannot be converted to canvas");
       return;
     }
 

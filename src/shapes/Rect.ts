@@ -95,7 +95,7 @@ export class Rect extends Shape {
 
   /**
    * edges are unaffected by world zoom factor
-   * @returns 
+   * @returns
    */
   getEdge() {
     const x = this.x,

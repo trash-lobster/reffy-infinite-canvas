@@ -62,7 +62,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
   private touchCache(id: string | number) {
     const val = this.cache.get(id);
     if (!val) return;
-    
+
     this.cache.delete(id);
     this.cache.set(id, val);
   }
@@ -208,7 +208,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
           .where("id")
           .equals(newVersion.id)
           .first();
-          
+
         if (updated) {
           this.setCache(updated.id, updated);
         }
@@ -229,8 +229,14 @@ export class DefaultIndexedDbStorage extends FileStorage {
 export class DefaultLocalStorage extends CanvasStorage {
   private static readonly NS_PREFIX = "reffy:canvas:";
   private static readonly RESERVED = new Set<string>([
-    "", "null", "undefined", ".", "..",
-    "__proto__", "prototype", "constructor",
+    "",
+    "null",
+    "undefined",
+    ".",
+    "..",
+    "__proto__",
+    "prototype",
+    "constructor",
   ]);
   key: string = "infinite_canvas";
 
@@ -318,7 +324,7 @@ export class DefaultLocalStorage extends CanvasStorage {
       } catch (err) {
         reject(err);
       }
-    })
+    });
   }
 }
 

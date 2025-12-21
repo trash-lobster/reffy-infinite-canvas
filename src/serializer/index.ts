@@ -1,2 +1,2 @@
 export * from "./serializer";
-export * from './schema';
+export * from "./schema";

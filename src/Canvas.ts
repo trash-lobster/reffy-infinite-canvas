@@ -25,9 +25,7 @@ import {
 import { Camera } from "./camera";
 import { CameraState, PointerEventState } from "./state";
 import { CanvasHistory } from "./history";
-import {
-  serializeCanvas,
-} from "./serializer";
+import { serializeCanvas } from "./serializer";
 import EventEmitter from "eventemitter3";
 import { AABB } from "./bounding";
 
@@ -43,11 +41,11 @@ export class Canvas extends Renderable {
   #gridProgram: WebGLProgram;
   #grid: Grid;
 
-  #screenShotCaptureSize: { 
-    x: number,
-    y: number,
-    width: number,
-    height: number, 
+  #screenShotCaptureSize: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
   } = null;
 
   #isGlobalClick = true;
@@ -302,13 +300,19 @@ export class Canvas extends Renderable {
     this.#gl.viewport(0, 0, this.#gl.canvas.width, this.#gl.canvas.height);
 
     if (this.#screenShotCaptureSize) {
-      this.#gl.viewport(this.#screenShotCaptureSize.x, this.#screenShotCaptureSize.y, this.#screenShotCaptureSize.width, this.#screenShotCaptureSize.height);
+      this.#gl.viewport(
+        this.#screenShotCaptureSize.x,
+        this.#screenShotCaptureSize.y,
+        this.#screenShotCaptureSize.width,
+        this.#screenShotCaptureSize.height,
+      );
       this.camera.setViewPortDimension(
         this.#screenShotCaptureSize.width,
         this.#screenShotCaptureSize.height,
       );
     } else {
-      const parentBoundingBox = this.canvas.parentElement.getBoundingClientRect();
+      const parentBoundingBox =
+        this.canvas.parentElement.getBoundingClientRect();
       this.camera.setViewPortDimension(
         parentBoundingBox.width,
         parentBoundingBox.height,
@@ -329,7 +333,10 @@ export class Canvas extends Renderable {
       totalRenderable++;
 
       // ignore culling when performing screen shot
-      if (!this.#screenShotCaptureSize && !AABB.isColliding(cameraBoundingBox, renderable.getBoundingBox())) {
+      if (
+        !this.#screenShotCaptureSize &&
+        !AABB.isColliding(cameraBoundingBox, renderable.getBoundingBox())
+      ) {
         renderable.culled = true;
       } else {
         rendered++;
@@ -346,7 +353,7 @@ export class Canvas extends Renderable {
       this,
     );
     const screenAABB = new AABB(sww, swh, ww, wh);
-    
+
     // ignore low res calculation when performing screenshot, quality is determined by processing anyways
     this.renderList.forEach((child) => {
       if (child instanceof Img) {
@@ -355,7 +362,10 @@ export class Canvas extends Renderable {
           this.camera.state.zoom,
         );
 
-        (child as Img).setUseLowRes(this.#screenShotCaptureSize ? false : useLowRes, this.gl);
+        (child as Img).setUseLowRes(
+          this.#screenShotCaptureSize ? false : useLowRes,
+          this.gl,
+        );
       }
     });
 
@@ -521,8 +531,8 @@ export class Canvas extends Renderable {
 
     const zoom = this.#camera.state.zoom;
     const center = this.getCenterPoint();
-    const diffX = center[0] - (camW * zoom / 2);
-    const diffY = center[1] - (camH * zoom / 2);
+    const diffX = center[0] - (camW * zoom) / 2;
+    const diffY = center[1] - (camH * zoom) / 2;
 
     this.#camera.setCameraPos(diffX, diffY);
   }
@@ -533,16 +543,19 @@ export class Canvas extends Renderable {
     this.render();
     const src = this.gl.canvas as HTMLCanvasElement;
 
-    if (typeof OffscreenCanvas !== 'undefined') {
+    if (typeof OffscreenCanvas !== "undefined") {
       const off = new OffscreenCanvas(width, height);
-      const ctx = off.getContext('2d');
-      if (!ctx) throw new Error('Failed to get 2D context for OffscreenCanvas');
+      const ctx = off.getContext("2d");
+      if (!ctx) throw new Error("Failed to get 2D context for OffscreenCanvas");
       ctx.imageSmoothingEnabled = true;
-      
-      ctx.imageSmoothingQuality = 'high';
+
+      ctx.imageSmoothingQuality = "high";
       ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, width, height);
 
-      const blob = await off.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+      const blob = await off.convertToBlob({
+        type: "image/jpeg",
+        quality: 0.92,
+      });
 
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -554,19 +567,22 @@ export class Canvas extends Renderable {
     }
 
     // Fallback to DOM canvas in environments without OffscreenCanvas
-    const out = document.createElement('canvas');
+    const out = document.createElement("canvas");
     out.width = width;
     out.height = height;
-    const ctx = out.getContext('2d');
-    if (!ctx) throw new Error('Failed to get 2D context for Canvas');
+    const ctx = out.getContext("2d");
+    if (!ctx) throw new Error("Failed to get 2D context for Canvas");
     ctx.imageSmoothingEnabled = true;
 
-    ctx.imageSmoothingQuality = 'high';
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, width, height);
-    return out.toDataURL('image/jpeg');
+    return out.toDataURL("image/jpeg");
   }
 
-  async getContentThumbnail(outputDimension?: {width: number, height: number}): Promise<string> {
+  async getContentThumbnail(outputDimension?: {
+    width: number;
+    height: number;
+  }): Promise<string> {
     const gl = this.gl;
     const width = outputDimension.width ?? this.canvas.width;
     const height = outputDimension.height ?? this.canvas.height;
@@ -575,42 +591,60 @@ export class Canvas extends Renderable {
     const fbo = gl.createFramebuffer();
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      width,
+      height,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      null,
+    );
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      tex,
+      0,
+    );
 
     // Save camera; compute target framing
     // deselect things as well in the meantime and then reselect it
-    const prev = { 
-      x: this.camera.state.x, 
+    const prev = {
+      x: this.camera.state.x,
       y: this.camera.state.y,
-      zoom: this.camera.state.zoom, 
+      zoom: this.camera.state.zoom,
       selected: [...this.selectionManager.selected],
       gridType: this.grid.gridType,
     };
     this.selectionManager.clear();
 
     const bounds = this.getContentBound();
-    
+
     if (!bounds) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.deleteTexture(tex); gl.deleteFramebuffer(fbo);
+      gl.deleteTexture(tex);
+      gl.deleteFramebuffer(fbo);
       return this.getViewportThumbnail(width, height);
     }
 
-    const {scale, canvasHeight, canvasWidth} = this.calculateScaleForThumbnail(bounds, width, height);
+    const { scale, canvasHeight, canvasWidth } =
+      this.calculateScaleForThumbnail(bounds, width, height);
 
     const targetZoom = Math.max(0.0001, scale);
     this.camera.state.setZoom(targetZoom);
 
     const center = this.getCenterPoint();
-    const diffX = center[0] - (this.canvas.width * targetZoom / 2);
-    const diffY = center[1] - (this.canvas.height * targetZoom / 2);
+    const diffX = center[0] - (this.canvas.width * targetZoom) / 2;
+    const diffY = center[1] - (this.canvas.height * targetZoom) / 2;
 
     this.#camera.setCameraPos(diffX, diffY);
-    
+
     // Render offscreen
     this.#screenShotCaptureSize = {
       x: (width - canvasWidth) / 2,
@@ -618,7 +652,7 @@ export class Canvas extends Renderable {
       // ensure that the image stays proportioned - the passed in values of height and width must match the AR of the canvas you're using
       height: canvasHeight,
       width: canvasWidth,
-    }
+    };
     this.grid.gridType = 0;
     this.render(); // draws into FBO, not the visible canvas
 
@@ -643,16 +677,22 @@ export class Canvas extends Renderable {
     this.selectionManager.selected = prev.selected;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.deleteTexture(tex); 
+    gl.deleteTexture(tex);
     gl.deleteFramebuffer(fbo);
 
     // // Encode via OffscreenCanvas (fast) into data URL
-    const off = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : null;
+    const off =
+      typeof OffscreenCanvas !== "undefined"
+        ? new OffscreenCanvas(width, height)
+        : null;
     if (off) {
-      const ctx = off.getContext('2d')!;
+      const ctx = off.getContext("2d")!;
       const imgData = new ImageData(flipped, width, height);
       ctx.putImageData(imgData, 0, 0);
-      const blob = await off.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+      const blob = await off.convertToBlob({
+        type: "image/jpeg",
+        quality: 0.92,
+      });
       return await new Promise<string>((resolve, reject) => {
         const r = new FileReader();
         r.onloadend = () => resolve(r.result as string);
@@ -660,29 +700,30 @@ export class Canvas extends Renderable {
         r.readAsDataURL(blob);
       });
     } else {
-      const out = document.createElement('canvas');
-      out.width = width; out.height = height;
-      const ctx = out.getContext('2d')!;
+      const out = document.createElement("canvas");
+      out.width = width;
+      out.height = height;
+      const ctx = out.getContext("2d")!;
       const imgData = new ImageData(flipped, width, height);
       ctx.putImageData(imgData, 0, 0);
-      return out.toDataURL('image/jpeg');
+      return out.toDataURL("image/jpeg");
     }
   }
 
   /**
-   * 
+   *
    * @param bounds The content box bound dimensions in world space
    * @param width Expected output thumbnail width
    * @param height Expected output thumbnail height
-   * @returns 
+   * @returns
    */
   protected calculateScaleForThumbnail(
-    bounds: {minX: number, minY: number, maxX: number, maxY: number}, 
-    width: number, 
-    height: number
+    bounds: { minX: number; minY: number; maxX: number; maxY: number },
+    width: number,
+    height: number,
   ) {
     /**
-     * calculate this in two folds 
+     * calculate this in two folds
      * - first, figure out how the content is captured within the output dimensions
      * - next, calculate the smallest canvas container (with canvas proportion) that can fit the output dimension without compromising its size
      */
@@ -691,17 +732,28 @@ export class Canvas extends Renderable {
 
     const worldAspectRatio = worldW / worldH;
     const canvasAspectRatio = this.canvas.width / this.canvas.height;
-    
-    const cameraSpaceH = width / worldAspectRatio > height ? height : width / worldAspectRatio;
-    const cameraSpaceW = height * worldAspectRatio > width ? width : height * worldAspectRatio;
+
+    const cameraSpaceH =
+      width / worldAspectRatio > height ? height : width / worldAspectRatio;
+    const cameraSpaceW =
+      height * worldAspectRatio > width ? width : height * worldAspectRatio;
 
     // make sure that the 'new' canvas proportion will fit the output dimension without making it any smaller
-    const canvasH = this.canvas.width < this.canvas.height ? width / canvasAspectRatio : height;
-    const canvasW = this.canvas.width < this.canvas.height ? width : height * canvasAspectRatio;
+    const canvasH =
+      this.canvas.width < this.canvas.height
+        ? width / canvasAspectRatio
+        : height;
+    const canvasW =
+      this.canvas.width < this.canvas.height
+        ? width
+        : height * canvasAspectRatio;
 
     const contentScale = Math.max(worldW / cameraSpaceW, worldH / cameraSpaceH);
-    const canvasScale = Math.max(canvasW / this.canvas.width, canvasH / this.canvas.height);
-    
+    const canvasScale = Math.max(
+      canvasW / this.canvas.width,
+      canvasH / this.canvas.height,
+    );
+
     // scale by content scale and canvas scale
     const scale = contentScale * canvasScale;
 
@@ -713,14 +765,21 @@ export class Canvas extends Renderable {
   }
 
   private getContentBound() {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
     let found = false;
     for (const child of this.children) {
       if (!(child instanceof Img)) continue;
       const edges = child.getEdge();
-      
-      if (!isFinite(edges.minX) || !isFinite(edges.minY) ||
-        !isFinite(edges.maxX) || !isFinite(edges.maxY)) {
+
+      if (
+        !isFinite(edges.minX) ||
+        !isFinite(edges.minY) ||
+        !isFinite(edges.maxX) ||
+        !isFinite(edges.maxY)
+      ) {
         continue;
       }
 
@@ -730,12 +789,15 @@ export class Canvas extends Renderable {
       minY = Math.min(minY, edges.minY);
       maxY = Math.max(maxY, edges.maxY);
     }
-    
+
     return found ? { minX, minY, maxX, maxY } : null;
   }
 
   private getCenterPoint() {
-    let minX = Number.MAX_SAFE_INTEGER, minY = Number.MAX_SAFE_INTEGER, maxX = Number.MIN_SAFE_INTEGER, maxY = Number.MIN_SAFE_INTEGER;
+    let minX = Number.MAX_SAFE_INTEGER,
+      minY = Number.MAX_SAFE_INTEGER,
+      maxX = Number.MIN_SAFE_INTEGER,
+      maxY = Number.MIN_SAFE_INTEGER;
     for (const child of this.children) {
       if (!(child instanceof Img)) continue;
       const edges = child.getEdge();

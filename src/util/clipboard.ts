@@ -13,24 +13,32 @@ interface InfiniteCanvasClipboardElement {
   sy: number;
 }
 
-const ClipboardElementSchema = z.object({
-  src: z.string()
-    .regex(/^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+$/i, "Invalid image data URL"),
-  x: z.number(),
-  y: z.number(),
-  sx: z.number(),
-  sy: z.number(),
-}).strict();
+const ClipboardElementSchema = z
+  .object({
+    src: z
+      .string()
+      .regex(
+        /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+$/i,
+        "Invalid image data URL",
+      ),
+    x: z.number(),
+    y: z.number(),
+    sx: z.number(),
+    sy: z.number(),
+  })
+  .strict();
 
 interface InfiniteCanvasClipboard {
   type: "infinite_canvas";
   elements: InfiniteCanvasClipboardElement[];
 }
 
-const ClipboardSchema = z.object({
-  type: z.literal("infinite_canvas"),
-  elements: z.array(ClipboardElementSchema).min(1),
-}).strict();
+const ClipboardSchema = z
+  .object({
+    type: z.literal("infinite_canvas"),
+    elements: z.array(ClipboardElementSchema).min(1),
+  })
+  .strict();
 
 const acceptedPasteMimeType = ["image/", "text/plain"];
 
@@ -147,9 +155,16 @@ export async function paste(
       if (type === "text/plain") {
         const text = await blob.text();
         let raw: unknown;
-        try { raw = JSON.parse(text); } catch { throw new Error("Invalid JSON in clipboard"); }
+        try {
+          raw = JSON.parse(text);
+        } catch {
+          throw new Error("Invalid JSON in clipboard");
+        }
         const result = ClipboardSchema.safeParse(raw);
-        if (!result.success) { console.error(result.error); return; }
+        if (!result.success) {
+          console.error(result.error);
+          return;
+        }
         const data = result.data;
         if (data.elements.length === 0) return;
 

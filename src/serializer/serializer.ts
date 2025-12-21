@@ -164,7 +164,7 @@ export async function deserializeCanvas(
   data: ParsedSerializedCanvas,
   canvas: Canvas,
   getFile: (id: string | number) => Promise<ImageFileMetadata>,
-  writeFileToDatabase?: (data: string) => void,
+  writeFileToDatabase?: (data: string) => Promise<string | number>,
 ) {
   canvas.children.length = 0;
 
@@ -195,14 +195,20 @@ export async function deserializeCanvas(
               const fileMeta = data.files.find(
                 (e) => e.id === (node as SerializedImg).fileId,
               );
+
+              // check if file storage has saved the file
+              getFile((node as SerializedImg).fileId)
+                .then((file) => {
+                  if (!file) {
+                    writeFileToDatabase(fileMeta.dataURL);
+                  }
+                })
+                .catch((err) => console.error("Image not written to database", err));
+
               return fileMeta?.dataURL ?? PLACEHOLDER_IMAGE_SRC;
             }
             return PLACEHOLDER_IMAGE_SRC;
           })();
-
-          if (writeFileToDatabase) {
-            writeFileToDatabase(src);
-          }
 
           const width = (node as SerializedImg).width;
           const height = (node as SerializedImg).height;

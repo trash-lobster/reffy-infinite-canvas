@@ -634,6 +634,9 @@ export class InfiniteCanvasElement extends LitElement {
     if (!this.#canvasStorage) {
       this.#canvasStorage = new DefaultLocalStorage(this.name);
     }
+    if (!this.#fileStorage) {
+      this.#fileStorage = new DefaultIndexedDbStorage();
+    }
     const dataAsString = await this.#canvasStorage.read();
     if (!dataAsString) {
       const legacy = localStorage.getItem(this.name);
@@ -660,7 +663,12 @@ export class InfiniteCanvasElement extends LitElement {
 
     try {
       const data = parseSerializedCanvas(raw);
-      await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
+      await deserializeCanvas(
+        data,
+        this.#canvas,
+        this.getImageFileMetadata,
+        this.#fileStorage.write,
+      );
     } catch (e) {
       console.warn("Saved canvas failed schema validation; ignoring.", e);
     }
@@ -819,6 +827,9 @@ export class InfiniteCanvasElement extends LitElement {
   }
 
   async importCanvas(fileList: FileList) {
+    if (!this.#fileStorage) {
+      this.#fileStorage = new DefaultIndexedDbStorage();
+    }
     this.#eventHub.emit(LoaderEvent.start, "spinner");
     if (!this.#canvas) return;
     if (!fileList || fileList.length !== 1) return;
@@ -843,7 +854,12 @@ export class InfiniteCanvasElement extends LitElement {
       const data = parseSerializedCanvas(raw);
       // clear any existing selection - might write a wrapper instead
       this.#canvas.selectionManager.clear();
-      await deserializeCanvas(data, this.#canvas, this.getImageFileMetadata);
+      await deserializeCanvas(
+        data,
+        this.#canvas,
+        this.getImageFileMetadata,
+        this.#fileStorage.write,
+      );
       this.#eventHub.emit(SaveEvent.Save);
     } catch (e) {
       console.warn("Saved canvas failed schema validation; ignoring.", e);

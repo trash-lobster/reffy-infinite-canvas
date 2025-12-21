@@ -9,6 +9,12 @@ The project began tracking changelog from version 0.0.8.
 
 View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
+## [0.1.2] - 2025-12-22
+
+### Added
+
+- When deserialising an imported canvas, the file data will now be written to the database.
+
 ## [0.1.1] - 2025-12-22
 
 ### Fixed
@@ -86,7 +92,8 @@ View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
 - File storage cache limit has been increased from 100 to 500
 
-[0.1.0]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.0...v0.1.1
+[0.1.2]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.13...v0.1.0
 [0.0.13]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.12...v0.0.13
 [0.0.12]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.11...v0.0.12

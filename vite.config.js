@@ -1,6 +1,7 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+import dts from "unplugin-dts/vite";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -11,8 +12,8 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
       name: "ReffyInfiniteCanvas",
-      formats: ["es", "umd"], // or ['es'] if UMD not needed
-      fileName: (format) => (format === "es" ? "index.js" : "index.umd.js"),
+      formats: ["es"],
+      fileName: "index.js",
     },
     // Generate source maps for production bundles
     sourcemap: true,
@@ -47,4 +48,5 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
   },
+  plugins: [dts()],
 });

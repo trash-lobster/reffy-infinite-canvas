@@ -727,50 +727,35 @@ export class Canvas extends Renderable {
      * - first, figure out how the content is captured within the output dimensions
      * - next, calculate the smallest canvas container (with canvas proportion) that can fit the output dimension without compromising its size
      */
-
-    console.log('bounds:', bounds);
-
     const worldW = bounds.maxX - bounds.minX;
-    console.log('worldW:', worldW);
     const worldH = bounds.maxY - bounds.minY;
-    console.log('worldH:', worldH);
 
     const worldAspectRatio = worldW / worldH;
-    console.log('worldAspectRatio:', worldAspectRatio);
     const canvasAspectRatio = this.canvas.width / this.canvas.height;
-    console.log('canvasAspectRatio:', canvasAspectRatio);
 
     const cameraSpaceH =
       width / worldAspectRatio > height ? height : width / worldAspectRatio;
-    console.log('cameraSpaceH:', cameraSpaceH);
     const cameraSpaceW =
       height * worldAspectRatio > width ? width : height * worldAspectRatio;
-    console.log('cameraSpaceW:', cameraSpaceW);
 
     // make sure that the 'new' canvas proportion will fit the output dimension without making it any smaller
     const canvasH =
       width > height
         ? width / canvasAspectRatio
         : height;
-    console.log('canvasH:', canvasH);
     const canvasW =
       width > height
         ? width
         : height * canvasAspectRatio;
-    console.log('canvasW:', canvasW);
 
     const contentScale = Math.max(worldW / cameraSpaceW, worldH / cameraSpaceH);
-    console.log('contentScale:', contentScale);
     const canvasScale = Math.max(
       canvasW / this.canvas.width,
       canvasH / this.canvas.height,
     );
-    console.log('canvasScale:', canvasScale);
-    console.log('canvasRatio:', canvasW / canvasH);
 
     // scale by content scale and canvas scale
     const scale = contentScale * canvasScale;
-    console.log('scale:', scale);
 
     return {
       scale,

@@ -132,6 +132,27 @@ export function createBasicImageMenuOptions() {
 
 export function createSingleImageMenuOptions(base?: ContextMenuGroupProps[]) {
   const withClear = withContextMenuClear.bind(this);
+
+  const devOptions = [];
+
+  let isDev = false;
+  try {
+    // ESM (Vite, modern bundlers)
+    isDev = (import.meta as any).env?.MODE === "development";
+  } catch {
+    // CJS or environments without import.meta
+    isDev =
+      // @ts-ignore
+      typeof process !== "undefined" && process.env?.NODE_ENV === "development";
+  }
+
+  if (isDev) {
+    devOptions.push({
+      text: "Check metadata",
+      onClick: withClear(this.checkMetadata.bind(this)),
+    });
+  }
+
   return {
     options: [
       ...(base ?? []),
@@ -147,6 +168,7 @@ export function createSingleImageMenuOptions(base?: ContextMenuGroupProps[]) {
             onClick: () =>
               withClear(this.sendShapeToNewZOrder.bind(this))(false),
           },
+          ...devOptions,
         ],
       },
     ],

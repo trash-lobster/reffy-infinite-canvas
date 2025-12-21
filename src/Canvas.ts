@@ -739,14 +739,8 @@ export class Canvas extends Renderable {
       height * worldAspectRatio > width ? width : height * worldAspectRatio;
 
     // make sure that the 'new' canvas proportion will fit the output dimension without making it any smaller
-    const canvasH =
-      width > height
-        ? width / canvasAspectRatio
-        : height;
-    const canvasW =
-      width > height
-        ? width
-        : height * canvasAspectRatio;
+    const canvasH = width > height ? width / canvasAspectRatio : height;
+    const canvasW = width > height ? width : height * canvasAspectRatio;
 
     const contentScale = Math.max(worldW / cameraSpaceW, worldH / cameraSpaceH);
     const canvasScale = Math.max(

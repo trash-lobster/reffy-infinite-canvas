@@ -9,6 +9,12 @@ The project began tracking changelog from version 0.0.8.
 
 View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
+## [0.1.1] - 2025-12-22
+
+### Fixed
+
+- A minor error in the build pipeline was found
+
 ## [0.1.0] - 2025-12-22
 
 ### Fixed
@@ -16,9 +22,11 @@ View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 - A minor bug was causing issue when trying to introduce new function to capture thumbnail
 
 ### Added
+
 - Add new thumbnail capture API method
 
 ### Updated
+
 - Build process has been updated to only focus on module release
 
 ## [0.0.13] - 2025-12-15
@@ -78,6 +86,7 @@ View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
 - File storage cache limit has been increased from 100 to 500
 
+[0.1.0]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.13...v0.1.0
 [0.0.13]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.12...v0.0.13
 [0.0.12]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.11...v0.0.12

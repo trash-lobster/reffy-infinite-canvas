@@ -13,7 +13,7 @@ export default defineConfig({
       entry: resolve(__dirname, "src/index.ts"),
       name: "ReffyInfiniteCanvas",
       formats: ["es"],
-      fileName: "index.js",
+      fileName: "index",
     },
     // Generate source maps for production bundles
     sourcemap: true,

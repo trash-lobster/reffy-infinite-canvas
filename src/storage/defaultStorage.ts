@@ -33,6 +33,7 @@ export class DefaultIndexedDbStorage extends FileStorage {
     super();
     this.dbQueue = new DatabaseQueue();
     this.dbPromise = this.initDb();
+    // this.write = this.write.bind(this);
   }
 
   private async initDb(): Promise<IndexDb> {

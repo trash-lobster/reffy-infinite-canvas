@@ -195,16 +195,6 @@ export async function deserializeCanvas(
               const fileMeta = data.files.find(
                 (e) => e.id === (node as SerializedImg).fileId,
               );
-
-              // check if file storage has saved the file
-              getFile((node as SerializedImg).fileId)
-                .then((file) => {
-                  if (!file) {
-                    writeFileToDatabase(fileMeta.dataURL);
-                  }
-                })
-                .catch((err) => console.error("Image not written to database", err));
-
               return fileMeta?.dataURL ?? PLACEHOLDER_IMAGE_SRC;
             }
             return PLACEHOLDER_IMAGE_SRC;
@@ -226,11 +216,23 @@ export async function deserializeCanvas(
             height,
           });
 
+          // if file doesn't contain the file data, look for it in the database
+          // restoring from an imported canvas will have the images data with it
+          // restoring from in browser canvas will not have image data with it, so we have to go look for it
           if (data.files && Array.isArray(data.files)) {
             const fileMeta = data.files.find(
               (e) => e.id === (node as SerializedImg).fileId,
             );
             (instance as Img).src = fileMeta.dataURL;
+            getFile((node as SerializedImg).fileId)
+              .then((file) => {
+                if (!file) {
+                  writeFileToDatabase(fileMeta.dataURL);
+                }
+              })
+              .catch((err) =>
+                console.error("Failed to write the image to storage", err),
+              );
           } else {
             getFile((node as SerializedImg).fileId)
               .then((file) => {

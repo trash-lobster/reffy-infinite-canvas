@@ -637,6 +637,7 @@ export class InfiniteCanvasElement extends LitElement {
     if (!this.#fileStorage) {
       this.#fileStorage = new DefaultIndexedDbStorage();
     }
+    this.#eventHub.emit(LoaderEvent.start, "spinner");
     const dataAsString = await this.#canvasStorage.read();
     if (!dataAsString) {
       const legacy = localStorage.getItem(this.name);
@@ -671,6 +672,8 @@ export class InfiniteCanvasElement extends LitElement {
       );
     } catch (e) {
       console.warn("Saved canvas failed schema validation; ignoring.", e);
+    } finally {
+      this.#eventHub.emit(LoaderEvent.done);
     }
   }
 

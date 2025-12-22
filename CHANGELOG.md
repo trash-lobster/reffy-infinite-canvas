@@ -9,6 +9,12 @@ The project began tracking changelog from version 0.0.8.
 
 View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
+## [0.1.3] - 2025-12-22
+
+### Fixed
+
+- Writing to index db was inaccurate
+
 ## [0.1.2] - 2025-12-22
 
 ### Added

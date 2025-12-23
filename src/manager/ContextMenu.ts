@@ -35,7 +35,7 @@ export class ContextMenuManager {
       this.lastPosition = {
         x: e.clientX,
         y: e.clientY,
-      }
+      };
 
       // only show context menu when there is collision with a child object, otherwise clear it
       const [wx, wy] = getWorldCoords(e.clientX, e.clientY);

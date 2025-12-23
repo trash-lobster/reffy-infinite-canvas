@@ -218,7 +218,8 @@ export class Canvas extends Renderable {
       updateCameraPos: this.camera.updateCameraPos,
       onWheel: this.camera.onWheel,
       setCursorStyle: (val: string) => (canvas.style.cursor = val),
-      paste: (x: number, y: number) => paste(x, y, this, history, getFileFromStorage),
+      paste: (x: number, y: number) =>
+        paste(x, y, this, history, getFileFromStorage),
       assignEventListener: this.assignEventListener,
       closeMarquee: this.#selectionManager.clearMarquee,
       selectionPointerMove: (

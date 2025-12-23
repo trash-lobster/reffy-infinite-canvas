@@ -110,11 +110,11 @@ export class DefaultIndexedDbStorage extends FileStorage {
   async readAll(): Promise<ImageFileMetadata[]> {
     return handleQuotaError(async (): Promise<ImageFileMetadata[]> => {
       const db: IndexDb = await this.getIndexDb();
-      
+
       const res = await db.files.toArray();
-      res.forEach(r => {
+      res.forEach((r) => {
         this.setCache(r.id, r);
-      })
+      });
       return res;
     });
   }

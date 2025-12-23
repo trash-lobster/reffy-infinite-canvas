@@ -342,35 +342,35 @@ export class InfiniteCanvasElement extends LitElement {
     this.#rootDiv = div;
 
     const canvas = document.createElement("canvas");
-    
+
     // persistent state set up
     this.assignFileStorage = this.assignFileStorage.bind(this);
     this.getImageFileMetadata = this.getImageFileMetadata.bind(this);
     this.getAllImageFileMetdata = this.getAllImageFileMetdata.bind(this);
     this.saveImageFileMetadata = this.saveImageFileMetadata.bind(this);
-    
+
     this.restoreStateFromCanvasStorage =
-    this.restoreStateFromCanvasStorage.bind(this);
+      this.restoreStateFromCanvasStorage.bind(this);
     this.assignCanvasStorage = this.assignCanvasStorage.bind(this);
     this.saveToCanvasStorage = this.saveToCanvasStorage.bind(this);
     this.debounceSaveToCanvasStorage =
-    this.debounceSaveToCanvasStorage.bind(this);
-    
+      this.debounceSaveToCanvasStorage.bind(this);
+
     // import and export
     this.importCanvas = this.importCanvas.bind(this);
     this.exportCanvas = this.exportCanvas.bind(this);
-    
+
     // context menu set up
     this.addContextMenu = addContextMenu.bind(this);
     this.clearContextMenu = clearContextMenu.bind(this);
     this.isContextMenuActive = isContextMenuActive.bind(this);
-    
+
     this.getContainerSize = this.getContainerSize.bind(this);
-    
+
     if (!div.contains(canvas)) {
       div.appendChild(canvas);
     }
-    
+
     this.registerSignal();
     this.#eventHub.emit(LoaderEvent.start, "spinner");
 
@@ -403,7 +403,7 @@ export class InfiniteCanvasElement extends LitElement {
     this.#multiImageMenuOptions = createMultiImageMenuOptions.bind(this)(
       basicImageMenuOptions.options,
     );
-    
+
     this.eventHub.emit(LoaderEvent.done);
     this.dispatchEvent(new Event("load"));
 
@@ -458,6 +458,7 @@ export class InfiniteCanvasElement extends LitElement {
     this.#canvas.camera.viewportY = rect.y;
     this.#canvas.camera.state.setHeight(rect.height);
     this.#canvas.camera.state.setWidth(rect.width);
+    this.dispatchEvent(new Event("resize"));
   }
 
   // Register signal
@@ -474,12 +475,16 @@ export class InfiniteCanvasElement extends LitElement {
           console.error("onCanvasChange handler failed", err);
         }
       }
+      this.dispatchEvent(new Event("change"));
     });
     this.#eventHub.on(SaveEvent.Save, this.saveToCanvasStorage);
-    this.#eventHub.on(SaveEvent.SaveCompleted, () => {});
-    this.#eventHub.on(SaveEvent.SaveFailed, () =>
-      console.error("Failed to Save!"),
-    );
+    this.#eventHub.on(SaveEvent.SaveCompleted, () => {
+      this.dispatchEvent(new Event("savecomplete"));
+    });
+    this.#eventHub.on(SaveEvent.SaveFailed, () => {
+      (console.error("Failed to Save!"),
+        this.dispatchEvent(new Event("savefail")));
+    });
   }
 
   // need to check if this is good practice
@@ -789,8 +794,15 @@ export class InfiniteCanvasElement extends LitElement {
     if (!this.#canvas) return;
     try {
       this.eventHub.emit(LoaderEvent.start, "spinner");
-      const {x, y} = this.#canvas.contextMenuManager.lastPosition;
-      await paste(x, y, this.#canvas, this.#history, this.getImageFileMetadata, false);
+      const { x, y } = this.#canvas.contextMenuManager.lastPosition;
+      await paste(
+        x,
+        y,
+        this.#canvas,
+        this.#history,
+        this.getImageFileMetadata,
+        false,
+      );
     } catch (err) {
       console.error(err);
     } finally {

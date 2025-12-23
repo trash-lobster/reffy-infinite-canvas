@@ -57,7 +57,7 @@ export async function copy(selected: Img[], clipboardEvent?: ClipboardEvent) {
   };
 
   const json = JSON.stringify(dataStored);
-  
+
   if (probablySupportsClipboardWriteText()) {
     try {
       await navigator.clipboard.writeText(json);
@@ -66,7 +66,7 @@ export async function copy(selected: Img[], clipboardEvent?: ClipboardEvent) {
       console.error(err);
     }
   }
-  
+
   try {
     if (clipboardEvent) {
       clipboardEvent.clipboardData?.setData("text/plain", json);
@@ -75,7 +75,7 @@ export async function copy(selected: Img[], clipboardEvent?: ClipboardEvent) {
   } catch (err) {
     console.error(err);
   }
-  
+
   if (!copyTextViaExecCommand(json)) {
     throw new Error("Error copying to clipboard.");
   }
@@ -133,28 +133,28 @@ export async function paste(
   // check if there is anything from your clipboard to paste from
   const items = await navigator.clipboard.read();
   const types = items[0].types;
-  
+
   const [wx, wy] = isWorldCoord
-  ? [clientX, clientY]
-  : getWorldCoords(clientX, clientY, canvas);
-  
+    ? [clientX, clientY]
+    : getWorldCoords(clientX, clientY, canvas);
+
   for (const type of types) {
     const allowed = acceptedPasteMimeType.find((allowed) =>
       allowed.endsWith("/") ? type.startsWith(allowed) : type === allowed,
-  );
-  if (!allowed) continue;
-  
-  const blob = await items[0].getType(type);
-  try {
-    if (type === "text/plain") {
-      const text = await blob.text();
-      let raw: unknown;
-      try {
-        raw = JSON.parse(text);
-      } catch {
-        throw new Error("Invalid JSON in clipboard");
-      }
-      const result = ClipboardSchema.safeParse(raw);
+    );
+    if (!allowed) continue;
+
+    const blob = await items[0].getType(type);
+    try {
+      if (type === "text/plain") {
+        const text = await blob.text();
+        let raw: unknown;
+        try {
+          raw = JSON.parse(text);
+        } catch {
+          throw new Error("Invalid JSON in clipboard");
+        }
+        const result = ClipboardSchema.safeParse(raw);
         if (!result.success) {
           console.error(result.error);
           return;
@@ -172,15 +172,15 @@ export async function paste(
 
         const images = await Promise.all(
           data.elements.map((element) =>
-            getImageFromId(element.fileId.toString()).then(img => {
+            getImageFromId(element.fileId.toString()).then((img) => {
               return canvas.addImageToCanvas(
                 img.dataURL,
                 wx + element.x - minX,
                 wy + element.y - minY,
                 element.sx,
                 element.sy,
-              )
-            })
+              );
+            }),
           ),
         );
 

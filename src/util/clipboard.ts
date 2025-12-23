@@ -61,19 +61,16 @@ export async function copy(selected: Img[], clipboardEvent?: ClipboardEvent) {
   };
 
   const json = JSON.stringify(dataStored);
-  const clipboardItem = new ClipboardItem({
-    "text/plain": new Blob([json], { type: "text/plain" }),
-  });
-
+  
   if (probablySupportsClipboardWriteText()) {
     try {
-      await navigator.clipboard.write([clipboardItem]);
+      await navigator.clipboard.writeText(json);
       return;
     } catch (err) {
       console.error(err);
     }
   }
-
+  
   try {
     if (clipboardEvent) {
       clipboardEvent.clipboardData?.setData("text/plain", json);
@@ -82,7 +79,7 @@ export async function copy(selected: Img[], clipboardEvent?: ClipboardEvent) {
   } catch (err) {
     console.error(err);
   }
-
+  
   if (!copyTextViaExecCommand(json)) {
     throw new Error("Error copying to clipboard.");
   }
@@ -139,28 +136,28 @@ export async function paste(
   // check if there is anything from your clipboard to paste from
   const items = await navigator.clipboard.read();
   const types = items[0].types;
-
+  
   const [wx, wy] = isWorldCoord
-    ? [clientX, clientY]
-    : getWorldCoords(clientX, clientY, canvas);
-
+  ? [clientX, clientY]
+  : getWorldCoords(clientX, clientY, canvas);
+  
   for (const type of types) {
     const allowed = acceptedPasteMimeType.find((allowed) =>
       allowed.endsWith("/") ? type.startsWith(allowed) : type === allowed,
-    );
-    if (!allowed) continue;
-
-    const blob = await items[0].getType(type);
-    try {
-      if (type === "text/plain") {
-        const text = await blob.text();
-        let raw: unknown;
-        try {
-          raw = JSON.parse(text);
-        } catch {
-          throw new Error("Invalid JSON in clipboard");
-        }
-        const result = ClipboardSchema.safeParse(raw);
+  );
+  if (!allowed) continue;
+  
+  const blob = await items[0].getType(type);
+  try {
+    if (type === "text/plain") {
+      const text = await blob.text();
+      let raw: unknown;
+      try {
+        raw = JSON.parse(text);
+      } catch {
+        throw new Error("Invalid JSON in clipboard");
+      }
+      const result = ClipboardSchema.safeParse(raw);
         if (!result.success) {
           console.error(result.error);
           return;

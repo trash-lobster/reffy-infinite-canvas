@@ -342,36 +342,37 @@ export class InfiniteCanvasElement extends LitElement {
     this.#rootDiv = div;
 
     const canvas = document.createElement("canvas");
-
+    
     // persistent state set up
     this.assignFileStorage = this.assignFileStorage.bind(this);
     this.getImageFileMetadata = this.getImageFileMetadata.bind(this);
     this.getAllImageFileMetdata = this.getAllImageFileMetdata.bind(this);
     this.saveImageFileMetadata = this.saveImageFileMetadata.bind(this);
-
+    
     this.restoreStateFromCanvasStorage =
-      this.restoreStateFromCanvasStorage.bind(this);
+    this.restoreStateFromCanvasStorage.bind(this);
     this.assignCanvasStorage = this.assignCanvasStorage.bind(this);
     this.saveToCanvasStorage = this.saveToCanvasStorage.bind(this);
     this.debounceSaveToCanvasStorage =
-      this.debounceSaveToCanvasStorage.bind(this);
-
+    this.debounceSaveToCanvasStorage.bind(this);
+    
     // import and export
     this.importCanvas = this.importCanvas.bind(this);
     this.exportCanvas = this.exportCanvas.bind(this);
-
+    
     // context menu set up
     this.addContextMenu = addContextMenu.bind(this);
     this.clearContextMenu = clearContextMenu.bind(this);
     this.isContextMenuActive = isContextMenuActive.bind(this);
-
+    
     this.getContainerSize = this.getContainerSize.bind(this);
-
+    
     if (!div.contains(canvas)) {
       div.appendChild(canvas);
     }
-
+    
     this.registerSignal();
+    this.#eventHub.emit(LoaderEvent.start, "spinner");
 
     this.#canvas = new Canvas(
       canvas,
@@ -401,7 +402,8 @@ export class InfiniteCanvasElement extends LitElement {
     this.#multiImageMenuOptions = createMultiImageMenuOptions.bind(this)(
       basicImageMenuOptions.options,
     );
-
+    
+    this.eventHub.emit(LoaderEvent.done);
     this.dispatchEvent(new Event("load"));
 
     const animate = async () => {

@@ -157,6 +157,7 @@ export class PointerEventManager {
       e.preventDefault();
       if (this.isContextMenuActive()) return;
       try {
+        this.eventHub.emit(LoaderEvent.start, "spinner");
         await deps.paste(
           this.state.lastPointerPos.x,
           this.state.lastPointerPos.y,

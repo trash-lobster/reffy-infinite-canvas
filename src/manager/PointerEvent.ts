@@ -144,12 +144,9 @@ export class PointerEventManager {
       e.preventDefault();
       if (this.isContextMenuActive()) return;
       try {
-        this.eventHub.emit(LoaderEvent.start, "spinner");
         await copy(this.getSelected() as Img[], e);
       } catch (err) {
         console.error(err);
-      } finally {
-        this.eventHub.emit(LoaderEvent.done);
       }
     });
 

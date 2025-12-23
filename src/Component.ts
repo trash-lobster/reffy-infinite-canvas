@@ -32,7 +32,7 @@ import {
   ContextMenuProps,
   ContextMenuType,
   createBasicImageMenuOptions,
-  createCanvasImageMenuOptions,
+  createCanvasMenuOptions,
   createMultiImageMenuOptions,
   createSingleImageMenuOptions,
   isContextMenuActive,
@@ -379,6 +379,7 @@ export class InfiniteCanvasElement extends LitElement {
       this.#history,
       this.#eventHub,
       this.debounceSaveToCanvasStorage,
+      this.getImageFileMetadata,
       this.saveImageFileMetadata,
       this.getContainerSize,
     );
@@ -398,7 +399,7 @@ export class InfiniteCanvasElement extends LitElement {
     this.#singleImageMenuOptions = createSingleImageMenuOptions.bind(this)(
       basicImageMenuOptions.options,
     );
-    this.#canvasImageMenuOptions = createCanvasImageMenuOptions.bind(this)();
+    this.#canvasImageMenuOptions = createCanvasMenuOptions.bind(this)();
     this.#multiImageMenuOptions = createMultiImageMenuOptions.bind(this)(
       basicImageMenuOptions.options,
     );
@@ -778,12 +779,9 @@ export class InfiniteCanvasElement extends LitElement {
   async copyImage() {
     if (!this.#canvas) return;
     try {
-      this.eventHub.emit(LoaderEvent.start, "spinner");
       await copy(this.#canvas.getSelected());
     } catch (err) {
       console.error(err);
-    } finally {
-      this.eventHub.emit(LoaderEvent.done);
     }
   }
 
@@ -791,7 +789,7 @@ export class InfiniteCanvasElement extends LitElement {
     if (!this.#canvas) return;
     try {
       this.eventHub.emit(LoaderEvent.start, "spinner");
-      await paste(e.clientX, e.clientY, this.#canvas, this.#history, false);
+      await paste(e.clientX, e.clientY, this.#canvas, this.#history, this.getImageFileMetadata, false);
     } catch (err) {
       console.error(err);
     } finally {

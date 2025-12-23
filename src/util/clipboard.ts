@@ -4,27 +4,23 @@ import { Canvas } from "Canvas";
 import { CanvasHistory } from "history";
 import { makeMultiAddChildCommand } from "../manager/SceneCommand";
 import z from "zod";
+import { ImageFileMetadata } from "storage";
 
 interface InfiniteCanvasClipboardElement {
-  src: string;
   x: number;
   y: number;
   sx: number;
   sy: number;
+  fileId: string | number;
 }
 
 const ClipboardElementSchema = z
   .object({
-    src: z
-      .string()
-      .regex(
-        /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+$/i,
-        "Invalid image data URL",
-      ),
     x: z.number(),
     y: z.number(),
     sx: z.number(),
     sy: z.number(),
+    fileId: z.union([z.string(), z.number()]),
   })
   .strict();
 
@@ -52,11 +48,11 @@ export async function copy(selected: Img[], clipboardEvent?: ClipboardEvent) {
   const dataStored: InfiniteCanvasClipboard = {
     type: "infinite_canvas",
     elements: selected.map((img) => ({
-      src: img.src,
       x: img.x,
       y: img.y,
       sx: img.sx,
       sy: img.sy,
+      fileId: img.fileId,
     })),
   };
 
@@ -131,6 +127,7 @@ export async function paste(
   clientY: number,
   canvas: Canvas,
   history: CanvasHistory,
+  getImageFromId: (id: string) => Promise<ImageFileMetadata>,
   isWorldCoord: boolean = true,
 ) {
   // check if there is anything from your clipboard to paste from
@@ -175,13 +172,15 @@ export async function paste(
 
         const images = await Promise.all(
           data.elements.map((element) =>
-            canvas.addImageToCanvas(
-              element.src,
-              wx + element.x - minX,
-              wy + element.y - minY,
-              element.sx,
-              element.sy,
-            ),
+            getImageFromId(element.fileId.toString()).then(img => {
+              return canvas.addImageToCanvas(
+                img.dataURL,
+                wx + element.x - minX,
+                wy + element.y - minY,
+                element.sx,
+                element.sy,
+              )
+            })
           ),
         );
 

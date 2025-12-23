@@ -28,6 +28,7 @@ import { CanvasHistory } from "./history";
 import { serializeCanvas } from "./serializer";
 import EventEmitter from "eventemitter3";
 import { AABB } from "./bounding";
+import { ImageFileMetadata } from "./storage";
 
 export class Canvas extends Renderable {
   #canvas: HTMLCanvasElement;
@@ -110,6 +111,7 @@ export class Canvas extends Renderable {
     history: CanvasHistory,
     eventHub: EventEmitter,
     writeToStorage: () => void,
+    getFileFromStorage: (id: string) => Promise<ImageFileMetadata>,
     saveImgFileToStorage: (data: string) => Promise<string | number | null>,
     getContainerDimension: () => number[],
   ) {
@@ -216,7 +218,7 @@ export class Canvas extends Renderable {
       updateCameraPos: this.camera.updateCameraPos,
       onWheel: this.camera.onWheel,
       setCursorStyle: (val: string) => (canvas.style.cursor = val),
-      paste: (x: number, y: number) => paste(x, y, this, history),
+      paste: (x: number, y: number) => paste(x, y, this, history, getFileFromStorage),
       assignEventListener: this.assignEventListener,
       closeMarquee: this.#selectionManager.clearMarquee,
       selectionPointerMove: (

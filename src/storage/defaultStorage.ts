@@ -33,7 +33,8 @@ export class DefaultIndexedDbStorage extends FileStorage {
     super();
     this.dbQueue = new DatabaseQueue();
     this.dbPromise = this.initDb();
-    // this.write = this.write.bind(this);
+    this.write = this.write.bind(this);
+    this.read = this.read.bind(this);
   }
 
   private async initDb(): Promise<IndexDb> {
@@ -109,7 +110,12 @@ export class DefaultIndexedDbStorage extends FileStorage {
   async readAll(): Promise<ImageFileMetadata[]> {
     return handleQuotaError(async (): Promise<ImageFileMetadata[]> => {
       const db: IndexDb = await this.getIndexDb();
-      return await db.files.toArray();
+      
+      const res = await db.files.toArray();
+      res.forEach(r => {
+        this.setCache(r.id, r);
+      })
+      return res;
     });
   }
 

@@ -10,9 +10,13 @@ const PADDING = 5;
 function withContextMenuClear<T extends (...args: any[]) => any>(fn: T): T {
   const self = this;
   return function (this: any, ...args: Parameters<T>): ReturnType<T> {
-    const result = fn.apply(self, args);
     self.clearContextMenu();
-    return result;
+    return (async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      return fn.apply(self, args);
+    })() as ReturnType<T>;
   } as T;
 }
 
@@ -75,9 +79,11 @@ export function addContextMenu(
 }
 
 export function clearContextMenu() {
-  const oldMenu = this.renderRoot.querySelector(".context-menu");
-  if (oldMenu) {
-    oldMenu.remove();
+  const menus = this.renderRoot.querySelectorAll(
+    ".context-menu, .sub-context-menu",
+  );
+  if (menus.length > 0) {
+    menus.forEach((m: Element) => m.remove());
     this.eventHub.emit(ContextMenuEvent.Close);
   }
 }
@@ -102,11 +108,6 @@ export function createBasicImageMenuOptions() {
           {
             text: "Copy",
             onClick: withClear(this.copyImage.bind(this)),
-          },
-          {
-            text: "Paste",
-            onClick: (e: PointerEvent) =>
-              withClear(this.pasteImage.bind(this))(e),
           },
           {
             text: "Delete",
@@ -304,7 +305,7 @@ export function createMultiImageMenuOptions(base?: ContextMenuGroupProps[]) {
   };
 }
 
-export function createCanvasImageMenuOptions(base?: ContextMenuGroupProps[]) {
+export function createCanvasMenuOptions(base?: ContextMenuGroupProps[]) {
   const withClear = withContextMenuClear.bind(this);
   return {
     options: [

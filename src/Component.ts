@@ -775,12 +775,26 @@ export class InfiniteCanvasElement extends LitElement {
 
   async copyImage() {
     if (!this.#canvas) return;
-    await copy(this.#canvas.getSelected());
+    try {
+      this.eventHub.emit(LoaderEvent.start, "spinner");
+      await copy(this.#canvas.getSelected());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this.eventHub.emit(LoaderEvent.done);
+    }
   }
 
   async pasteImage(e: PointerEvent) {
     if (!this.#canvas) return;
-    await paste(e.clientX, e.clientY, this.#canvas, this.#history, false);
+    try {
+      this.eventHub.emit(LoaderEvent.start, "spinner");
+      await paste(e.clientX, e.clientY, this.#canvas, this.#history, false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this.eventHub.emit(LoaderEvent.done);
+    }
   }
 
   flipVertical() {

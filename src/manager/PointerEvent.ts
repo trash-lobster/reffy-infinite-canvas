@@ -143,17 +143,29 @@ export class PointerEventManager {
     window.addEventListener("copy", async (e) => {
       e.preventDefault();
       if (this.isContextMenuActive()) return;
-
-      await copy(this.getSelected() as Img[]);
+      try {
+        this.eventHub.emit(LoaderEvent.start, "spinner");
+        await copy(this.getSelected() as Img[], e);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.eventHub.emit(LoaderEvent.done);
+      }
     });
 
     window.addEventListener("paste", async (e) => {
       e.preventDefault();
       if (this.isContextMenuActive()) return;
-      await deps.paste(
-        this.state.lastPointerPos.x,
-        this.state.lastPointerPos.y,
-      );
+      try {
+        await deps.paste(
+          this.state.lastPointerPos.x,
+          this.state.lastPointerPos.y,
+        );
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.eventHub.emit(LoaderEvent.done);
+      }
     });
   }
 

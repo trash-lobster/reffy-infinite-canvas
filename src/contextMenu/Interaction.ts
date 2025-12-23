@@ -330,8 +330,7 @@ export function createCanvasMenuOptions(base?: ContextMenuGroupProps[]) {
           },
           {
             text: "Paste",
-            onClick: (e: PointerEvent) =>
-              withClear(this.pasteImage.bind(this))(e),
+            onClick: () => withClear(this.pasteImage.bind(this))(),
           },
         ],
       },

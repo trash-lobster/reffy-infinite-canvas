@@ -785,11 +785,12 @@ export class InfiniteCanvasElement extends LitElement {
     }
   }
 
-  async pasteImage(e: PointerEvent) {
+  async pasteImage() {
     if (!this.#canvas) return;
     try {
       this.eventHub.emit(LoaderEvent.start, "spinner");
-      await paste(e.clientX, e.clientY, this.#canvas, this.#history, this.getImageFileMetadata, false);
+      const {x, y} = this.#canvas.contextMenuManager.lastPosition;
+      await paste(x, y, this.#canvas, this.#history, this.getImageFileMetadata, false);
     } catch (err) {
       console.error(err);
     } finally {

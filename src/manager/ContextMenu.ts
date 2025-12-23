@@ -1,3 +1,4 @@
+import { Point } from "bounding";
 import { BoundingBoxCollisionType } from "../util";
 import { ContextMenuEvent } from "../util/customEventType";
 import EventEmitter from "eventemitter3";
@@ -7,6 +8,7 @@ export class ContextMenuManager {
   paste: (e: ClipboardEvent) => Promise<void>;
   customContextMenu: (e: PointerEvent) => void;
   #isMenuActive: boolean = false;
+  lastPosition: Point = null;
 
   get isActive() {
     return this.#isMenuActive;
@@ -29,6 +31,11 @@ export class ContextMenuManager {
     this.customContextMenu = (e: PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
+
+      this.lastPosition = {
+        x: e.clientX,
+        y: e.clientY,
+      }
 
       // only show context menu when there is collision with a child object, otherwise clear it
       const [wx, wy] = getWorldCoords(e.clientX, e.clientY);

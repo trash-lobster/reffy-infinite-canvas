@@ -39,7 +39,7 @@ import {
 } from "./contextMenu";
 import {
   CanvasStorage,
-  DefaultIndexedDbStorage,
+  DefaultFileStorage,
   DefaultLocalStorage,
   FileStorage,
   ImageFileMetadata,
@@ -490,7 +490,7 @@ export class InfiniteCanvasElement extends LitElement {
   // need to check if this is good practice
   private async warmUpStorage() {
     if (!this.#fileStorage) {
-      this.#fileStorage = new DefaultIndexedDbStorage();
+      this.#fileStorage = new DefaultFileStorage();
     }
     try {
       await this.#fileStorage.readAll();
@@ -547,7 +547,7 @@ export class InfiniteCanvasElement extends LitElement {
     dataURL: string,
   ): Promise<string | number | null> {
     if (!this.#fileStorage) {
-      this.#fileStorage = new DefaultIndexedDbStorage();
+      this.#fileStorage = new DefaultFileStorage();
     }
     try {
       const id = await hashStringToId(dataURL);
@@ -567,7 +567,7 @@ export class InfiniteCanvasElement extends LitElement {
    */
   async getImageFileMetadata(fileId: string): Promise<ImageFileMetadata> {
     if (!this.#fileStorage) {
-      this.#fileStorage = new DefaultIndexedDbStorage();
+      this.#fileStorage = new DefaultFileStorage();
     }
     try {
       return await this.#fileStorage.read(fileId);
@@ -581,7 +581,7 @@ export class InfiniteCanvasElement extends LitElement {
    */
   async getAllImageFileMetdata(): Promise<ImageFileMetadata[]> {
     if (!this.#fileStorage) {
-      this.#fileStorage = new DefaultIndexedDbStorage();
+      this.#fileStorage = new DefaultFileStorage();
     }
 
     try {
@@ -593,7 +593,7 @@ export class InfiniteCanvasElement extends LitElement {
 
   async deleteAllImageFileMetadata(): Promise<void> {
     if (!this.#fileStorage) {
-      this.#fileStorage = new DefaultIndexedDbStorage();
+      this.#fileStorage = new DefaultFileStorage();
     }
 
     try {
@@ -643,7 +643,7 @@ export class InfiniteCanvasElement extends LitElement {
       this.#canvasStorage = new DefaultLocalStorage(this.name);
     }
     if (!this.#fileStorage) {
-      this.#fileStorage = new DefaultIndexedDbStorage();
+      this.#fileStorage = new DefaultFileStorage();
     }
     this.#eventHub.emit(LoaderEvent.start, "spinner");
     const dataAsString = await this.#canvasStorage.read();
@@ -858,7 +858,7 @@ export class InfiniteCanvasElement extends LitElement {
 
   async importCanvas(fileList: FileList) {
     if (!this.#fileStorage) {
-      this.#fileStorage = new DefaultIndexedDbStorage();
+      this.#fileStorage = new DefaultFileStorage();
     }
     this.#eventHub.emit(LoaderEvent.start, "spinner");
     if (!this.#canvas) return;

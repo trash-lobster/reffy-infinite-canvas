@@ -23,7 +23,7 @@ interface IndexDb extends Dexie {
   files: EntityTable<ImageFileMetadata, "id">;
 }
 
-export class DefaultIndexedDbStorage extends FileStorage {
+export class DefaultFileStorage extends FileStorage {
   private dbQueue = new DatabaseQueue();
   private dbPromise: Promise<IndexDb>;
   private cache = new Map<string | number, ImageFileMetadata>();

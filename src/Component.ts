@@ -39,8 +39,8 @@ import {
 } from "./contextMenu";
 import {
   CanvasStorage,
+  DefaultCanvasStorage,
   DefaultFileStorage,
-  DefaultLocalStorage,
   FileStorage,
   ImageFileMetadata,
 } from "./storage";
@@ -622,7 +622,7 @@ export class InfiniteCanvasElement extends LitElement {
    */
   debounceSaveToCanvasStorage(timeout: number = 1000) {
     if (!this.#canvasStorage) {
-      this.#canvasStorage = new DefaultLocalStorage(this.name);
+      this.#canvasStorage = new DefaultCanvasStorage();
     }
     clearTimeout(this.#timeoutId);
     this.#timeoutId = setTimeout(this.saveToCanvasStorage, timeout);
@@ -630,43 +630,36 @@ export class InfiniteCanvasElement extends LitElement {
 
   async saveToCanvasStorage() {
     if (!this.#canvasStorage) {
-      this.#canvasStorage = new DefaultLocalStorage(this.name);
+      this.#canvasStorage = new DefaultCanvasStorage();
+    } 
+    try {
+      await this.#canvasStorage
+      .update({
+        name: this.name,
+        ...serializeCanvas(this.#canvas),
+      })
+      this.#eventHub.emit(SaveEvent.SaveCompleted)
+    } catch {
+      this.#eventHub.emit(SaveEvent.SaveFailed);
     }
-    this.#canvasStorage
-      .write(serializeCanvas(this.#canvas))
-      .then(() => this.#eventHub.emit(SaveEvent.SaveCompleted))
-      .catch(() => this.#eventHub.emit(SaveEvent.SaveFailed));
   }
 
   async restoreStateFromCanvasStorage() {
     if (!this.#canvasStorage) {
-      this.#canvasStorage = new DefaultLocalStorage(this.name);
+      this.#canvasStorage = new DefaultCanvasStorage();
     }
     if (!this.#fileStorage) {
       this.#fileStorage = new DefaultFileStorage();
     }
     this.#eventHub.emit(LoaderEvent.start, "spinner");
-    const dataAsString = await this.#canvasStorage.read();
-    if (!dataAsString) {
-      const legacy = localStorage.getItem(this.name);
-      if (legacy) {
-        try {
-          const newKey = (DefaultLocalStorage as any).makeKey
-            ? (DefaultLocalStorage as any)["makeKey"](this.name)
-            : `reffy:canvas:${this.name}`;
-          localStorage.setItem(newKey, legacy);
-          localStorage.removeItem(this.name);
-        } catch (err) {
-          console.error(err);
-          return;
-        }
-      }
-    }
+    const canvasData = await this.#canvasStorage.read(this.name);
+
     let raw: unknown;
     try {
-      raw = JSON.parse(dataAsString);
+      raw = JSON.parse(canvasData.content);
     } catch (err) {
-      console.warn("Uploaded JSON cannot be converted to canvas");
+      console.error("Uploaded JSON cannot be converted to canvas");
+      this.#eventHub.emit(LoaderEvent.done);
       return;
     }
 
@@ -687,10 +680,10 @@ export class InfiniteCanvasElement extends LitElement {
 
   async deleteStateFromCanvasStorage() {
     if (!this.#canvasStorage) {
-      this.#canvasStorage = new DefaultLocalStorage(this.name);
+      this.#canvasStorage = new DefaultCanvasStorage();
     }
     try {
-      this.#canvasStorage.delete();
+      this.#canvasStorage.delete(this.name);
     } catch (err) {
       console.error("Failed to delete canvas storage ", err);
     }
@@ -698,7 +691,7 @@ export class InfiniteCanvasElement extends LitElement {
 
   async renameCanvasInStorage(newName: string) {
     if (!this.#canvasStorage) {
-      this.#canvasStorage = new DefaultLocalStorage(this.name);
+      this.#canvasStorage = new DefaultCanvasStorage();
     }
     try {
       this.#canvasStorage.changeCanvasKey(this.name, newName);
@@ -876,7 +869,8 @@ export class InfiniteCanvasElement extends LitElement {
     try {
       raw = JSON.parse(dataString);
     } catch (err) {
-      console.warn("Uploaded JSON cannot be converted to canvas");
+      console.error("Uploaded JSON cannot be converted to canvas");
+      this.#eventHub.emit(LoaderEvent.done);
       return;
     }
 

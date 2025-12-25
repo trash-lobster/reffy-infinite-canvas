@@ -1,7 +1,7 @@
 import { ImageFileMetadata } from "storage";
 import { Canvas } from "../Canvas";
 import { Renderable, Rect, Img, Grid } from "../shapes";
-import { hashStringToId, performanceTest } from "../util";
+import { hashStringToId } from "../util";
 import { ParsedSerializedCanvas } from "./schema";
 
 /**
@@ -226,7 +226,7 @@ export async function deserializeCanvas(
             (instance as Img).src = fileMeta.dataURL;
             getFile((node as SerializedImg).fileId)
               .then((file) => {
-                if (!file) {
+                if (!file && writeFileToDatabase) {
                   writeFileToDatabase(fileMeta.dataURL);
                 }
               })
@@ -236,7 +236,7 @@ export async function deserializeCanvas(
           } else {
             getFile((node as SerializedImg).fileId)
               .then((file) => {
-                (instance as Img).src = file.dataURL;
+                if (file) (instance as Img).src = file.dataURL;
               })
               .catch((err) => console.error("Image not loaded", err));
           }

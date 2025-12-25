@@ -86,6 +86,11 @@ export class InfiniteCanvasAPI {
     });
   }
 
+  static async deleteCanvas(id: string) {
+    const storage: CanvasStorage = new DefaultCanvasStorage();
+    return await storage.delete(id);
+  }
+
   /**
    * This is a long process that reviews and cleans up the file storage.
    * Only cleans the file storage in IndexedDB.

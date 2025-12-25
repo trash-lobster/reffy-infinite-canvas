@@ -101,6 +101,10 @@ export class CanvasStorageData {
     data._id = entry.name;
     return data;
   }
+
+  static async parse(s: string) {
+    return JSON.parse(s) as CanvasStorageEntry;
+  }
 }
 
 /**

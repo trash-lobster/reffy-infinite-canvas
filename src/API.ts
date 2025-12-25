@@ -3,6 +3,7 @@ import {
   CanvasStorageEntry,
   DefaultCanvasStorage,
   DefaultFileStorage,
+  FileDeletionResult,
   FileStorage,
 } from "./storage";
 import { InfiniteCanvasElement } from "./Component";
@@ -69,9 +70,35 @@ export class InfiniteCanvasAPI {
     });
   }
 
-  static async addCanvas(id: string, fileStorage?: FileStorage) {
-    const storage: FileStorage = fileStorage ?? new DefaultFileStorage();
-    return await storage.readAll();
+  /**
+   * Writes an empty entry to the database
+   */
+  static async registerCanvas(id: string, canvasStorage?: CanvasStorage) {
+    const storage: CanvasStorage = canvasStorage ?? new DefaultCanvasStorage();
+    return await storage.write({
+      name: id,
+      version: 1,
+      canvas: null,
+      camera: null,
+      root: null,
+      files: [],
+      lastRetrieved: Date.now(),
+    });
+  }
+
+  /**
+   * This is a long process that reviews and cleans up the file storage.
+   * Only cleans the file storage in IndexedDB.
+   * Since the storage uses a queuing system, there is no risk of accidentally deleting new entries.
+   * However, please account for the noticeable delay that will incur when your file storage gets too big.
+   * Failed deletion does not interupt the deletion
+   * @returns {Promise<FileDeletionResult>} The result of the deletion. Check for the ok status and error to see if deletion succeeded or not.
+   */
+  static async clearFileDataInIDB(): Promise<FileDeletionResult[]> {
+    const fileDb = new DefaultFileStorage();
+    const canvasDb = new DefaultCanvasStorage();
+    const filesInUse = await canvasDb.getAllUsedImagesId();
+    return await fileDb.removeUnusedImages(filesInUse);
   }
 
   /**

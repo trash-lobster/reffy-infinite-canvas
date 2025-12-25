@@ -7,6 +7,7 @@ import {
   CanvasStorageEntry,
   CanvasStorageData,
 } from "./storage";
+import { SerializedNode } from "../serializer";
 
 const dbVersion2 = {
   files: "$$id, mimetype, created, lastRetrieved",
@@ -234,6 +235,35 @@ export class DefaultFileStorage extends FileStorage {
       return entry ? entry.id : null;
     });
   }
+
+  async removeUnusedImages(
+    usedImageIds: string[],
+  ): Promise<FileDeletionResult[]> {
+    return this.dbQueue.add(async () => {
+      const db: IndexDb = await this.getIndexDb();
+      const unused = await db.files
+        .filter((f) => !usedImageIds.includes(f.id.toString()))
+        .toArray();
+      const results = await Promise.all(
+        unused.map(async (f) => {
+          try {
+            await db.files.delete(f.id);
+            return { id: f.id, ok: true };
+          } catch (err) {
+            console.error("delete failed for", f.id, err);
+            return { id: f.id, ok: false, error: err };
+          }
+        }),
+      );
+      return results;
+    });
+  }
+}
+
+export interface FileDeletionResult {
+  id: string | number;
+  ok: boolean;
+  error?: string;
 }
 
 export class DefaultCanvasStorage extends CanvasStorage {
@@ -299,9 +329,6 @@ export class DefaultCanvasStorage extends CanvasStorage {
         const db: IndexDb = await this.getIndexDb();
 
         const res = await db.canvases.toArray();
-        // res.forEach((r) => {
-        //   this.setCache(r.id, r);
-        // });
         return res;
       }),
     );
@@ -459,6 +486,27 @@ export class DefaultCanvasStorage extends CanvasStorage {
         const db: IndexDb = await this.getIndexDb();
         const entry = await db.canvases.where("id").equals(id).first();
         return entry !== null;
+      }),
+    );
+  }
+
+  async getAllUsedImagesId(): Promise<string[]> {
+    return this.dbQueue.add(() =>
+      handleQuotaError(async (): Promise<string[]> => {
+        const db: IndexDb = await this.getIndexDb();
+        const filesInUse = new Set<string>();
+        const entries = await db.canvases.toArray();
+        entries.forEach((f) => {
+          const content = CanvasStorageData.parse(f.content);
+          if (content && typeof content === "object" && "root" in content) {
+            (content.root as SerializedNode).children.forEach((element) => {
+              if ("fileId" in element) {
+                filesInUse.add(element.fileId.toString());
+              }
+            });
+          }
+        });
+        return Array.from(filesInUse);
       }),
     );
   }

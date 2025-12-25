@@ -299,6 +299,16 @@ export class InfiniteCanvasElement extends LitElement {
     window.removeEventListener("resize", this.#onViewportResize);
     this.#resizeObserver?.disconnect();
     this.#resizeObserver = undefined;
+
+    if (this.#intervalId) {
+      clearInterval(this.#intervalId);
+      this.#intervalId = null;
+    }
+    if (this.#timeoutId) {
+      clearTimeout(this.#timeoutId);
+      this.#timeoutId = null;
+    }
+
     this.#canvas.destroy();
     super.disconnectedCallback();
   }
@@ -629,16 +639,21 @@ export class InfiniteCanvasElement extends LitElement {
   }
 
   async saveToCanvasStorage() {
+    if (!this.isConnected || !this.#canvas || !this.#canvasStorage) return;
+
+    const canvasSnapshot = serializeCanvas(this.#canvas);
+
     if (!this.#canvasStorage) {
       this.#canvasStorage = new DefaultCanvasStorage();
     }
     try {
       await this.#canvasStorage.update({
         name: this.name,
-        ...serializeCanvas(this.#canvas),
+        ...canvasSnapshot,
       });
       this.#eventHub.emit(SaveEvent.SaveCompleted);
-    } catch {
+    } catch (err) {
+      console.error(err);
       this.#eventHub.emit(SaveEvent.SaveFailed);
     }
   }

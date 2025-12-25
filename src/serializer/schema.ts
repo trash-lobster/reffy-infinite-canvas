@@ -86,6 +86,7 @@ const CameraSchema = z
 
 export const SerializedCanvasSchema = z
   .object({
+    name: z.string().optional(),
     version: z.literal(1),
     canvas: z
       .object({

@@ -64,15 +64,53 @@ export abstract class FileStorage {
   abstract checkIfImageStored(id: string): Promise<string | number | null>;
 }
 
-export type CanvasStorageEntry = SerializedCanvas;
+export type CanvasStorageEntry = {name: string} & SerializedCanvas;
+
+export class CanvasStorageData {
+  private _id: string;
+  private _content: string; // the file content has to be saved as a json string - saving it as an object leads to circular reference in Dexie
+
+  // writing updates should lead to replacement of the content string value altogether
+  private _touch() {
+    const entry: SerializedCanvas = JSON.parse(this._content) as SerializedCanvas;
+    entry.lastRetrieved = Date.now();
+    this._content = JSON.stringify(entry);
+    return entry;
+  }
+
+  get id() { 
+    this._touch();
+    return this._id; 
+  }
+
+  get content() {
+    this._touch();
+    return this._content;
+  }
+
+  constructor(entry: SerializedCanvas) {
+    // serialize the entry into string
+    entry.lastRetrieved = Date.now();
+    this._content = JSON.stringify(entry);
+  }
+
+  static async create(entry: CanvasStorageEntry): Promise<CanvasStorageData> {
+    const data = new CanvasStorageData(entry);
+    data._id = entry.name;
+    return data;
+  }
+}
 
 /**
  * Writes the canvas data into storage
  */
 export abstract class CanvasStorage {
-  abstract write(value: CanvasStorageEntry): Promise<void>;
-  abstract read(): Promise<string>;
-  abstract delete(): Promise<void>;
-  abstract update(value: CanvasStorageEntry): Promise<void>;
-  abstract changeCanvasKey(oldKey: string, newKey: string): Promise<void>;
+  abstract write(value: CanvasStorageEntry): Promise<string | number>;
+  abstract read(name: string): Promise<CanvasStorageData>;
+  abstract readAll(): Promise<CanvasStorageData[]>;
+  abstract delete(name: string): Promise<CanvasStorageData>;
+  abstract deleteAll(): Promise<void>;
+  abstract update(newVersion: CanvasStorageEntry): Promise<CanvasStorageData>;
+  abstract changeCanvasKey(oldName: string, newName: string): Promise<boolean>;
+  abstract checkIfCanvasExistsByName(id: string): Promise<boolean>;
 }

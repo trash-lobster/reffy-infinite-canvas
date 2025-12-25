@@ -1,5 +1,6 @@
-import { CanvasStorage } from "./storage";
+import { CanvasStorage, CanvasStorageEntry, DefaultCanvasStorage, DefaultFileStorage, FileStorage } from "./storage";
 import { InfiniteCanvasElement } from "./Component";
+import { SerializedCanvas } from "serializer";
 
 export class InfiniteCanvasAPI {
   private el: InfiniteCanvasElement;
@@ -43,8 +44,30 @@ export class InfiniteCanvasAPI {
     return new InfiniteCanvasAPI(el);
   }
 
+  static async getAllCanvasNames(canvasStorage?: CanvasStorage) {
+    const storage = canvasStorage ?? new DefaultCanvasStorage();
+    const data = await storage.readAll();
+    return data.map(d => d.id);
+  }
+
+  static async getAllCanvasData(canvasStorage?: CanvasStorage): Promise<CanvasStorageEntry[]> {
+    const storage = canvasStorage ?? new DefaultCanvasStorage();
+    const data = await storage.readAll();
+    return data.map(d => {
+      return {
+        name: d.id,
+        ...JSON.parse(d.content) as SerializedCanvas,
+      }
+    })
+  }
+
+  static async addCanvas(id: string, fileStorage?: FileStorage) {
+    const storage: FileStorage = fileStorage ?? new DefaultFileStorage();
+    return await storage.readAll();
+  }
+
   /**
-   * Without assigning storage, the canvas will not save any data
+   * Without assigning storage, the canvas will write to indexDB
    * @param storage
    * @param saveFrequency How often auto save occurs in ms
    */
@@ -53,8 +76,12 @@ export class InfiniteCanvasAPI {
     return this;
   }
 
+  assignFileStorage(storage: FileStorage) {
+    this.el.assignFileStorage(storage);
+    return this;
+  }
+
   async zoomIn() {
-    console.log("zooming");
     this.el.zoomIn();
   }
 

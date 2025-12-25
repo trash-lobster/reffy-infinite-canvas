@@ -1,4 +1,10 @@
-import { CanvasStorage, CanvasStorageEntry, DefaultCanvasStorage, DefaultFileStorage, FileStorage } from "./storage";
+import {
+  CanvasStorage,
+  CanvasStorageEntry,
+  DefaultCanvasStorage,
+  DefaultFileStorage,
+  FileStorage,
+} from "./storage";
 import { InfiniteCanvasElement } from "./Component";
 import { SerializedCanvas } from "serializer";
 
@@ -47,18 +53,20 @@ export class InfiniteCanvasAPI {
   static async getAllCanvasNames(canvasStorage?: CanvasStorage) {
     const storage = canvasStorage ?? new DefaultCanvasStorage();
     const data = await storage.readAll();
-    return data.map(d => d.id);
+    return data.map((d) => d.id);
   }
 
-  static async getAllCanvasData(canvasStorage?: CanvasStorage): Promise<CanvasStorageEntry[]> {
+  static async getAllCanvasData(
+    canvasStorage?: CanvasStorage,
+  ): Promise<CanvasStorageEntry[]> {
     const storage = canvasStorage ?? new DefaultCanvasStorage();
     const data = await storage.readAll();
-    return data.map(d => {
+    return data.map((d) => {
       return {
         name: d.id,
-        ...JSON.parse(d.content) as SerializedCanvas,
-      }
-    })
+        ...(JSON.parse(d.content) as SerializedCanvas),
+      };
+    });
   }
 
   static async addCanvas(id: string, fileStorage?: FileStorage) {

@@ -64,7 +64,7 @@ export abstract class FileStorage {
   abstract checkIfImageStored(id: string): Promise<string | number | null>;
 }
 
-export type CanvasStorageEntry = {name: string} & SerializedCanvas;
+export type CanvasStorageEntry = { name: string } & SerializedCanvas;
 
 export class CanvasStorageData {
   private _id: string;
@@ -72,15 +72,17 @@ export class CanvasStorageData {
 
   // writing updates should lead to replacement of the content string value altogether
   private _touch() {
-    const entry: SerializedCanvas = JSON.parse(this._content) as SerializedCanvas;
+    const entry: SerializedCanvas = JSON.parse(
+      this._content,
+    ) as SerializedCanvas;
     entry.lastRetrieved = Date.now();
     this._content = JSON.stringify(entry);
     return entry;
   }
 
-  get id() { 
+  get id() {
     this._touch();
-    return this._id; 
+    return this._id;
   }
 
   get content() {

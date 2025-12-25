@@ -294,7 +294,7 @@ export class DefaultCanvasStorage extends CanvasStorage {
   }
 
   async readAll(): Promise<CanvasStorageData[]> {
-    return this.dbQueue.add(() => 
+    return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<CanvasStorageData[]> => {
         const db: IndexDb = await this.getIndexDb();
 
@@ -303,30 +303,29 @@ export class DefaultCanvasStorage extends CanvasStorage {
         //   this.setCache(r.id, r);
         // });
         return res;
-      }
-    ));
+      }),
+    );
   }
 
   /**
    * @param id Passed in as plain text without the canvas identifier modifier
    */
   async read(id: string): Promise<CanvasStorageData> {
-    return this.dbQueue.add(() => 
+    return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<CanvasStorageData> => {
         const db: IndexDb = await this.getIndexDb();
-  
+
         try {
           const entry = await db.canvases.get(id);
-    
+
           if (!entry) return null;
-  
+
           return entry;
         } catch (err) {
-          console.error('Read operation was not completed', err);
+          console.error("Read operation was not completed", err);
           throw err;
         }
-  
-      })
+      }),
     );
   }
 
@@ -369,7 +368,10 @@ export class DefaultCanvasStorage extends CanvasStorage {
             await db.canvases.clear();
           })
           .catch((error) => {
-            console.error("Failed to clear all canvas data from local DB:", error);
+            console.error(
+              "Failed to clear all canvas data from local DB:",
+              error,
+            );
             throw error;
           });
 
@@ -384,30 +386,34 @@ export class DefaultCanvasStorage extends CanvasStorage {
   async update(newVersion: CanvasStorageEntry): Promise<CanvasStorageData> {
     return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<CanvasStorageData> => {
-        const canvas: CanvasStorageData = await CanvasStorageData.create(newVersion);
+        const canvas: CanvasStorageData =
+          await CanvasStorageData.create(newVersion);
         const db: IndexDb = await this.getIndexDb();
 
-        await db.transaction("rw", db.canvases, async () => {
-          const existing = await db.canvases.where("id").equals(canvas.id).first();
-          if (!existing) {
-            await db.canvases.add({
-              id: canvas.id,
+        await db
+          .transaction("rw", db.canvases, async () => {
+            const existing = await db.canvases
+              .where("id")
+              .equals(canvas.id)
+              .first();
+            if (!existing) {
+              await db.canvases.add({
+                id: canvas.id,
+                content: canvas.content,
+              } as any);
+              return;
+            }
+            await db.canvases.update(canvas.id, {
               content: canvas.content,
-            } as any);
-            return;
-          }
-          await db.canvases.update(canvas.id, {
-            content: canvas.content,
+            });
+          })
+          .catch(() => {
+            throw new CanvasStorageError(
+              "CanvasStorage failed to update the canvas",
+            );
           });
-        })
-        .catch(() => {
-          throw new CanvasStorageError('CanvasStorage failed to update the canvas');
-        });
 
-        const updated = await db.canvases
-          .where("id")
-          .equals(canvas.id)
-          .first();
+        const updated = await db.canvases.where("id").equals(canvas.id).first();
 
         return updated;
       }),
@@ -418,18 +424,19 @@ export class DefaultCanvasStorage extends CanvasStorage {
    * Both inputs should be the pure canvas name. Converting it to the canvas key is handled internally.
    */
   async changeCanvasKey(oldName: string, newName: string) {
-    return this.dbQueue.add(() => 
+    return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<boolean> => {
         try {
           const db: IndexDb = await this.getIndexDb();
-    
-          return await db.transaction("rw", db.canvases, async() => {
+
+          return await db.transaction("rw", db.canvases, async () => {
             const entry = await db.canvases.where("id").equals(oldName).first();
             if (oldName === newName) return true;
             if (!entry) return false;
 
             const existingNew = await db.canvases.get(newName);
-            if (existingNew) throw new Error(`Canvas "${newName}" already exists`);
+            if (existingNew)
+              throw new Error(`Canvas "${newName}" already exists`);
             const content = entry.content;
             await db.canvases.add({
               id: newName,
@@ -442,17 +449,17 @@ export class DefaultCanvasStorage extends CanvasStorage {
           console.error(err);
           return false;
         }
-      })
+      }),
     );
   }
 
   async checkIfCanvasExistsByName(id: string): Promise<boolean> {
-    return this.dbQueue.add(() => 
+    return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<boolean> => {
         const db: IndexDb = await this.getIndexDb();
         const entry = await db.canvases.where("id").equals(id).first();
         return entry !== null;
-      })
+      }),
     );
   }
 }
@@ -484,7 +491,7 @@ class DatabaseQueue {
   async add<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.queue.then(() => operation());
     this.queue = result.catch((err) => {
-      console.error('Database queue failed to complete this operation', err);
+      console.error("Database queue failed to complete this operation", err);
     });
     return result;
   }

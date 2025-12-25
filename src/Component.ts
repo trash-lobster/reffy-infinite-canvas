@@ -631,14 +631,13 @@ export class InfiniteCanvasElement extends LitElement {
   async saveToCanvasStorage() {
     if (!this.#canvasStorage) {
       this.#canvasStorage = new DefaultCanvasStorage();
-    } 
+    }
     try {
-      await this.#canvasStorage
-      .update({
+      await this.#canvasStorage.update({
         name: this.name,
         ...serializeCanvas(this.#canvas),
-      })
-      this.#eventHub.emit(SaveEvent.SaveCompleted)
+      });
+      this.#eventHub.emit(SaveEvent.SaveCompleted);
     } catch {
       this.#eventHub.emit(SaveEvent.SaveFailed);
     }

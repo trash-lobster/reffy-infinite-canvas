@@ -496,16 +496,18 @@ export class DefaultCanvasStorage extends CanvasStorage {
         const db: IndexDb = await this.getIndexDb();
         const filesInUse = new Set<string>();
         const entries = await db.canvases.toArray();
-        entries.forEach((f) => {
-          const content = CanvasStorageData.parse(f.content);
-          if (content && typeof content === "object" && "root" in content) {
-            (content.root as SerializedNode).children.forEach((element) => {
-              if ("fileId" in element) {
-                filesInUse.add(element.fileId.toString());
-              }
-            });
-          }
-        });
+        await Promise.all(
+          entries.map(async (f) => {
+            const content = await CanvasStorageData.parse(f.content);
+            if (content && typeof content === "object" && "root" in content) {
+              (content.root as SerializedNode).children.forEach((element) => {
+                if ("fileId" in element) {
+                  filesInUse.add(element.fileId.toString());
+                }
+              });
+            }
+          }),
+        );
         return Array.from(filesInUse);
       }),
     );

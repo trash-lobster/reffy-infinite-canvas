@@ -94,8 +94,12 @@ export class MarqueeSelectionBox {
    * @returns
    */
   getBoundingBox(getWorldCoords: (x: number, y: number) => number[]) {
-    const [wx, wy] = getWorldCoords(this.x, this.y);
-    const [wW, wH] = getWorldCoords(this.x + this.width, this.y + this.height);
+    const dpr = window.devicePixelRatio || 1;
+    const [wx, wy] = getWorldCoords(this.x / dpr, this.y / dpr);
+    const [wW, wH] = getWorldCoords(
+      (this.x + this.width) / dpr,
+      (this.y + this.height) / dpr,
+    );
 
     const minX = Math.min(wx, wW);
     const maxX = Math.max(wx, wW);

@@ -131,12 +131,12 @@ export async function paste(
   isWorldCoord: boolean = true,
 ) {
   // check if there is anything from your clipboard to paste from
-  const items = await navigator.clipboard.read();
-  const types = items[0].types;
-
   const [wx, wy] = isWorldCoord
     ? [clientX, clientY]
     : getWorldCoords(clientX, clientY, canvas);
+
+  const items = await navigator.clipboard.read();
+  const types = items[0].types;
 
   for (const type of types) {
     const allowed = acceptedPasteMimeType.find((allowed) =>

@@ -1,8 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { MarqueeSelectionBox } from "../../../src/bounding";
 import { BORDERPX } from "../../../src/util";
+import { beforeEach } from "node:test";
 
 const I = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+
+if (typeof window === "undefined") {
+    (globalThis as any).window = globalThis as any;
+}
+(globalThis as any).window.devicePixelRatio ??= 1;
 
 describe("marquee selection render", () => {
   const gl = {} as WebGLRenderingContext;

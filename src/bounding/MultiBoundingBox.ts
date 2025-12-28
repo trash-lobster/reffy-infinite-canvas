@@ -166,12 +166,9 @@ export class MultiBoundingBox {
   }
 
   flip(
-    worldMatrix: number[],
     direction: FlipDirection,
     getWorldCoords: (x: number, y: number) => number[],
   ) {
-    const [worldScaleX, worldScaleY] = getScalesFromMatrix(worldMatrix);
-
     const transformArray: FlipSnapshotItem[] = [];
 
     const [startX, startY] = getWorldCoords(this.x, this.y);
@@ -424,6 +421,7 @@ export class MultiBoundingBox {
     for (const type of HANDLE_TYPES) {
       const handle = this.handles.get(type);
       const config = this.getHandleConfig(type);
+      console.log('handle', config);
 
       if (handle) {
         handle.setTranslation(config.x, config.y);

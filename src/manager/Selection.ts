@@ -297,7 +297,6 @@ export class SelectionManager {
   flip(direction: FlipDirection) {
     if (this.multiBoundingBox) {
       const transformArray = this.multiBoundingBox.flip(
-        this.getWorldMatrix(),
         direction,
         this.getWorldCoords,
       );

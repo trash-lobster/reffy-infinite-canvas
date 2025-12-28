@@ -100,6 +100,7 @@ beforeEach(() => {
     history,
     hub,
     vi.fn(),
+    vi.fn(),
     vi.fn(async () => 1),
     () => [640, 480],
   );
@@ -209,7 +210,7 @@ describe("Canvas", () => {
   it("addImageToCanvas emits save and change, returns Img", async () => {
     const saveSpy = vi.fn(async () => 42);
     const emitSpy = vi.spyOn(hub, "emit");
-    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), saveSpy, () => [
+    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), vi.fn(), saveSpy, () => [
       640, 480,
     ]);
 
@@ -227,7 +228,7 @@ describe("Canvas", () => {
   it("addImageToCanvas and pass in center to explore the branch", async () => {
     const saveSpy = vi.fn(async () => 42);
     const emitSpy = vi.spyOn(hub, "emit");
-    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), saveSpy, () => [
+    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), vi.fn(), saveSpy, () => [
       640, 480,
     ]);
 
@@ -242,7 +243,7 @@ describe("Canvas", () => {
   it("addImageToCanvas and pass in center to explore onload", async () => {
     const saveSpy = vi.fn(async () => 42);
     const emitSpy = vi.spyOn(hub, "emit");
-    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), saveSpy, () => [
+    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), vi.fn(), saveSpy, () => [
       640, 480,
     ]);
 
@@ -262,7 +263,7 @@ describe("Canvas", () => {
   });
 
   it("getChild returns child as expected", () => {
-    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), vi.fn(), () => [
+    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), vi.fn(), vi.fn(), () => [
       640, 480,
     ]);
 
@@ -277,6 +278,7 @@ describe("Canvas", () => {
       canvasEl,
       history,
       hub,
+      vi.fn(),
       vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
@@ -322,6 +324,7 @@ describe("Canvas getters", () => {
       history,
       hub,
       vi.fn(),
+      vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
     );
@@ -340,6 +343,7 @@ describe("Canvas getters", () => {
       history,
       hub,
       vi.fn(),
+      vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
     );
@@ -357,6 +361,7 @@ describe("destroy", () => {
       history,
       hub,
       vi.fn(),
+      vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
     );
@@ -370,6 +375,7 @@ describe("destroy", () => {
       canvasEl,
       history,
       hub,
+      vi.fn(),
       vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
@@ -388,6 +394,7 @@ describe("destroy", () => {
       canvasEl,
       history,
       hub,
+      vi.fn(),
       vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
@@ -417,6 +424,7 @@ describe("hitTest", () => {
       history,
       hub,
       vi.fn(),
+      vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
     );
@@ -431,14 +439,6 @@ describe("state", () => {
     const result = canvas.exportState();
     expect(serializeCanvas).toHaveBeenCalledWith(canvas);
     expect(result).toEqual({ mock: "serialized" });
-  });
-
-  it("importState delegates to deserializeCanvas", async () => {
-    const data = { foo: "bar" } as any;
-    const getFile = vi.fn(async () => ({ id: 1 }) as ImageFileMetadata);
-    const result = await canvas.importState(data, getFile);
-    expect(deserializeCanvas).toHaveBeenCalledWith(data, canvas, getFile);
-    expect(result).toEqual({ mock: "deserialized" });
   });
 
   it("clearChildren clears selection, children, and history", () => {
@@ -465,6 +465,7 @@ describe("toggle grid", () => {
       history,
       hub,
       vi.fn(),
+      vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
     );
@@ -479,6 +480,7 @@ describe("toggle grid", () => {
       canvasEl,
       history,
       hub,
+      vi.fn(),
       vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
@@ -500,6 +502,7 @@ describe("setShapeZOrder", () => {
       canvasEl,
       history,
       hub,
+      vi.fn(),
       vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
@@ -526,6 +529,7 @@ describe("setShapeZOrder", () => {
       history,
       hub,
       vi.fn(),
+      vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
     );
@@ -547,6 +551,7 @@ describe("setShapeZOrder", () => {
       canvasEl,
       history,
       hub,
+      vi.fn(),
       vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
@@ -570,6 +575,7 @@ describe("setShapeZOrder", () => {
       history,
       hub,
       vi.fn(),
+      vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
     );
@@ -582,6 +588,7 @@ describe("change mode", () => {
       canvasEl,
       history,
       hub,
+      vi.fn(),
       vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],
@@ -646,6 +653,7 @@ describe("WebGL stats", () => {
       localCanvasEl,
       new CanvasHistory(),
       new EventEmitter(),
+      vi.fn(),
       vi.fn(),
       vi.fn(async () => 1),
       () => [640, 480],

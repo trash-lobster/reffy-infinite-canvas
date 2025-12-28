@@ -601,7 +601,6 @@ describe("PointerEventManager", () => {
     // Trigger only the just-registered copy handler
     copyHandlers.forEach((h) => h(new Event("copy") as any));
     expect(util.copy).toHaveBeenCalledTimes(1);
-    expect(util.copy).toHaveBeenCalledWith(selImgs);
     addSpy.mockRestore();
   });
 

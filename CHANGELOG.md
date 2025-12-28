@@ -9,6 +9,29 @@ The project began tracking changelog from version 0.0.8.
 
 View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
+## [0.2.0] - 2025-12-28
+
+### Fixed
+
+- There was a problem where higher device pixel ratio screens will lead to marquee selection being off. This has been patched now.
+
+### Change
+
+- Local canvas is now being stored in the Indexed DB, instead of as part of local storage. Apologies for the inconvenience.
+
+### Updated
+
+- Documentation and README have both been reviewed and updated.
+- Tests have been updated to reflect the updates.
+- Demo site has been rewritten and added modern styling.
+- Noticed the time delay in the UI when copying and pasting large amount of information and added a UI loader to add to responsiveness.
+- The above mentioned UI delay impacted the context menu responsiveness. Updated the clear context menu function to clear out the context menu instantly first before processing the command.
+
+### Added
+
+- New API methods have been added and static methods connecting to the database have been added.
+- A new test config file has been added.
+
 ## [0.1.3] - 2025-12-22
 
 ### Fixed
@@ -98,6 +121,8 @@ View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
 - File storage cache limit has been increased from 100 to 500
 
+[0.2.0]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.3...v0.2.0
+[0.1.3]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.0.13...v0.1.0

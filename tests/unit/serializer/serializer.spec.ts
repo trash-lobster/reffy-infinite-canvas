@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   serializeNode,
   serializeCanvas,
@@ -46,6 +46,7 @@ function makeCanvasStub() {
     grid,
     children: [] as Renderable[],
     appendChild: vi.fn(function (this: Canvas, child: Renderable) {
+      console.log('test', child);
       this.children.push(child);
     }),
   } as any;
@@ -187,10 +188,51 @@ describe("serializer serializeCanvas", () => {
 
 describe("serializer deserializeCanvas", () => {
   let canvas: any;
+  const mockDataString = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII";
+  const realImage = (globalThis as any).Image;
+  const realCreateObjectURL = (URL as any).createObjectURL;
+  const realRevokeObjectURL = (URL as any).revokeObjectURL;
 
   beforeEach(() => {
     canvas = makeCanvasStub();
     Object.setPrototypeOf(canvas, Canvas.prototype);
+    // Lightweight Image mock that calls onload after src is set.
+    vi.stubGlobal(
+        "Image",
+        class {
+            crossOrigin: string = "";
+            naturalWidth: number = 1;
+            naturalHeight: number = 1;
+            onload: (() => void) | null = null;
+            onerror: ((e?: any) => void) | null = null;
+            set src(_v: string) {
+                // simulate async load — tests await deserializeCanvas so this is fine
+                setTimeout(() => {
+                    if (this.onload) this.onload();
+                }, 0);
+            }
+            // no-op getter for src
+            get src() {
+                return "";
+            }
+        } as any,
+    );
+
+    // If URL.createObjectURL isn't available (Node/jsdom), stub it to return a marker string.
+    if (!(URL as any).createObjectURL) {
+        (URL as any).createObjectURL = (_blob: Blob) => "blob:mock";
+    }
+    if (!(URL as any).revokeObjectURL) {
+        (URL as any).revokeObjectURL = (_url: string) => {};
+    }
+  });
+
+  afterEach(() => {
+      // restore globals
+      vi.unstubAllGlobals();
+      if (realImage) (globalThis as any).Image = realImage;
+      if (realCreateObjectURL) (URL as any).createObjectURL = realCreateObjectURL;
+      if (realRevokeObjectURL) (URL as any).revokeObjectURL = realRevokeObjectURL;
   });
 
   it("rebuilds Rect nodes with transform and appends to canvas", async () => {
@@ -220,9 +262,7 @@ describe("serializer deserializeCanvas", () => {
     expect(rect.sy).toBeCloseTo(3, 6);
   });
 
-  it("rebuilds Img nodes, preserves renderOrder, calls writeFileToDatabase and loads actual file", async () => {
-    const mockDataString =
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII";
+  it("rebuilds Img nodes, preserves renderOrder, does not call writeFileToDatabase and loads actual file", async () => {
     const fileId = await hashStringToId(mockDataString);
     const data: SerializedCanvas = {
       version: 1,
@@ -241,12 +281,13 @@ describe("serializer deserializeCanvas", () => {
             type: "Img",
             width: 120,
             height: 60,
-            fileId: fileId,
+            fileId,
             transform: { x: 15, y: 25, sx: 1.2, sy: 0.8 },
             renderOrder: 99,
           },
         ],
       } as SerializedNode,
+      lastRetrieved: Date.now(),
     };
 
     const writeFileToDatabase = vi.fn();
@@ -254,8 +295,7 @@ describe("serializer deserializeCanvas", () => {
       async (id: number | string) =>
         ({
           id,
-          dataURL:
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=",
+          dataURL: mockDataString,
         }) as any,
     );
 
@@ -264,15 +304,15 @@ describe("serializer deserializeCanvas", () => {
     const img = canvas.children[0] as Img;
     expect(img).toBeInstanceOf(Img);
     expect(img.renderOrder).toBe(99);
-    expect(writeFileToDatabase).toHaveBeenCalled();
-    // file loader was requested
-    expect(getFile).toHaveBeenCalledWith(fileId);
+    expect(writeFileToDatabase).not.toHaveBeenCalled(); // write to file database does not happen when the file is found
+    expect(getFile).toHaveBeenCalledWith(fileId); // file loader was requested
+    
     // position and scale applied
     expect(img.x).toBe(15);
     expect(img.y).toBe(25);
     expect(img.sx).toBeCloseTo(1.2, 6);
     expect(img.sy).toBeCloseTo(0.8, 6);
-  }, 20000);
+  });
 
   it("handles Grid style when parent is Canvas", async () => {
     const data: SerializedCanvas = {
@@ -282,23 +322,34 @@ describe("serializer deserializeCanvas", () => {
       root: { type: "Grid", style: 2 } as any,
     } as any;
 
-    const getFile = vi.fn(async () => ({ id: 1, dataURL: "" }) as any);
+    const getFile = vi.fn(async () => ({ id: 1, dataURL: mockDataString }) as any);
     await deserializeCanvas(data, canvas, getFile);
     expect(canvas.grid.gridType).toBe(2);
   });
 
   it("continues when image file lookup fails (uses placeholder path)", async () => {
+    const fileId = await hashStringToId(mockDataString);
     const data: SerializedCanvas = {
       version: 1,
       canvas: { width: 640, height: 480, dpr: 1 },
       camera: { x: 0, y: 0, zoom: 1 },
-      files: [],
       root: {
-        type: "Img",
-        transform: { x: 0, y: 0, sx: 1, sy: 1 },
-        width: 10,
-        height: 10,
-        fileId: 999,
+        type: "Renderable",
+        transform: { x: 15, y: 25, sx: 1.2, sy: 0.8 },
+        width: 120,
+        height: 80,
+        fileId,
+        renderOrder: 0,
+        children: [
+          {
+            type: "Img",
+            width: 120,
+            height: 60,
+            fileId,
+            transform: { x: 15, y: 25, sx: 1.2, sy: 0.8 },
+            renderOrder: 99,
+          },
+        ],
       } as any,
     } as any;
 

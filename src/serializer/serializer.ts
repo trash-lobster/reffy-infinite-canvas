@@ -223,16 +223,25 @@ export async function deserializeCanvas(
             const fileMeta = data.files.find(
               (e) => e.id === (node as SerializedImg).fileId,
             );
-            (instance as Img).src = fileMeta.dataURL;
-            getFile((node as SerializedImg).fileId)
-              .then((file) => {
-                if (!file && writeFileToDatabase) {
-                  writeFileToDatabase(fileMeta.dataURL);
-                }
-              })
-              .catch((err) =>
-                console.error("Failed to write the image to storage", err),
-              );
+
+            if (fileMeta && fileMeta.dataURL) {
+              (instance as Img).src = fileMeta.dataURL;
+              getFile((node as SerializedImg).fileId)
+                .then((file) => {
+                  if (!file && writeFileToDatabase) {
+                    writeFileToDatabase(fileMeta.dataURL);
+                  }
+                })
+                .catch((err) =>
+                  console.error("Failed to write the image to storage", err),
+                );
+            } else {
+              getFile((node as SerializedImg).fileId)
+                .then((file) => {
+                  if (file) (instance as Img).src = file.dataURL;
+                })
+                .catch((err) => console.error("Image not loaded", err));
+            }
           } else {
             getFile((node as SerializedImg).fileId)
               .then((file) => {

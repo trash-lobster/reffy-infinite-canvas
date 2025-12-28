@@ -90,7 +90,9 @@ describe("clipboard", () => {
   });
 
   it("copy should log error when clipboard.write fails", async () => {
-    navigator.clipboard.writeText = vi.fn().mockRejectedValueOnce(new Error("fail"));
+    navigator.clipboard.writeText = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("fail"));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const img = new Img({ src: "foo", x: 1, y: 2, sx: 1, sy: 1 });
     await clipboard.copy([img]);
@@ -99,9 +101,9 @@ describe("clipboard", () => {
   });
 
   it("copy should fallback to execCommand if clipboard.write fails", async () => {
-    globalThis.navigator.clipboard.writeText = vi.fn().mockRejectedValueOnce(
-      new Error("fail"),
-    );
+    globalThis.navigator.clipboard.writeText = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("fail"));
     const img = new Img({ src: "foo", x: 1, y: 2, sx: 1, sy: 1 });
     await clipboard.copy([img]);
     expect(document.execCommand).toHaveBeenCalledWith("copy");
@@ -132,9 +134,16 @@ describe("clipboard", () => {
       push: vi.fn(),
     };
     const getImageId = vi.fn().mockResolvedValueOnce({
-      dataURL: 'test data url'
+      dataURL: "test data url",
     });
-    await clipboard.paste(10, 20, canvas as any, history as any, getImageId, true);
+    await clipboard.paste(
+      10,
+      20,
+      canvas as any,
+      history as any,
+      getImageId,
+      true,
+    );
     expect(canvas.addImageToCanvas).toHaveBeenCalled();
     expect(history.push).toHaveBeenCalled();
   });
@@ -155,7 +164,14 @@ describe("clipboard", () => {
       },
     ]);
 
-    const result = await clipboard.paste(10, 20, {} as any, {} as any, vi.fn(), false);
+    const result = await clipboard.paste(
+      10,
+      20,
+      {} as any,
+      {} as any,
+      vi.fn(),
+      false,
+    );
     expect(result).toBeUndefined();
   });
 

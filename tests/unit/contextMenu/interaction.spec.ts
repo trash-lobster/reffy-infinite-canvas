@@ -50,10 +50,7 @@ function makeHost() {
       baseFns,
       createBasicImageMenuOptions.call(baseFns).options,
     ),
-    canvasImageMenuOptions: createCanvasMenuOptions.call(
-      baseFns,
-      [] as any,
-    ),
+    canvasImageMenuOptions: createCanvasMenuOptions.call(baseFns, [] as any),
     ...baseFns,
   };
   return host;

@@ -210,9 +210,15 @@ describe("Canvas", () => {
   it("addImageToCanvas emits save and change, returns Img", async () => {
     const saveSpy = vi.fn(async () => 42);
     const emitSpy = vi.spyOn(hub, "emit");
-    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), vi.fn(), saveSpy, () => [
-      640, 480,
-    ]);
+    const canvas = new Canvas(
+      canvasEl,
+      history,
+      hub,
+      vi.fn(),
+      vi.fn(),
+      saveSpy,
+      () => [640, 480],
+    );
 
     const img = await canvas.addImageToCanvas(
       "data:image/png;base64,i",
@@ -228,9 +234,15 @@ describe("Canvas", () => {
   it("addImageToCanvas and pass in center to explore the branch", async () => {
     const saveSpy = vi.fn(async () => 42);
     const emitSpy = vi.spyOn(hub, "emit");
-    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), vi.fn(), saveSpy, () => [
-      640, 480,
-    ]);
+    const canvas = new Canvas(
+      canvasEl,
+      history,
+      hub,
+      vi.fn(),
+      vi.fn(),
+      saveSpy,
+      () => [640, 480],
+    );
 
     const img = await canvas.addImageToCanvas("base64,i", 10, 20, 1, 1, true);
     expect(img).toBeInstanceOf(Img);
@@ -243,9 +255,15 @@ describe("Canvas", () => {
   it("addImageToCanvas and pass in center to explore onload", async () => {
     const saveSpy = vi.fn(async () => 42);
     const emitSpy = vi.spyOn(hub, "emit");
-    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), vi.fn(), saveSpy, () => [
-      640, 480,
-    ]);
+    const canvas = new Canvas(
+      canvasEl,
+      history,
+      hub,
+      vi.fn(),
+      vi.fn(),
+      saveSpy,
+      () => [640, 480],
+    );
 
     const img = await canvas.addImageToCanvas(
       "data:image/png;base64,i",
@@ -263,9 +281,15 @@ describe("Canvas", () => {
   });
 
   it("getChild returns child as expected", () => {
-    const canvas = new Canvas(canvasEl, history, hub, vi.fn(), vi.fn(), vi.fn(), () => [
-      640, 480,
-    ]);
+    const canvas = new Canvas(
+      canvasEl,
+      history,
+      hub,
+      vi.fn(),
+      vi.fn(),
+      vi.fn(),
+      () => [640, 480],
+    );
 
     const img = new Img({ src: "data:image/png;base64,i" });
     canvas.appendChild(img);

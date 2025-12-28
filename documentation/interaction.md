@@ -42,7 +42,7 @@
 
 - A custom context menu is set up to replace the disabled native implementation on the browser.
 - There are three types of context menus that can show up depending on what you are selecting:
-    - Single image selected
-    - Multiple images selected
-    - Empty canvas area
+  - Single image selected
+  - Multiple images selected
+  - Empty canvas area
 - Certain functions are also enabled for developer mode only

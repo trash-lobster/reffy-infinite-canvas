@@ -114,7 +114,7 @@ describe("DefaultLocalStorage", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-  })
+  });
 
   it("writes, reads, updates, and deletes canvas entry", async () => {
     const store = new DefaultCanvasStorage();

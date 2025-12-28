@@ -46,7 +46,7 @@ function makeCanvasStub() {
     grid,
     children: [] as Renderable[],
     appendChild: vi.fn(function (this: Canvas, child: Renderable) {
-      console.log('test', child);
+      console.log("test", child);
       this.children.push(child);
     }),
   } as any;
@@ -188,7 +188,8 @@ describe("serializer serializeCanvas", () => {
 
 describe("serializer deserializeCanvas", () => {
   let canvas: any;
-  const mockDataString = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII";
+  const mockDataString =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII";
   const realImage = (globalThis as any).Image;
   const realCreateObjectURL = (URL as any).createObjectURL;
   const realRevokeObjectURL = (URL as any).revokeObjectURL;
@@ -198,41 +199,41 @@ describe("serializer deserializeCanvas", () => {
     Object.setPrototypeOf(canvas, Canvas.prototype);
     // Lightweight Image mock that calls onload after src is set.
     vi.stubGlobal(
-        "Image",
-        class {
-            crossOrigin: string = "";
-            naturalWidth: number = 1;
-            naturalHeight: number = 1;
-            onload: (() => void) | null = null;
-            onerror: ((e?: any) => void) | null = null;
-            set src(_v: string) {
-                // simulate async load — tests await deserializeCanvas so this is fine
-                setTimeout(() => {
-                    if (this.onload) this.onload();
-                }, 0);
-            }
-            // no-op getter for src
-            get src() {
-                return "";
-            }
-        } as any,
+      "Image",
+      class {
+        crossOrigin: string = "";
+        naturalWidth: number = 1;
+        naturalHeight: number = 1;
+        onload: (() => void) | null = null;
+        onerror: ((e?: any) => void) | null = null;
+        set src(_v: string) {
+          // simulate async load — tests await deserializeCanvas so this is fine
+          setTimeout(() => {
+            if (this.onload) this.onload();
+          }, 0);
+        }
+        // no-op getter for src
+        get src() {
+          return "";
+        }
+      } as any,
     );
 
     // If URL.createObjectURL isn't available (Node/jsdom), stub it to return a marker string.
     if (!(URL as any).createObjectURL) {
-        (URL as any).createObjectURL = (_blob: Blob) => "blob:mock";
+      (URL as any).createObjectURL = (_blob: Blob) => "blob:mock";
     }
     if (!(URL as any).revokeObjectURL) {
-        (URL as any).revokeObjectURL = (_url: string) => {};
+      (URL as any).revokeObjectURL = (_url: string) => {};
     }
   });
 
   afterEach(() => {
-      // restore globals
-      vi.unstubAllGlobals();
-      if (realImage) (globalThis as any).Image = realImage;
-      if (realCreateObjectURL) (URL as any).createObjectURL = realCreateObjectURL;
-      if (realRevokeObjectURL) (URL as any).revokeObjectURL = realRevokeObjectURL;
+    // restore globals
+    vi.unstubAllGlobals();
+    if (realImage) (globalThis as any).Image = realImage;
+    if (realCreateObjectURL) (URL as any).createObjectURL = realCreateObjectURL;
+    if (realRevokeObjectURL) (URL as any).revokeObjectURL = realRevokeObjectURL;
   });
 
   it("rebuilds Rect nodes with transform and appends to canvas", async () => {
@@ -306,7 +307,7 @@ describe("serializer deserializeCanvas", () => {
     expect(img.renderOrder).toBe(99);
     expect(writeFileToDatabase).not.toHaveBeenCalled(); // write to file database does not happen when the file is found
     expect(getFile).toHaveBeenCalledWith(fileId); // file loader was requested
-    
+
     // position and scale applied
     expect(img.x).toBe(15);
     expect(img.y).toBe(25);
@@ -322,7 +323,9 @@ describe("serializer deserializeCanvas", () => {
       root: { type: "Grid", style: 2 } as any,
     } as any;
 
-    const getFile = vi.fn(async () => ({ id: 1, dataURL: mockDataString }) as any);
+    const getFile = vi.fn(
+      async () => ({ id: 1, dataURL: mockDataString }) as any,
+    );
     await deserializeCanvas(data, canvas, getFile);
     expect(canvas.grid.gridType).toBe(2);
   });

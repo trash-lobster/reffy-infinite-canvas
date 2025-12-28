@@ -29,7 +29,7 @@ interface IndexDb extends Dexie {
 
 /**
  * The IndexedDB implementation of FileStorage, providing basic CRUD operations.
- * 
+ *
  * Utilises an in-memory cache to fasten the file retrieval operations.
  * @extends FileStorage
  */

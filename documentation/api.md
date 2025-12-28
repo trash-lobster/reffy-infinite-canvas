@@ -39,12 +39,14 @@ UI methods:
 - `clearCanvas()` — Empties out the canvas and deletes all images from it.
 
 Thumbnails:
+
 - `generateViewportThumbnail(width, height)` — Take the current screen and return a snapshot.
 - `generateContentThumbnail(width?, height?)` — Accepts the given dimensions and create a thumbnail of the images placed onto the canvas. It will fill out the given dimension without stretching or distorting the thumbnail. Instead, it will pad out the spaces as needed.
 
 ## Events
 
 The following events are dispatched across the lifetime of the element:
+
 - `change` — emitted when any change occurs.
 - `load` — emitted when the canvas finishes initializing.
 - `savecomplete` — emitted when the canvas completes a save.
@@ -60,69 +62,71 @@ Below are quick examples showing how host apps might use the component and the s
 ```html
 <infinite-canvas id="canvas"></infinite-canvas>
 <script type="module">
-	import './dist/index.js';
+  import "./dist/index.js";
 
-	const canvasEl = document.getElementById('canvas');
-	canvasEl.onCanvasChange = () => console.log('Canvas changed');
+  const canvasEl = document.getElementById("canvas");
+  canvasEl.onCanvasChange = () => console.log("Canvas changed");
 
-	// Toggle grid
-	canvasEl.toggleGrid();
+  // Toggle grid
+  canvasEl.toggleGrid();
 
-	// Zoom
-	canvasEl.zoomIn();
-	canvasEl.zoomOut();
+  // Zoom
+  canvasEl.zoomIn();
+  canvasEl.zoomOut();
 
-	// Add images via input
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.accept = 'image/*';
-	input.onchange = () => canvasEl.addImages(input.files);
-	document.body.appendChild(input);
+  // Add images via input
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.onchange = () => canvasEl.addImages(input.files);
+  document.body.appendChild(input);
 </script>
 ```
+
 ### React
 
 Ensure that you also install `@lit/react` to use this component.
 
 Create this file to make the component available as a React Element.
 
-``` ts
-import React from 'react';
-import { createComponent } from '@lit/react';
-import { InfiniteCanvasElement } from '@reffy/infinite-canvas';
+```ts
+import React from "react";
+import { createComponent } from "@lit/react";
+import { InfiniteCanvasElement } from "@reffy/infinite-canvas";
 
 export const InfiniteCanvas = createComponent({
-    tagName: 'infinite-canvas',
-    elementClass: InfiniteCanvasElement,
-    react: React,
-    events: {
-        onChange: 'change',
-        onLoad: 'load',
-        onSaveComplete: 'savecomplete',
-        onSaveFail: 'savefail',
-        onResize: 'resize',
-    },
+  tagName: "infinite-canvas",
+  elementClass: InfiniteCanvasElement,
+  react: React,
+  events: {
+    onChange: "change",
+    onLoad: "load",
+    onSaveComplete: "savecomplete",
+    onSaveFail: "savefail",
+    onResize: "resize",
+  },
 });
 ```
 
 Sample usage:
-``` tsx
+
+```tsx
 export function App() {
   return (
     <>
       <InfiniteCanvas
-        id='canvas'
-        name='SampleCanvas' // this will be the name that the canvas is saved in local storage
-        onChange={() => console.log('change!')}
+        id="canvas"
+        name="SampleCanvas" // this will be the name that the canvas is saved in local storage
+        onChange={() => console.log("change!")}
       />
     </>
-  )
+  );
 }
 ```
 
 I recommend setting up a hook to utilise the API methods:
 
-``` jsx
+```jsx
 import {
     InfiniteCanvasElement,
     InfiniteCanvasAPI,

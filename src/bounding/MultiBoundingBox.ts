@@ -421,7 +421,7 @@ export class MultiBoundingBox {
     for (const type of HANDLE_TYPES) {
       const handle = this.handles.get(type);
       const config = this.getHandleConfig(type);
-      console.log('handle', config);
+      console.log("handle", config);
 
       if (handle) {
         handle.setTranslation(config.x, config.y);

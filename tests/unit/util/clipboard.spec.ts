@@ -7,10 +7,31 @@ import {
   afterEach,
   beforeAll,
 } from "vitest";
+
+vi.mock("zod", () => {
+  const z = {
+    number: () => ({}),
+    string: () => ({}),
+    literal: (_v: any) => ({}),
+    union: (_arr: any[]) => ({}),
+    object: (_spec: any) => ({
+      strict: () => ({
+        safeParse: (raw: any) => ({ success: true, data: raw }),
+      }),
+    }),
+    array: (_item: any) => ({
+      min: (_n: number) => ({
+        strict: () => ({
+          safeParse: (raw: any) => ({ success: true, data: raw }),
+        }),
+      }),
+    }),
+  };
+  return { default: z };
+});
+
 import * as clipboard from "../../../src/util/clipboard";
-import { Img, WebGLRenderable } from "../../../src/shapes";
-import { Canvas } from "../../../src/Canvas";
-import { getWorldCoords, convertToPNG } from "../../../src/util";
+import { Img } from "../../../src/shapes";
 import * as Camera from "../../../src/util/camera";
 import * as Util from "../../../src/util";
 
@@ -38,14 +59,13 @@ describe("clipboard", () => {
       text: vi.fn().mockResolvedValue(
         JSON.stringify({
           type: "infinite_canvas",
-          elements: [{ src: "foo", x: 1, y: 2, sx: 1, sy: 1 }],
+          elements: [{ src: "foo", x: 1, y: 2, sx: 1, sy: 1, fileId: 199 }],
         }),
       ),
     };
 
     // @ts-ignore
     globalThis.navigator.clipboard = {
-      write: vi.fn().mockResolvedValue(null),
       read: vi.fn().mockResolvedValue([
         {
           types: ["text/plain"],
@@ -62,16 +82,15 @@ describe("clipboard", () => {
     document.execCommand = originalExecCommand;
   });
 
-  it("copy should serialize selected images and call clipboard.write", async () => {
-    navigator.clipboard.writeText = vi.fn().mockResolvedValue(undefined);
+  it("copy should serialize selected images and call clipboard.writeText", async () => {
+    navigator.clipboard.writeText = vi.fn().mockResolvedValueOnce(undefined);
     const img = new Img({ src: "foo", x: 1, y: 2, sx: 1, sy: 1 });
     await clipboard.copy([img]);
-    expect(navigator.clipboard.write).toHaveBeenCalled();
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
   });
 
   it("copy should log error when clipboard.write fails", async () => {
-    (navigator.clipboard.write as any).mockRejectedValueOnce(new Error("fail"));
-    navigator.clipboard.writeText = vi.fn().mockResolvedValue(undefined);
+    navigator.clipboard.writeText = vi.fn().mockRejectedValueOnce(new Error("fail"));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const img = new Img({ src: "foo", x: 1, y: 2, sx: 1, sy: 1 });
     await clipboard.copy([img]);
@@ -80,7 +99,7 @@ describe("clipboard", () => {
   });
 
   it("copy should fallback to execCommand if clipboard.write fails", async () => {
-    (globalThis.navigator.clipboard.write as any).mockRejectedValueOnce(
+    globalThis.navigator.clipboard.writeText = vi.fn().mockRejectedValueOnce(
       new Error("fail"),
     );
     const img = new Img({ src: "foo", x: 1, y: 2, sx: 1, sy: 1 });
@@ -112,7 +131,10 @@ describe("clipboard", () => {
     const history = {
       push: vi.fn(),
     };
-    await clipboard.paste(10, 20, canvas as any, history as any, true);
+    const getImageId = vi.fn().mockResolvedValueOnce({
+      dataURL: 'test data url'
+    });
+    await clipboard.paste(10, 20, canvas as any, history as any, getImageId, true);
     expect(canvas.addImageToCanvas).toHaveBeenCalled();
     expect(history.push).toHaveBeenCalled();
   });
@@ -121,7 +143,7 @@ describe("clipboard", () => {
     const worldCoordsSpy = vi
       .spyOn(Camera, "getWorldCoords")
       .mockImplementation((x, y, canvas) => [100, 100]);
-    await clipboard.paste(10, 20, {}, {}, false);
+    await clipboard.paste(10, 20, {}, {}, vi.fn(), false);
     expect(worldCoordsSpy).toHaveBeenCalled();
   });
 
@@ -133,7 +155,7 @@ describe("clipboard", () => {
       },
     ]);
 
-    const result = await clipboard.paste(10, 20, {} as any, {} as any, false);
+    const result = await clipboard.paste(10, 20, {} as any, {} as any, vi.fn(), false);
     expect(result).toBeUndefined();
   });
 
@@ -162,7 +184,7 @@ describe("clipboard", () => {
         .mockResolvedValue((base64: string, w: number, y: number) => {}),
     };
 
-    await clipboard.paste(10, 20, canvas as any, {} as any, false);
+    await clipboard.paste(10, 20, canvas as any, {} as any, vi.fn(), false);
     expect(documentSpy).not.toHaveBeenCalled();
     expect(canvas.addImageToCanvas).not.toHaveBeenCalledWith(
       "http://test.com/",
@@ -188,7 +210,7 @@ describe("clipboard", () => {
       },
     ]);
 
-    await clipboard.paste(10, 20, {}, {} as any, false);
+    await clipboard.paste(10, 20, {}, {} as any, vi.fn(), false);
     expect(pngConversionSpy).toHaveBeenCalled();
     pngConversionSpy.mockRestore();
   });
@@ -227,7 +249,7 @@ describe("clipboard", () => {
         .mockResolvedValue((base64: string, w: number, y: number) => {}),
     };
 
-    await clipboard.paste(10, 20, canvas as any, {} as any, false);
+    await clipboard.paste(10, 20, canvas as any, {} as any, vi.fn(), false);
     expect(canvas.addImageToCanvas).toHaveBeenCalledWith(
       "data:image/png;base64,mockdata",
       100,

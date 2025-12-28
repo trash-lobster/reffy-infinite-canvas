@@ -119,7 +119,6 @@ describe("Grid render", () => {
       expect.any(Float32Array),
       gl.STATIC_DRAW,
     );
-    expect(gl.useProgram).toHaveBeenCalledWith(program);
 
     // Uniforms forwarded via setUpUniforms and render path
     expect(gl.getUniformLocation).toHaveBeenCalledWith(

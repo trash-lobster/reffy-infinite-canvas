@@ -54,6 +54,7 @@ vi.mock("dexie", () => {
   // Mock Dexie as an object-like module with the members used by dexie-primary-key addon
   function MockDexie(this: any, _name?: string) {
     this.files = new MockTable();
+    this.canvases = new MockTable();
   }
 
   MockDexie.prototype.version = function () {
@@ -88,58 +89,66 @@ vi.mock("dexie", () => {
   return { default: MockDexie as any, __esModule: true };
 });
 import {
-  DefaultIndexedDbStorage,
-  DefaultLocalStorage,
+  DefaultFileStorage,
+  DefaultCanvasStorage,
   dataUrlToBlob,
 } from "../../../src/storage/defaultStorage";
 import { ImageFileMetadata } from "../../../src/storage/storage";
-
-// Minimal Dexie mock
-// Note: Do not import or execute '../../../src/storage/dexie-primary-key.js' directly in tests;
-// defaultStorage imports it internally and will use the mocked Dexie.
+import { afterEach } from "node:test";
+import { hashStringToId } from "../../../src/util";
 
 describe("DefaultLocalStorage", () => {
   const key = "infinite_canvas_test_key";
 
   beforeEach(() => {
-    // reset localStorage
-    vi.restoreAllMocks();
-    // JSDOM localStorage is available; ensure empty
-    localStorage.removeItem(key);
+    vi.stubGlobal(
+      "Date",
+      class extends Date {
+        static now() {
+          return 100;
+        }
+      } as any,
+    );
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  })
+
   it("writes, reads, updates, and deletes canvas entry", async () => {
-    const store = new DefaultLocalStorage(key);
+    const store = new DefaultCanvasStorage();
     const entry: any = {
+      name: key,
       version: 1,
       canvas: { width: 1, height: 1, dpr: 1 },
       root: { type: "Renderable" },
     };
 
     await store.write(entry);
-    const raw = await store.read();
-    expect(JSON.parse(raw)).toEqual(entry);
+    const raw = await store.read(key);
+    expect(JSON.parse(raw.content)).toEqual(entry);
 
     // update
     entry.canvas.width = 2;
     await store.update(entry);
-    const updated = JSON.parse(await store.read());
+    const updated = JSON.parse((await store.read(key)).content);
     expect(updated.canvas.width).toBe(2);
 
     // delete
-    await store.delete();
-    const afterDelete = await store.read();
+    await store.delete(key);
+    const afterDelete = await store.read(key);
     expect(afterDelete).toBeNull();
   });
 });
 
-describe("DefaultIndexedDbStorage", () => {
+describe("DefaultFileStorage", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
   it("write stores an ImageFileMetadata and read retrieves it", async () => {
-    const store = new DefaultIndexedDbStorage();
+    const store = new DefaultFileStorage();
     const url =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBgXYp3wAAAABJRU5ErkJggg==";
     // stub ImageFileMetadata.create to control id
@@ -160,7 +169,7 @@ describe("DefaultIndexedDbStorage", () => {
   });
 
   it("caches reads and updates lastRetrieved asynchronously", async () => {
-    const store = new DefaultIndexedDbStorage();
+    const store = new DefaultFileStorage();
     const url =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBgXYp3wAAAABJRU5ErkJggg==";
     const meta = new ImageFileMetadata(url);
@@ -181,7 +190,7 @@ describe("DefaultIndexedDbStorage", () => {
   });
 
   it("delete removes an existing entry and returns it", async () => {
-    const store = new DefaultIndexedDbStorage();
+    const store = new DefaultFileStorage();
     const url = "data:image/png;base64,Zm9v";
     const meta = await ImageFileMetadata.create(url);
     const id = meta.id;
@@ -197,7 +206,7 @@ describe("DefaultIndexedDbStorage", () => {
   });
 
   it("update modifies stored fields and bumps lastRetrieved", async () => {
-    const store = new DefaultIndexedDbStorage();
+    const store = new DefaultFileStorage();
     const url = "data:image/png;base64,YmFy";
     const meta = new ImageFileMetadata(url);
     (meta as any)._id = 13;
@@ -218,7 +227,7 @@ describe("DefaultIndexedDbStorage", () => {
   });
 
   it("readPage returns a limited slice using offset and limit", async () => {
-    const store = new DefaultIndexedDbStorage();
+    const store = new DefaultFileStorage();
     const base = "data:image/png;base64,";
     const metas: ImageFileMetadata[] = [];
     for (let i = 0; i < 5; i++) {
@@ -241,30 +250,21 @@ describe("DefaultIndexedDbStorage", () => {
   });
 
   it("checkIfImageStored returns id when present, null otherwise", async () => {
-    const store = new DefaultIndexedDbStorage();
+    const store = new DefaultFileStorage();
     const url1 = "data:image/png;base64,cXV4";
     const url2 = "data:image/png;base64,cXV6";
-    const meta1 = new ImageFileMetadata(url1);
-    (meta1 as any)._id = 21;
-    const meta2 = new ImageFileMetadata(url2);
-    (meta2 as any)._id = 22;
-    const createSpy = vi.spyOn(ImageFileMetadata, "create");
-    createSpy.mockResolvedValueOnce(meta1);
+    const id1 = await hashStringToId(url1);
+    const id2 = await hashStringToId(url2);
     await store.write(url1);
-    createSpy.mockResolvedValueOnce(meta2);
-    await store.write(url2);
-    createSpy.mockRestore();
 
-    const found = await store.checkIfImageStored(url2);
-    expect(found).toBe(22);
-    const missing = await store.checkIfImageStored(
-      "data:image/png;base64,bm90aGVyZQ==",
-    );
+    const found = await store.checkIfImageStored(id1);
+    expect(found).toBe(id1);
+    const missing = await store.checkIfImageStored(id2);
     expect(missing).toBeNull();
   });
 
   it("write respects max image entries limit and throws DatabaseLimitError", async () => {
-    const store = new DefaultIndexedDbStorage();
+    const store = new DefaultFileStorage();
     // Pre-fill 1000 entries to hit the limit
     const createSpy = vi.spyOn(ImageFileMetadata, "create");
     for (let i = 0; i < 1000; i++) {

@@ -10,20 +10,13 @@ A TypeScript Web Component (`<infinite-canvas>`) that provides an infinite, GPU-
 
 Live Demo Site: https://trash-lobster.github.io/reffy-infinite-canvas/
 
-## A word from the developer
+## Installation
 
-Before you carry on to read the rest of the documentation, I would like to first state that this project was heavily influenced by the following open-sourced projects:
+```powershell
+npm i reffy-infinite-canvas
+```
 
-- [Excalidraw](https://excalidraw.com/)
-- [An infinite canvas tutorial](https://infinitecanvas.cc/)
-
-They are both incredible resources and have sped up my own learning and I highly recommend browsing through their materials. I am still learning as I go and working on this project.
-
-Additionally, I referenced [PureRef](https://www.pureref.com/) for a lot of the available functions. In fact, as the project continued development, it became clear that I wanted to create a version of PureRef, but for the web.
-
-Happy learning!
-
-## Aim of the project
+## Project Context
 
 While working on a separate, but related project, I was making a lot of progress leveraging Excalidraw and enjoying the fact that I did not have to think or write my own implementation. However, Excalidraw, despite how fantastic it is, came coupled with a predetermined setup (toolbars and such) and a lot of functions that a pure image reference board would not need.
 
@@ -31,25 +24,16 @@ Thus, I made the challenging decision to try to write my own. Reffy Infinite Can
 
 While not everything is customisable, it does offer more options than Excalidraw, achieving part of the initial goal.
 
-## Installation
+Before you carry on to read the rest of the documentation (found in the `documentation` directory), I would like to credit that this project was heavily influenced by the following open-sourced projects:
 
-```powershell
-npm i reffy-infinite-canvas
-```
+- [Excalidraw](https://excalidraw.com/)
+- [An infinite canvas tutorial](https://infinitecanvas.cc/)
 
-## API
+They are both incredible resources and have sped up my own learning and I highly recommend browsing through their materials. I am still learning as I work on this project.
 
-To utilise the API, create the canvas and set up some way for the canvas to be discoverable through JS/TS.
+Additionally, I referenced [PureRef](https://www.pureref.com/) for a lot of the available functions. In fact, as the project continued development, it became clear that I wanted to create a version of PureRef, but for the web.
 
-```js
-const el = document.querySelector('#canvas') as InfiniteCanvasElement;
-
-InfiniteCanvasAPI.forElement(el).then(api => {
-    // example: toggling the grid mode for the canvas
-    const modeButton = document.getElementById('mode-button') as HTMLButtonElement;
-    modeButton.onclick  = api.toggleMode.bind(api);
-};
-```
+Happy learning!
 
 ## Image transformation
 
@@ -60,6 +44,7 @@ Available image transformations:
 - Align
 - Scale
 - Move
+- Rotate (to be added)
 
 ## Persistent storage
 
@@ -90,7 +75,3 @@ The design for image storage is styled after Excalidraw. This means breaking the
 The canvas is reconstructed each time you load the canvas.
 
 When setting up the canvasStorage, you can add the custom canvas storage and add a frequency, measured in ms. The default is 300000 ms (or, 5 minutes).
-
-### TODO:
-
-- Add method to allow custom setting of how frequent auto save should be

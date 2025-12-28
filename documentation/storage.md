@@ -4,16 +4,18 @@ The project abstracts storage for canvas state and image metadata.
 
 ## Canvas Storage
 
-- Canvas state (scene graph, transforms, ordering) can be persisted via storage backends.
-- Default local storage is used when none is provided.
+- Canvas state (scene graph, transforms, ordering) can be persisted via storage backends. `Component.ts` exposes the API.
+- Originally, we used local storage as a backup. However, due to implementation potentially having multiple canvases, we switched to using Indexed DB as well.
 - Auto-save can be configured with a frequency; debounced saves are supported to avoid excessive writes.
 
 Key flows:
 
-- `assignCanvasStorage(storage, saveFrequency?)` — set the backend and autosave interval.
+- `assignCanvasStorage(storage, saveFrequency)` — set the backend and autosave interval.
 - `saveToCanvasStorage()` — immediate save.
 - `debounceSaveToCanvasStorage(timeout?)` — schedule a save.
-- On load, `restoreStateFromCanvasStorage()` deserializes saved state.
+- On load, `restoreStateFromCanvasStorage()` deserializes saved state and restores the canvas back to the saved state.
+- `deleteStateFromCanvasStorage()` - deletes the save state of the current canvas.
+- `renameCanvasInStorage(newName)` - renames the canvas in storage.
 
 ## File Storage
 
@@ -23,9 +25,10 @@ Key flows:
 API:
 
 - `assignFileStorage(storage)` — set backend.
-- `saveImageFileMetadata(dataURL)` — write if not present, else compute a hashed id.
+- `saveImageFileMetadata(dataURL)` — write if not present, else returns a computed hashstring id.
 - `getImageFileMetadata(fileId)` — read single entry.
 - `getAllImageFileMetdata()` — read all entries.
+- `deleteAllImageFileMetdata()` - deletes all entries.
 
 ## Placeholders
 

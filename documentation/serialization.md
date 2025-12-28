@@ -9,7 +9,7 @@ Top-level:
 - `version`: schema version (currently `1`).
 - `canvas`: `{ width, height, dpr }` recorded from the WebGL canvas at save time.
 - `root`: serialized node for the canvas root, with children representing the scene.
-- `files`: optional list of `{ id, dataURL, ... }` for image metadata.
+- `files`: optional list of `{ id, dataURL, ... }` for image metadata. In-memory storage will not contain this. The exported file of the canvas will. If the list is missing, the deserialization process will attempt to look up the data from the file storage.
 
 Per node:
 
@@ -42,8 +42,3 @@ Per node:
 
 - If an image cannot be found immediately, a framed placeholder is generated at the target dimensions to avoid blank content.
 - Real image data replaces the placeholder once loaded.
-
-## Extensibility
-
-- Add fields to `SerializedNode` variants as needed; bump `version` when making breaking changes.
-- Guards (like checking `typeof renderOrder === 'number'`) help maintain backward compatibility with older saves.

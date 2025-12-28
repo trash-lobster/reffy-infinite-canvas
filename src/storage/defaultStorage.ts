@@ -27,6 +27,12 @@ interface IndexDb extends Dexie {
   canvases: EntityTable<CanvasStorageData, "id">;
 }
 
+/**
+ * The IndexedDB implementation of FileStorage, providing basic CRUD operations.
+ * 
+ * Utilises an in-memory cache to fasten the file retrieval operations.
+ * @extends FileStorage
+ */
 export class DefaultFileStorage extends FileStorage {
   private dbQueue = new DatabaseQueue();
   private dbPromise: Promise<IndexDb>;
@@ -74,11 +80,9 @@ export class DefaultFileStorage extends FileStorage {
   }
 
   /**
-   * Writes to indexedDB
-   * @param data
-   * @param mimetype
-   * @returns the file ID
-   */
+   * @param data The data URL (base64 string) of the image
+   * @returns the id of the file image, which is the hashstring of the data URL, ensuring consistency
+   * */
   async write(data: string): Promise<string | number> {
     const file: ImageFileMetadata = await ImageFileMetadata.create(data);
     const blob = dataUrlToBlob(file.dataURL);
@@ -111,6 +115,9 @@ export class DefaultFileStorage extends FileStorage {
     );
   }
 
+  /**
+   * @returns All the images that are saved in the database
+   */
   async readAll(): Promise<ImageFileMetadata[]> {
     return handleQuotaError(async (): Promise<ImageFileMetadata[]> => {
       const db: IndexDb = await this.getIndexDb();
@@ -123,6 +130,11 @@ export class DefaultFileStorage extends FileStorage {
     });
   }
 
+  /**
+   * Allow pagination of data retrieval
+   * @param offset The index from which the data retrieval should begin
+   * @param limit How many files should be retrieved
+   */
   async readPage(offset: number, limit: number): Promise<ImageFileMetadata[]> {
     return handleQuotaError(async (): Promise<ImageFileMetadata[]> => {
       const db: IndexDb = await this.getIndexDb();
@@ -157,6 +169,10 @@ export class DefaultFileStorage extends FileStorage {
     });
   }
 
+  /**
+   * @param id The id of the specific file you want to remove
+   * @returns The original file metadata object that has been removed
+   */
   async delete(id: string): Promise<ImageFileMetadata> {
     return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<ImageFileMetadata> => {
@@ -183,6 +199,9 @@ export class DefaultFileStorage extends FileStorage {
     );
   }
 
+  /**
+   * Deletes all the entries in the database
+   */
   async deleteAll(): Promise<void> {
     return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<void> => {
@@ -202,6 +221,10 @@ export class DefaultFileStorage extends FileStorage {
     );
   }
 
+  /**
+   * @param newVersion The id of the entry being updated must be within this object
+   * @returns The updated version of the entry from the database
+   */
   async update(newVersion: ImageFileMetadata): Promise<ImageFileMetadata> {
     return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<ImageFileMetadata> => {
@@ -228,6 +251,10 @@ export class DefaultFileStorage extends FileStorage {
     );
   }
 
+  /**
+   * Checks there is an image stored with the id passed in
+   * @returns the id if found or null
+   */
   async checkIfImageStored(id: string): Promise<string | number | null> {
     return handleQuotaError(async (): Promise<string | number | null> => {
       const db: IndexDb = await this.getIndexDb();
@@ -236,6 +263,11 @@ export class DefaultFileStorage extends FileStorage {
     });
   }
 
+  /**
+   * Uses the passed in list of image IDs to check to cross off all other images that are deemed removable.
+   * @param usedImageIds The IDs of the images that are retained
+   * @returns The response object of the deletion
+   */
   async removeUnusedImages(
     usedImageIds: string[],
   ): Promise<FileDeletionResult[]> {
@@ -260,8 +292,14 @@ export class DefaultFileStorage extends FileStorage {
   }
 }
 
+/**
+ * The result of the deletion.
+ */
 export interface FileDeletionResult {
   id: string | number;
+  /**
+   * Use this boolean value to see if the operation succeeded
+   */
   ok: boolean;
   error?: string;
 }
@@ -480,6 +518,10 @@ export class DefaultCanvasStorage extends CanvasStorage {
     );
   }
 
+  /**
+   * Use the name of the canvases to check if they exist within the database
+   * @returns Validation of whether the canvas exists or not
+   */
   async checkIfCanvasExistsByName(id: string): Promise<boolean> {
     return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<boolean> => {
@@ -490,6 +532,9 @@ export class DefaultCanvasStorage extends CanvasStorage {
     );
   }
 
+  /**
+   * @returns The images that are currently within the canvases
+   */
   async getAllUsedImagesId(): Promise<string[]> {
     return this.dbQueue.add(() =>
       handleQuotaError(async (): Promise<string[]> => {

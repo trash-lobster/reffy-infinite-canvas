@@ -9,7 +9,7 @@
   - `img`: textured quads for image rendering.
   - `grid`: background grid.
 
-Standard derivative extension `OES_standard_derivatives` is enabled for shader features (e.g., `fwidth`).
+Standard derivative extension `OES_standard_derivatives` is enabled for shader features (e.g., `fwidth`, which is necessary for grid rendering).
 
 ## Frame Steps
 
@@ -28,11 +28,11 @@ Standard derivative extension `OES_standard_derivatives` is enabled for shader f
 ## Culling
 
 - Per-frame camera bounding box is computed via `Camera.getBoundingBox()`.
-- Each shape’s AABB (`Shape.getBoundingBox()`) is tested against the camera AABB; non-intersecting shapes are marked `culled` and skipped.
+- Each shape’s AABB (`Shape.getBoundingBox()`) is tested against the camera AABB; non-intersecting shapes are marked `culled` and skipped for rendering.
 
 ## Low-Resolution Images
 
-- `Img.determineIfLowRes(cameraBoundingBox, zoom)` decides if a low-res texture should be used based on on-screen coverage and zoom level.
+- `Img.determineIfLowRes(cameraBoundingBox, zoom)` decides if a low-res texture should be used based on on-screen coverage and zoom level. This is based on the perceived area of the screen that is occupied by the image.
 - If low-res is selected, `Img.setUseLowRes(useLowRes, gl)` switches the bound texture to the low-res version.
 
 ## Resource Management

@@ -1,120 +1,66 @@
 # Public API
 
-The library exposes a small, imperative API for host apps via the Web Component and `src/API.ts`.
+The library exposes a small, imperative API for host apps via the Web Component and `src/API.ts`. The methods exposed through `API.ts` will allow users to attach the methods to other UI elements, e.g. the toggle grid method can be attached to a button.
 
-## Web Component `<infinite-canvas>`
+## API
 
-Create and insert the element; it initializes the engine and starts rendering automatically.
+Constructor:
 
-Properties:
+- Takes in an infinite canvas element to attach the exposed API methods to that element.
+- This means that users can have multiple infinite canvas elements and separate API instances for each of them.
 
-- `displayMode: 'fullscreen' | 'windowed'` — Controls the outer div size policy.
-- `onCanvasChange?: () => void` — Callback when canvas state changes.
+`forElement`:
 
-Methods:
-
-- `togglePointerMode()` — Switch between interaction modes.
-- `toggleGrid()` — Toggle grid visibility/type.
-- `zoomIn()` / `zoomOut()` — Adjust camera zoom by fixed increments.
-- `addImages(fileList: FileList)` — Add one or more images, centered on canvas.
-- `addImageFromURL(url: string)` — Adds an image by URL, centered at canvas midpoint.
-- `copyImage()` / `pasteImage(e: PointerEvent)` — Clipboard operations for selected images.
-- `flipVertical()` / `flipHorizontal()` — Flip selected images.
-- `deleteSelectedImages()` — Remove selected images from scene.
-- `exportCanvas(filename?: string)` — Download a serialized JSON of the canvas state.
-- `importCanvas(fileList: FileList)` — Restore canvas from a JSON file.
-- `clearCanvas()` — Remove all children and reset history.
+- A static method that takes in an infinite canvas element or a selector string.
+- This assigns the API after the canvas has loaded.
+- Returns an instance of the API.
 
 Storage helpers:
 
-- `assignCanvasStorage(storage, frequency?)` — Set canvas state storage and autosave interval.
+- These methods are `static`, which enables users to clean up the application's local storage without attaching it to any specific instance of canvas.
+- `registerCanvas(id: string, canvasStorage: CanvasStorage)` — Creates a blank canvas object and store it to either the local storage or the given canvas storage implementation.
+- `getAllCanvasNames(canvasStorage?)` — Returns the names/ID of the canvases.
+- `getAllCanvasData(canvasStorage)` — Returns all canvas stored in the local or passed in DB.
+- `deleteCanvas(id)` — Deletes the canvas from local storage. This removes the canvas entirely and there is no restoration set up.
+- `clearFileDataInIDB()` — Removes all images from the local fileStorage that is not currently in any canvas.
+- `assignCanvasStorage(storage, frequency)` — Set canvas state storage and autosave interval.
 - `assignFileStorage(storage)` — Set image file metadata storage.
-- `saveToCanvasStorage()` / `debounceSaveToCanvasStorage(timeout?)` — Save operations.
 
-Context menu:
+UI methods:
 
-- `addContextMenu(x, y, type)` / `clearContextMenu()` / `isContextMenuActive()` — Control contextual UI.
+- `zoomIn()` — Zoom into the canvas by a fixed amount.
+- `zoomOut()` — Zoom out from the canvas by a fixed amount.
+- `toggleMode()` — Change the canvas navigation mode between `select` and `pan`.
+- `snapToCenter()` — Moves the canvas to the center of all your images. This method does not update your zoom level.
+- `addImage(src)` — Accepts a base64 string and renders and adds the image to the canvas.
+- `addImageFromLocal(fileList)` — Use this to add images from your local file system.
+- `exportCanvas(fileName?)` — Export the current canvas in JSON format.
+- `importCanvas(fileName?)` — Import one JSON file and check if it is in the right format.
+- `clearCanvas()` — Empties out the canvas and deletes all images from it.
 
-## Engine (`Canvas`)
+Thumbnails:
+- `generateViewportThumbnail(width, height)` — Take the current screen and return a snapshot.
+- `generateContentThumbnail(width?, height?)` — Accepts the given dimensions and create a thumbnail of the images placed onto the canvas. It will fill out the given dimension without stretching or distorting the thumbnail. Instead, it will pad out the spaces as needed.
 
-Selected methods:
+## Events
 
-- `appendChild(child)` / `removeChild(child)` — Manage scene graph.
-- `render()` — Main draw loop.
-- `toggleGrid()` — Toggle grid.
-- `getSelected()` — Returns selected images.
-- `setShapeZOrder(child, toFront: boolean)` — Adjust `renderOrder` only.
-- `updateZoomByFixedAmount(direction?: 1 | -1)` — Zoom using the canvas center.
-- `exportState()` / `importState(data, getFile)` — Serialize/deserialize canvas state.
-
-## Suggested Extension API (Infinite Canvas Standard)
-
-The following API surface outlines common, extensible operations expected of an infinite canvas engine. These are not all implemented today, but provide a forward-looking contract for extensions/plugins and host apps.
-
-- `remove(nodeId: number | Renderable)`:
-  Removes a node from the scene.
-- `duplicate(nodeId: number | Renderable)`:
-  Duplicates a node preserving transforms and style.
-- `group(nodeIds: number[])` / `ungroup(groupId: number)`:
-  Groups/ungroups nodes to apply transforms collectively.
-- `setZOrder(nodeId: number, order: number)`:
-  Explicitly set `renderOrder` for GPU depth-based z-ordering.
-- `bringToFront(nodeId: number)` / `sendToBack(nodeId: number)`:
-  Convenience z-order operations.
-- `select(predicate: (node: Renderable) => boolean)` / `selectById(ids: number[])`:
-  Programmatic selection.
-- `clearSelection()` / `getSelection(): Renderable[]`:
-  Selection management.
-- `setTransform(nodeId: number, t: { x?: number; y?: number; sx?: number; sy?: number; rotation?: number })`:
-  Update transforms (supports rotation when available).
-- `fitToView(nodeId: number)` / `fitAllToView()`:
-  Adjust camera to frame a node or entire scene.
-- `zoomTo(rect: { x: number; y: number; width: number; height: number })`:
-  Camera zoom to a world-space rect.
-- `setGrid(type: 'none' | 'grid' | 'dots', opts?: { spacing?: number; color?: string; opacity?: number })`:
-  Grid display customization.
-- `enableSnap(options?: { toGrid?: boolean; toGuides?: boolean; toObjects?: boolean; tolerance?: number })`:
-  Enable snapping with configurable targets and tolerance.
-- `createGuide(axis: 'x' | 'y', position: number)` / `removeGuide(id: number)`:
-  Simple guides for alignment.
-- `history.undo()` / `history.redo()` / `history.clear()` / `history.batch(fn: () => void)`:
-  Command history control with batching.
-- `export(type: 'json' | 'png' | 'svg', options?: ExportOptions)` / `import(data: SerializedCanvas | Blob)`:
-  Multi-format export/import.
-- `on(event: CanvasEvent, handler: (...args: any[]) => void)` / `off(event, handler)`:
-  Event subscription for changes, selection, pointer, context menu, storage.
-- `registerTool(name: string, tool: ToolDefinition)`:
-  Pluggable tools (e.g., pan/zoom, brush, lasso) that integrate with pointer lifecycle.
-
-### Event Model (recommended)
-
-- `CanvasEvent.Change` — Any mutation affecting render or state.
-- `CanvasEvent.SelectionChange` — Selection set updated.
-- `CanvasEvent.Zoom` / `CanvasEvent.Pan` — Camera changes.
-- `CanvasEvent.ResourceLoaded` — Image/asset finished loading.
-- `SaveEvent.Save` / `SaveEvent.SaveCompleted` / `SaveEvent.SaveFailed` — Persistence lifecycle.
-
-### Data Contracts (recommended)
-
-- `RenderableDescriptor` (serializable): `{ id, type, transform: { x, y, sx, sy }, renderOrder, style?: { fill, stroke, opacity }, meta?: Record<string, any> }`.
-- `CameraState` (serializable): `{ x, y, zoom, viewport: { width, height } }`.
-
-### Performance Considerations
-
-- Prefer GPU depth via `renderOrder` over CPU sorts; reserve CPU sorts for complex transparency.
-- Implement frustum culling for all renderables via AABB intersection with camera.
-- Defer image uploads and use low-resolution textures while loading or at small screen coverage.
+The following events are dispatched across the lifetime of the element:
+- `change` — emitted when any change occurs.
+- `load` — emitted when the canvas finishes initializing.
+- `savecomplete` — emitted when the canvas completes a save.
+- `savefail` — emitted when the canvas fails to save.
+- `resize` — emitted when the canvas resizes. The canvas already adjusts automatically, but this is available if you want anything additional triggered.
 
 ## Usage Examples
 
 Below are quick examples showing how host apps might use the component and the suggested extension API.
 
-### Create and use the Web Component
+### Create and use the Web Component in Vanilla JS
 
 ```html
 <infinite-canvas id="canvas"></infinite-canvas>
 <script type="module">
-	import './esm/index.js';
+	import './dist/index.js';
 
 	const canvasEl = document.getElementById('canvas');
 	canvasEl.onCanvasChange = () => console.log('Canvas changed');
@@ -132,72 +78,113 @@ Below are quick examples showing how host apps might use the component and the s
 	input.accept = 'image/*';
 	input.onchange = () => canvasEl.addImages(input.files);
 	document.body.appendChild(input);
+</script>
+```
+### React
+
+Ensure that you also install `@lit/react` to use this component.
+
+Create this file to make the component available as a React Element.
+
+``` ts
+import React from 'react';
+import { createComponent } from '@lit/react';
+import { InfiniteCanvasElement } from '@reffy/infinite-canvas';
+
+export const InfiniteCanvas = createComponent({
+    tagName: 'infinite-canvas',
+    elementClass: InfiniteCanvasElement,
+    react: React,
+    events: {
+        onChange: 'change',
+        onLoad: 'load',
+        onSaveComplete: 'savecomplete',
+        onSaveFail: 'savefail',
+        onResize: 'resize',
+    },
+});
 ```
 
-### Programmatic selection and z-order
-
-```ts
-// Assuming you have access to the engine
-const engine = canvasEl.engine;
-const selected = engine.getSelected();
-
-// Bring the first selected to front
-if (selected.length) {
-  engine.setShapeZOrder(selected[0], true);
+Sample usage:
+``` tsx
+export function App() {
+  return (
+    <>
+      <InfiniteCanvas
+        id='canvas'
+        name='SampleCanvas' // this will be the name that the canvas is saved in local storage
+        onChange={() => console.log('change!')}
+      />
+    </>
+  )
 }
 ```
 
-### Suggested Extension API (examples)
+I recommend setting up a hook to utilise the API methods:
 
-```ts
-// Add an image by URL centered
-engine.addImageFromURL("https://example.com/pic.png", { center: true });
+``` jsx
+import {
+    InfiniteCanvasElement,
+    InfiniteCanvasAPI,
+} from '@reffy/infinite-canvas';
+import { CanvasStorage } from '@reffy/infinite-canvas/dist/storage';
+import { useState, useEffect } from 'react';
 
-// Add a rectangle
-engine.addShape("rect", {
-  x: 100,
-  y: 80,
-  width: 320,
-  height: 180,
-  style: { fill: "#4477ee", stroke: "#224488", opacity: 0.9 },
-});
+export function useInfiniteCanvas(id: string) {
+    const [ready, setReady] = useState(false);
+    const [canvasApi, setCanvasApi] = useState<InfiniteCanvasAPI | null>(null);
 
-// Add text
-engine.addText("Hello Canvas", {
-  x: 50,
-  y: 50,
-  font: "16px Inter",
-  color: "#111",
-});
+    useEffect(() => {
+        const el = document.getElementById(id);
+        if (!el || !(el instanceof InfiniteCanvasElement)) {
+            console.warn('Element is not ready yet.');
+            return;
+        }
+        const onLoad = async () => {
+            setCanvasApi(await InfiniteCanvasAPI.forElement(el));
+            setReady(true);
+        };
+        el.addEventListener('load', onLoad);
+        return () => el.removeEventListener('load', onLoad);
+    }, [id]);
 
-// Group and align
-const ids = engine.getSelection().map((n) => n.id);
-const groupId = engine.group(ids);
-engine.alignSelection?.("top");
-
-// Explicit z-order
-engine.setZOrder(groupId, 1000);
-
-// Camera fit
-engine.fitAllToView();
-
-// Export / Import
-const json = engine.export("json");
-engine.import(json);
-
-// History
-engine.history.batch(() => {
-  engine.bringToFront(ids[0]);
-  engine.sendToBack(ids[1]);
-});
-engine.history.undo();
+    // return only the methods you need
+    return {
+        assignCanvasStorage: (storage: CanvasStorage, saveFrequency: number) =>
+            canvasApi?.assignCanvasStorage(storage, saveFrequency),
+        zoomIn: () => canvasApi?.zoomIn(),
+        zoomOut: () => canvasApi?.zoomOut(),
+        toggleMode: () => canvasApi?.toggleMode(),
+        addImage: (data: string) => canvasApi?.addImage(data),
+        addImageFromLocal: (fileList: FileList) =>
+            canvasApi?.addImageFromLocal(fileList),
+        exportCanvas: () => canvasApi?.exportCanvas(id),
+        importCanvas: (fileList: FileList) => canvasApi?.importCanvas(fileList),
+        clearCanvas: () => canvasApi?.clearCanvas(),
+        snapToCenter: () => canvasApi?.snapToCenter(),
+        generateThumbnail: (width?: number, height?: number) =>
+            canvasApi?.generateContentThumbnail(width, height),
+        isReady: ready,
+        api: canvasApi,
+    };
+}
 ```
 
-## Serialization (`src/serializer/serializer.ts`)
+```jsx
+import React, { useRef } from 'react';
+import { useInfiniteCanvas } from '@src/hook/useInfiniteCanvas';
 
-Saved per shape:
+export function CanvasButtons({ id } : { id: string }) {
+  const canvasApi = useInfiniteCanvas(id);
 
-- `type`, `id`, `layer` (legacy), `renderOrder`, `transform { x, y, sx, sy }`, dimension-specific props (width, height, color), and `fileId` for images.
-- Grid saves `style` (`gridType`).
-
-Deserialization rebuilds the scene graph and restores transforms/file associations, guarding optional fields like `renderOrder`.
+  return (
+    <div>
+      <button
+        onClick={canvasApi?.toggleMode}
+      >
+        Toggle Mode
+      </button>
+    </div>
+  )
+}
+```

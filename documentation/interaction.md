@@ -30,9 +30,19 @@
 ## Clipboard
 
 - `copyImage()` serializes selected images for clipboard usage.
-- `pasteImage(e)` inserts from clipboard at pointer position using world coordinate conversion.
+- `pasteImage(e)` inserts from clipboard at pointer position using world coordinate conversion. Reading from `navigator.clipboard` requires permission, depending on the browser used, this may impact the user experience.
+- Both of these functions have the traditional equivalent keyboard shortcut (`ctrl + v` and `ctrl + c`).
 
 ## Modes & Grid
 
 - Pointer interaction modes can be toggled (`togglePointerMode()`).
 - Grid visibility/type toggles via `toggleGrid()`.
+
+## Context menu
+
+- A custom context menu is set up to replace the disabled native implementation on the browser.
+- There are three types of context menus that can show up depending on what you are selecting:
+    - Single image selected
+    - Multiple images selected
+    - Empty canvas area
+- Certain functions are also enabled for developer mode only

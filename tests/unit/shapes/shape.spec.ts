@@ -85,6 +85,7 @@ describe("shape render", () => {
     gl.enableVertexAttribArray = vi.fn();
     gl.drawArrays = vi.fn();
     gl.getUniformLocation = vi.fn().mockReturnValueOnce(null);
+    gl.disableVertexAttribArray = vi.fn();
   });
 
   it("tests render", () => {

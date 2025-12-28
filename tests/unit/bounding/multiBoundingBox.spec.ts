@@ -311,31 +311,33 @@ describe("resize keeps ratio", () => {
 });
 
 describe("flip", () => {
-  let target = setUpTarget();
-  let box = setUpBox([target]);
+  let target = setUpTarget(200, 200, 200, 400);
+  let target2 = setUpTarget(100, 100, 200, 400);
+  let box = setUpBox([target, target2]);
   const getWorldCoords = (x: number, y: number) => [x, y];
 
   beforeEach(() => {
-    target = setUpTarget();
-    box = setUpBox([target]);
+    target = setUpTarget(200, 200, 200, 400);
+    target2 = setUpTarget(100, 100, 200, 400);
+    box = setUpBox([target, target2]);
   });
 
   it("tests vertical flip", () => {
-    target.setTranslation = vi.fn();
+    target.updateTranslation = vi.fn();
     box.update();
 
-    box.flip(I, "vertical", getWorldCoords);
+    box.flip("vertical", getWorldCoords);
 
-    expect(target.setTranslation).toHaveBeenCalledWith(0, -100);
+    expect(target.updateTranslation).toHaveBeenCalledWith(0, -400);
   });
 
   it("tests horizontal flip", () => {
-    target.setTranslation = vi.fn();
+    target.updateTranslation = vi.fn();
     box.update();
 
-    box.flip(I, "horizontal", getWorldCoords);
+    box.flip("horizontal", getWorldCoords);
 
-    expect(target.setTranslation).toHaveBeenCalledWith(-100, 0);
+    expect(target.updateTranslation).toHaveBeenCalledWith(-400, 0);
   });
 });
 

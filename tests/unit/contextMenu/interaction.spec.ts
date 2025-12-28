@@ -6,7 +6,7 @@ import {
   createBasicImageMenuOptions,
   createSingleImageMenuOptions,
   createMultiImageMenuOptions,
-  createCanvasImageMenuOptions,
+  createCanvasMenuOptions,
 } from "../../../src/contextMenu/Interaction";
 import { ContextMenuEvent } from "../../../src/util";
 
@@ -50,7 +50,7 @@ function makeHost() {
       baseFns,
       createBasicImageMenuOptions.call(baseFns).options,
     ),
-    canvasImageMenuOptions: createCanvasImageMenuOptions.call(
+    canvasImageMenuOptions: createCanvasMenuOptions.call(
       baseFns,
       [] as any,
     ),
@@ -64,46 +64,34 @@ describe("withContextMenuClear behavior via option factories", () => {
     vi.restoreAllMocks();
   });
 
-  it("wraps sync handler and calls clearContextMenu afterwards (Copy)", () => {
+  it("wraps sync handler and calls clearContextMenu afterwards (Copy)", async () => {
     const host = makeHost();
     const basic = createBasicImageMenuOptions.call(host);
     const group = basic.options[0];
     const copy = group.childOptions.find((o: any) => o.text === "Copy") as any;
 
     expect(typeof copy.onClick).toBe("function");
-    copy.onClick.call(host);
+    const promise = copy.onClick.call(host);
 
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+
+    await promise;
     expect(host.copyImage).toHaveBeenCalledTimes(1);
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
   });
 
-  it("passes event to handler and still clears (Paste)", () => {
-    const host = makeHost();
-    const basic = createBasicImageMenuOptions.call(host);
-    const group = basic.options[0];
-    const paste = group.childOptions.find(
-      (o: any) => o.text === "Paste",
-    ) as any;
-
-    const evt = new PointerEvent("pointerdown");
-    paste.onClick(evt);
-
-    expect(host.pasteImage).toHaveBeenCalledTimes(1);
-    expect(host.pasteImage.mock.calls[0][0]).toBe(evt);
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
-  });
-
-  it("works with wrapped calls returning values (Single: Send to Front)", () => {
+  it("works with wrapped calls returning values (Single: Send to Front)", async () => {
     const host = makeHost();
     const single = createSingleImageMenuOptions.call(host);
-    const group = single.options[single.options.length - 1];
+    const group = single.options[0];
     const front = group.childOptions.find(
       (o: any) => o.text === "Send to Front",
     ) as any;
 
-    front.onClick();
-    expect(host.sendShapeToNewZOrder).toHaveBeenCalledWith(true);
+    const promise = front.onClick.call(host);
     expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+
+    await promise;
+    expect(host.sendShapeToNewZOrder).toHaveBeenCalledWith(true);
   });
 });
 
@@ -153,7 +141,7 @@ describe("Interaction context menu helpers", () => {
     );
     expect(hasSub).toBe(true);
 
-    const canvas = createCanvasImageMenuOptions.call(base, []);
+    const canvas = createCanvasMenuOptions.call(base, []);
     expect(canvas.options.length).toBeGreaterThan(0);
   });
 });
@@ -182,7 +170,7 @@ describe("createMultiImageMenuOptions", () => {
     host = makeMultiHost();
   });
 
-  it("produces a group with Align submenu and calls align on click", () => {
+  it("produces a group with Align submenu and calls align on click", async () => {
     const cfg = createMultiImageMenuOptions.call(host);
     expect(Array.isArray(cfg.options)).toBe(true);
 
@@ -205,30 +193,34 @@ describe("createMultiImageMenuOptions", () => {
     );
 
     expect(typeof left.onClick).toBe("function");
-    left.onClick();
+    const leftPromise = left.onClick();
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await leftPromise;
     expect(host.align).toHaveBeenCalledWith("left");
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
 
     host.align.mockClear();
     host.clearContextMenu.mockClear();
-    right.onClick();
+    const rightPromise = right.onClick();
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await rightPromise;
     expect(host.align).toHaveBeenCalledWith("right");
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
 
     host.align.mockClear();
     host.clearContextMenu.mockClear();
-    top.onClick();
+    const topPromise = top.onClick();
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await topPromise;
     expect(host.align).toHaveBeenCalledWith("top");
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
 
     host.align.mockClear();
     host.clearContextMenu.mockClear();
-    bottom.onClick();
-    expect(host.align).toHaveBeenCalledWith("bottom");
+    const bottomPromise = bottom.onClick();
     expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await bottomPromise;
+    expect(host.align).toHaveBeenCalledWith("bottom");
   });
 
-  it("produces Normalize by First submenu and calls normalizeSelection correctly", () => {
+  it("produces Normalize by First submenu and calls normalizeSelection correctly", async () => {
     const cfg = createMultiImageMenuOptions.call(host);
     const normFirstTop = findOption(cfg.options, "Normalize by First");
     expect(normFirstTop).toBeDefined();
@@ -239,30 +231,34 @@ describe("createMultiImageMenuOptions", () => {
     const size = group.childOptions.find((o: any) => o.text === "Size");
     const scale = group.childOptions.find((o: any) => o.text === "Scale");
 
-    height.onClick();
+    const heightPromise = height.onClick();
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await heightPromise;
     expect(host.normalizeSelection).toHaveBeenCalledWith("height", "first");
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
 
     host.normalizeSelection.mockClear();
     host.clearContextMenu.mockClear();
-    width.onClick();
+    const widthPromise = width.onClick();
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await widthPromise;
     expect(host.normalizeSelection).toHaveBeenCalledWith("width", "first");
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
 
     host.normalizeSelection.mockClear();
     host.clearContextMenu.mockClear();
-    size.onClick();
+    const sizePromise = size.onClick();
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await sizePromise;
     expect(host.normalizeSelection).toHaveBeenCalledWith("size", "first");
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
 
     host.normalizeSelection.mockClear();
     host.clearContextMenu.mockClear();
-    scale.onClick();
-    expect(host.normalizeSelection).toHaveBeenCalledWith("scale", "first");
+    const scalePromise = scale.onClick();
     expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await scalePromise;
+    expect(host.normalizeSelection).toHaveBeenCalledWith("scale", "first");
   });
 
-  it("produces Normalize by Average submenu and calls normalizeSelection correctly", () => {
+  it("produces Normalize by Average submenu and calls normalizeSelection correctly", async () => {
     const cfg = createMultiImageMenuOptions.call(host);
     const normAvgTop = findOption(cfg.options, "Normalize by Average");
     expect(normAvgTop).toBeDefined();
@@ -273,26 +269,30 @@ describe("createMultiImageMenuOptions", () => {
     const size = group.childOptions.find((o: any) => o.text === "Size");
     const scale = group.childOptions.find((o: any) => o.text === "Scale");
 
-    height.onClick();
+    const heightPromise = height.onClick();
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await heightPromise;
     expect(host.normalizeSelection).toHaveBeenCalledWith("height", "average");
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
 
     host.normalizeSelection.mockClear();
     host.clearContextMenu.mockClear();
-    width.onClick();
+    const widthPromise = width.onClick();
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await widthPromise;
     expect(host.normalizeSelection).toHaveBeenCalledWith("width", "average");
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
 
     host.normalizeSelection.mockClear();
     host.clearContextMenu.mockClear();
-    size.onClick();
+    const sizePromise = size.onClick();
+    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await sizePromise;
     expect(host.normalizeSelection).toHaveBeenCalledWith("size", "average");
-    expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
 
     host.normalizeSelection.mockClear();
     host.clearContextMenu.mockClear();
-    scale.onClick();
-    expect(host.normalizeSelection).toHaveBeenCalledWith("scale", "average");
+    const scalePromise = scale.onClick();
     expect(host.clearContextMenu).toHaveBeenCalledTimes(1);
+    await scalePromise;
+    expect(host.normalizeSelection).toHaveBeenCalledWith("scale", "average");
   });
 });

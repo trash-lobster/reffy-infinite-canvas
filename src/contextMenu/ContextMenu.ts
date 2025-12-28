@@ -67,7 +67,6 @@ export class ContextMenu {
   }
 
   private addDivider() {
-    // const divider = document.createElement('div');
     const divider = document.createElement("hr");
     divider.classList.add("context-menu-divider");
     this.el.appendChild(divider);

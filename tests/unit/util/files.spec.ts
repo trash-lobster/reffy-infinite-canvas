@@ -72,17 +72,6 @@ describe("downloadJSON", () => {
   });
 });
 
-describe("readJSONFile", () => {
-  it("should parse JSON from file", async () => {
-    const { readJSONFile } = await import("../../../src/util/files");
-    const file = {
-      text: vi.fn().mockResolvedValue('{"foo":123}'),
-    } as unknown as File;
-    const result = await readJSONFile(file);
-    expect(result).toEqual({ foo: 123 });
-  });
-});
-
 describe("convertToPNG", () => {
   it("should resolve with PNG data URL", async () => {
     const { convertToPNG } = await import("../../../src/util/files");

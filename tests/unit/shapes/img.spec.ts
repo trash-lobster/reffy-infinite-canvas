@@ -449,10 +449,37 @@ describe("setLowResTextureFromBitMap", () => {
               })),
             } as any;
           }
-          return orig.call(document, tag);
+          return Document.prototype.createElement.call(document, tag);
         }
       )(document.createElement as any) as any,
     );
+
+    vi.stubGlobal(
+      "Image",
+      class {
+        src = "";
+        crossOrigin: string | null = null;
+        onload: (() => void) | null = null;
+        onerror: ((e?: any) => void) | null = null;
+        naturalWidth = 1;
+        naturalHeight = 1;
+        complete = false;
+
+        set srcSetter(v: string) {
+          this.src = v;
+          // simulate async load
+          setTimeout(() => {
+            this.complete = true;
+            if (this.onload) this.onload();
+          }, 0);
+        }
+        // ensure tests using direct assignment still work
+        get srcGetter() {
+          return this.src;
+        }
+      } as any,
+    );
+
     vi.stubGlobal(
       "createImageBitmap",
       vi.fn(async () => ({ close: vi.fn() }) as unknown as ImageBitmap),
@@ -498,6 +525,7 @@ describe("setLowResTextureFromBitMap", () => {
 
     await img.setUseLowRes(true, gl);
     expect(gl.createTexture).toHaveBeenCalled();
+    expect(createImageBitmap).toHaveBeenCalled();
     expect(clearRectSpy).toHaveBeenCalled();
     expect(drawImageSpy).toHaveBeenCalled();
   });

@@ -175,8 +175,10 @@ export class InfiniteCanvasElement extends LitElement {
 
     .canvas-loader {
       position: absolute;
-      top: 0;
+      top: 0 !important;
       left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
       display: flex;
       flex-direction: column;
       align-items: center;

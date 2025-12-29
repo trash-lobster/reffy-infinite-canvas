@@ -1,4 +1,9 @@
-import { BoundingBoxCollisionType, CanvasEvent, oppositeCorner, SaveEvent } from "../util";
+import {
+  BoundingBoxCollisionType,
+  CanvasEvent,
+  oppositeCorner,
+  SaveEvent,
+} from "../util";
 import { Rect, Renderable, Shape } from "../shapes";
 import { Canvas } from "Canvas";
 import { Point } from "bounding/type";

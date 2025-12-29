@@ -9,18 +9,24 @@ The project began tracking changelog from version 0.0.8.
 
 View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
+## [0.2.2] - 2025-12-30
+
+### Fixed
+
+- Fixed bug that led to Chrome not displaying loader
+
 ## [0.2.1] - 2025-12-29
 
 ### Added
 
 - Added the intended auto-save behaviour that triggers by default every 5 minutes
 - Several actions will trigger save once performed:
-    - Scrolling
-    - Moving selection
-    - Resizing selection
-    - Flipping selection
-    - Aligning selection
-    - Normalizing selection
+  - Scrolling
+  - Moving selection
+  - Resizing selection
+  - Flipping selection
+  - Aligning selection
+  - Normalizing selection
 
 ### Updated
 
@@ -138,6 +144,8 @@ View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
 - File storage cache limit has been increased from 100 to 500
 
+[0.2.2]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/trash-lobster/reffy-infinite-canvas/compare/v0.1.1...v0.1.2

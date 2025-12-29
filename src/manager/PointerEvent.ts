@@ -7,6 +7,7 @@ import {
   ContextMenuEvent,
   copy,
   LoaderEvent,
+  SaveEvent,
 } from "../util";
 import { PointerEventState } from "../state";
 import { CanvasHistory } from "../history";
@@ -195,6 +196,7 @@ export class PointerEventManager {
       (e) => {
         if (!this.isContextMenuActive()) {
           onWheel(e);
+          this.eventHub.emit(SaveEvent.Save);
         }
       },
       { passive: false },
@@ -306,7 +308,7 @@ export class PointerEventManager {
 
     this.closeMarquee();
 
-    this.eventHub.emit("save");
+    this.eventHub.emit(SaveEvent.Save);
   }
 
   private checkCollidingChild(wx: number, wy: number) {

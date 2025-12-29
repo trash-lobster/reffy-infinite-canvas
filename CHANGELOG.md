@@ -9,6 +9,23 @@ The project began tracking changelog from version 0.0.8.
 
 View NPM package at https://www.npmjs.com/package/@reffy/infinite-canvas
 
+## [0.2.1] - 2025-12-29
+
+### Added
+
+- Added the intended auto-save behaviour that triggers by default every 5 minutes
+- Several actions will trigger save once performed:
+    - Scrolling
+    - Moving selection
+    - Resizing selection
+    - Flipping selection
+    - Aligning selection
+    - Normalizing selection
+
+### Updated
+
+- On receiving signal to save, the debounced save action is triggered now instead of the regular save function.
+
 ## [0.2.0] - 2025-12-28
 
 ### Fixed

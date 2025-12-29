@@ -1,4 +1,4 @@
-import { BoundingBoxCollisionType, CanvasEvent, oppositeCorner } from "../util";
+import { BoundingBoxCollisionType, CanvasEvent, oppositeCorner, SaveEvent } from "../util";
 import { Rect, Renderable, Shape } from "../shapes";
 import { Canvas } from "Canvas";
 import { Point } from "bounding/type";
@@ -266,6 +266,7 @@ export class SelectionManager {
       }
     }
     this.#eventHub.emit(CanvasEvent.Change);
+    this.#eventHub.emit(SaveEvent.Save);
   }
 
   /**
@@ -292,6 +293,7 @@ export class SelectionManager {
       }
     }
     this.#eventHub.emit(CanvasEvent.Change);
+    this.#eventHub.emit(SaveEvent.Save);
   }
 
   flip(direction: FlipDirection) {
@@ -312,6 +314,7 @@ export class SelectionManager {
       this.#history.push(makeMultiFlipCommand(transformArray, direction));
     }
     this.#eventHub.emit(CanvasEvent.Change);
+    this.#eventHub.emit(SaveEvent.Save);
   }
 
   alignSelection(direction: AlignDirection) {
@@ -319,6 +322,7 @@ export class SelectionManager {
     const transformations = this.multiBoundingBox.align(direction);
     this.#history.push(makeMultiTransformCommand(transformations));
     this.#eventHub.emit(CanvasEvent.Change);
+    this.#eventHub.emit(SaveEvent.Save);
   }
 
   normalize(type: NormalizeOption, mode: NormalizeMode = "first") {
@@ -326,6 +330,7 @@ export class SelectionManager {
     const transformations = this.multiBoundingBox.normalize(type, mode);
     this.#history.push(makeMultiTransformCommand(transformations));
     this.#eventHub.emit(CanvasEvent.Change);
+    this.#eventHub.emit(SaveEvent.Save);
   }
 
   onPointerMove(

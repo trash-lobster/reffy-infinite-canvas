@@ -414,6 +414,12 @@ export class InfiniteCanvasElement extends LitElement {
       basicImageMenuOptions.options,
     );
 
+    // set up autosave
+    this.#intervalId = setInterval(
+      this.saveToCanvasStorage,
+      this.#saveFrequency,
+    );
+
     this.eventHub.emit(LoaderEvent.done);
     this.dispatchEvent(new Event("load"));
 
@@ -487,7 +493,7 @@ export class InfiniteCanvasElement extends LitElement {
       }
       this.dispatchEvent(new Event("change"));
     });
-    this.#eventHub.on(SaveEvent.Save, this.saveToCanvasStorage);
+    this.#eventHub.on(SaveEvent.Save, this.debounceSaveToCanvasStorage);
     this.#eventHub.on(SaveEvent.SaveCompleted, () => {
       this.dispatchEvent(new Event("savecomplete"));
     });

@@ -98,6 +98,7 @@ export class InfiniteCanvasElement extends LitElement {
       font-family: system-ui, sans-serif;
       animation: fadeInMenu 0.13s cubic-bezier(0.4, 0, 0.2, 1);
       overflow: scroll;
+      z-index: 9999;
     }
 
     /* Chrome, Edge, Safari */

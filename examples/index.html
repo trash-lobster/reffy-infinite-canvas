@@ -17,6 +17,14 @@
       touch-action: none;
     }
 
+    .canvas-container {
+      display: flex;
+      height: 100%;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+    }
+
     #disclaimer {
       position: absolute;
       left: 50%;
@@ -147,7 +155,9 @@
     }
   </style>
   <body>
+    <!-- <div class="canvas-container"> -->
     <infinite-canvas id="canvas"></infinite-canvas>
+    </div>
     <button id="open-menu">
       <svg
         xmlns="http://www.w3.org/2000/svg"

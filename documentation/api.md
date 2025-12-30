@@ -123,6 +123,12 @@ export function App() {
   );
 }
 ```
+Note that if you want to create a container to limit the size and change the default position of the canvas, please ensure that the container has at least the following css properties. This is necessary for the context menu to show up in the right place. (I will look into how to remove this bug in the future)
+```css
+display: flex;
+align-items: center;
+justify-content: center;
+```
 
 I recommend setting up a hook to utilise the API methods:
 
